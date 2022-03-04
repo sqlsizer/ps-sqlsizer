@@ -1,4 +1,6 @@
-﻿function Init
+﻿# -----------------------------------------
+
+function Init
 {
     param
     (
@@ -365,12 +367,14 @@ function CopyDatabase
 {
      param (
         [string]$server,
-        [string]$source
+        [string]$source,
+        [string]$prefix,
+        [string]$login
     )
 
-
-    Copy-DbaDatabase  -Source $server -Destination $server -Database $source -Prefix "SqlSizer." -BackupRestore -SharedPath (Get-DbaDefaultPath -SqlInstance $server).Backup
-    Copy-DbaLogin -Source $server -Destination $server -Login AppReadOnly, AppReadWrite
+   
+    Copy-DbaDatabase  -Source $server -Destination $server -Database $source  -Prefix $prefix -BackupRestore -SharedPath (Get-DbaDefaultPath -SqlInstance $server).Backup
+    Copy-DbaLogin -Source $server -Destination $server -Login AppReadOnly, AppReadWrite, $login
 
 }
 
@@ -396,16 +400,84 @@ function Truncate
 
     foreach ($table in $tables)
     {
-        $sql = "DELETE FROM " + $table["schema"] + "." + $table["table"]
+        $sql = "DELETE FROM " + $table["schema"] + "." + $table["table"]        
         $_ = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
     }
-    
-    foreach ($table in $tables)
-    {
-        $sql = "ALTER TABLE " + $table["schema"] + "." + $table["table"] + " WITH CHECK CHECK CONSTRAINT ALL"
-        $_ = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
-    }
+}
+
+function EnableChecks
+{
+    param (
+        [string]$server,
+        [string]$database
+    )
+
+    $sql = Get-Content -Raw -Path "Tables.sql"
+    $tables = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
 
     $sql = "sp_msforeachtable 'ALTER TABLE ? ENABLE TRIGGER all'"
     $_ = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
+
+    $sql = "DBCC SHRINKDATABASE ([" + $database + "])"
+    Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
 }
+
+
+function CopyData
+{
+    param (
+        [string]$server,
+        [string]$source,
+        [string]$destination,
+        [Object]$related
+    )
+
+    $groups = $result | Group-Object -Property Schema, TableName
+
+
+    foreach ($group in $groups)
+    {
+        foreach ($item in $group.Group)
+        {
+            #TODO
+            #$sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON INSERT INTO " +  $schema + ".[" +  $tableName + "] SELECT * FROM " + $source + "." + $schema + ".[" +  $tableName + "] SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF"
+            #Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $destination
+        }
+    }
+}
+
+
+# -----------------------------------------
+
+
+
+# Settings
+
+$database = "AdventureWorks"
+$server = "localhost"
+$prefix = "SqlSizer2."
+$login = ''
+
+
+# Init
+Init -server $server -database $database
+
+# Add desired data
+AddToProcessing -server $server -database $database -schema "Person" -table "Person" -key "2" -type 3
+
+# Find related
+Measure-Command {
+    $result = FindRelated -server $server -database $database
+}
+
+# Create new db
+CopyDatabase -server $server -source $database -prefix $prefix -login $login
+Truncate -server $server -database ($prefix + $database)
+
+# Copy data
+CopyData -server $server -source $database -destination ($prefix + $database) -related $result
+
+# Enable referece checks
+EnableChecks -server $server -database ($prefix + $database)
+
+#end of script
