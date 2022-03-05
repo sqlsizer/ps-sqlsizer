@@ -422,6 +422,40 @@ function EnableChecks
     Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
 }
 
+function SetIdentityInsertOn
+{
+     param (
+        [string]$server,
+        [string]$database
+    )
+
+    $sql = Get-Content -Raw -Path "Identity.sql"
+    $tables = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
+
+    foreach ($table in $tables)
+    {
+        $sql = "SET IDENTITY_INSERT " + $table["schema"] + "." + $table["table"] + " ON"
+        $_ = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
+    }
+}
+
+function SetIdentityInsertOff
+{
+     param (
+        [string]$server,
+        [string]$database
+    )
+
+    $sql = Get-Content -Raw -Path "Identity.sql"
+    $tables = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
+
+    foreach ($table in $tables)
+    {
+        $sql = "SET IDENTITY_INSERT " + $table["schema"] + "." + $table["table"] + " OFF"
+        $_ = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
+    }
+}
+
 
 function CopyData
 {
@@ -432,18 +466,19 @@ function CopyData
         [Object]$related
     )
 
+    SetIdentityInsertOn -server $server -database $destination
+
     $groups = $result | Group-Object -Property Schema, TableName
-
-
     foreach ($group in $groups)
     {
         foreach ($item in $group.Group)
         {
-            #TODO
-            #$sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON INSERT INTO " +  $schema + ".[" +  $tableName + "] SELECT * FROM " + $source + "." + $schema + ".[" +  $tableName + "] SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF"
+            #$sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] SELECT * FROM " + $source + "." + $schema + ".[" +  $tableName + "]"
             #Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $destination
         }
     }
+
+    SetIdentityInsertOff -server $server -database $destination
 }
 
 
@@ -480,4 +515,4 @@ CopyData -server $server -source $database -destination ($prefix + $database) -r
 # Enable referece checks
 EnableChecks -server $server -database ($prefix + $database)
 
-#end of script
+#end of scriptc
