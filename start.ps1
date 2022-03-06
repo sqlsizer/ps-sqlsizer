@@ -50,9 +50,9 @@ function GetType
 
     foreach ($row in $rows)
     {
-        if (($row["TABLE_NAME"] -eq $tableName) -and ($row["TABLE_SCHEMA"] -eq $schema) -and ($row["COLUMN_NAME"] -eq $columnName))
+        if (($row["table"] -eq $tableName) -and ($row["schema"] -eq $schema) -and ($row["column"] -eq $columnName))
         {
-            $row["DATA_TYPE"]
+            $row["dataType"]
             break
         }
     }
@@ -74,11 +74,42 @@ function GetColumnValue
 
     if ($type -eq "hierarchyid")
     {
-        "CONVERT(varchar, " + $columnName + ")"
+        "CONVERT(varchar(max), " + $columnName + ")"
+    }
+    else 
+    {
+        if ($type -eq "xml")
+        {
+            "CONVERT(varchar(max), " + $columnName + ")"
+        }
+        else
+        {
+            $columnName
+        }
+    }
+}
+
+
+function GetValue
+{
+    param 
+    (
+        [string]$schema,
+        [string]$tableName,
+        [string]$columnName,
+        [string]$value,
+        [System.Data.DataRow[]]$rows
+    )
+
+    $type = GetType -schema $schema -tableName $tableName -columnName $columnName -rows $rows
+
+    if (($type -eq "varchar") -or ($type -eq "nvarchar") -or ($type -eq "datetime") -or ($type -eq "nchar") -or ($type -eq "char"))
+    {
+        "'" + $value + "'"
     }
     else
     {
-        $columnName
+        $value
     }
 }
 
@@ -281,6 +312,101 @@ function GetPrimaryKey
     $key
 }
 
+function GetTableSelect
+{
+    param (
+        [string]$Schema,
+        [string]$TableName,
+        [System.Data.DataRow[]]$Columns,
+        [System.Data.DataRow[]]$Computed,
+        [bool]$Raw
+    )
+
+    $select = ""
+
+    $i = 0
+
+
+    foreach ($row in $Columns)
+    {
+        if (($row["table"] -eq $TableName) -and ($row["schema"] -eq $Schema))
+        {  
+           $isComputed = IsComputed -Schema $Schema -TableName $TableName -ColumnName $row["column"] -Computed $Computed
+
+           if ($isComputed)
+           {
+              continue
+           }
+
+           if ($i -gt 0)
+           {
+              $select += ","
+           }
+
+           if ($raw)
+           {
+              $select += $row["column"]
+           }
+           else
+           {
+              $select += GetColumnValue -schema $Schema -tableName $TableName -columnName $row["column"] -rows $columns
+           }
+           
+           $i += 1
+        }
+    }
+
+    $select
+}
+
+function GetTableWhere
+{
+     param (
+        [string]$Schema,
+        [string]$TableName,
+        [System.Data.DataRow[]]$PrimaryKeys,
+        [string]$Key1,
+        [string]$Key2,
+        [string]$Key3,
+        [string]$Key4
+     )
+
+     $primaryKey = GetPrimaryKey -Schema $Schema -TableName $TableName -PrimaryKeys $PrimaryKeys
+
+     $Key1 = (GetValue -tableName $TableName -columnName $primaryKey -value $Key1 -schema $Schema -rows $PrimaryKeys)
+
+     if ($primaryKey.Count -gt 1)
+     {
+        $Key2 = (GetValue -tableName $TableName -columnName $primaryKey[1] -value $Key2 -schema $Schema -rows $PrimaryKeys)
+     }
+
+     if ($primaryKey.Count -gt 2)
+     {
+        $Key3 = (GetValue -tableName $TableName -columnName $primaryKey[2] -value $Key3 -schema $Schema -rows $PrimaryKeys)
+     }
+
+     if ($primaryKey.Count -gt 3)
+     {
+        $Key4 = (GetValue -tableName $TableName -columnName $primaryKey[3] -value $Key4 -schema $Schema -rows $PrimaryKeys)
+     }
+     
+     if ($primaryKey.Count -eq 1)
+     {
+         " WHERE " + $primaryKey + " = " + $Key1
+     }
+     
+     if ($primaryKey.Count -eq 2)
+     {
+        " WHERE " + $primaryKey[0] + " = " + $Key1 + " and " + $primaryKey[1] + " = " + $Key2
+     }
+
+     if ($primaryKey.Count -eq 3)
+     {
+        " WHERE " + $primaryKey[0] + " = " + $Key1 + " and " + $primaryKey[1] + " = " + $Key2 + " and " + $primaryKey[2] + " = " + $Key3
+     }
+}
+
+
 function GetForeignKeys
 {
     param (
@@ -422,6 +548,64 @@ function EnableChecks
     Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
 }
 
+
+function IsComputed
+{
+     param (
+        [string]$Schema,
+        [string]$TableName,
+        [string]$ColumnName,
+        [System.Data.DataRow[]]$Computed
+    )
+
+    $result = $false
+
+    foreach ($row in $Computed)
+    {
+        if (($row["table"] -eq $TableName) -and ($row["schema"] -eq $Schema) -and ($row["column"] -eq $ColumnName))
+        {  
+           $result = $true
+        }
+    }
+
+    $result
+}
+
+function HasIdentity
+{
+     param (
+        [string]$Schema,
+        [string]$TableName,
+        [System.Data.DataRow[]]$Identifies
+    )
+
+    $result = $false
+
+    foreach ($row in $Identifies)
+    {
+        if (($row["table"] -eq $TableName) -and ($row["schema"] -eq $Schema))
+        {  
+           $result = $true
+        }
+    }
+
+    $result
+}
+
+
+function GetTablesWithIdentityInsert
+{
+     param (
+        [string]$server,
+        [string]$database
+    )
+
+    $sql = Get-Content -Raw -Path "Identity.sql"
+    $tables = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $database
+    
+    $tables
+}
+
 function SetIdentityInsertOn
 {
      param (
@@ -465,20 +649,43 @@ function CopyData
         [string]$destination,
         [Object]$related
     )
+    
+    $columnsSql = Get-Content -Path "Columns.sql" -Raw
+    $columns = Invoke-Sqlcmd -Query $columnsSql -ServerInstance $server -Database $database
+    
+    $identityTables = GetTablesWithIdentityInsert -server $server -database $source
+    
+    $computedSql = Get-Content -Path "Computed.sql" -Raw
+    $computed =  Invoke-Sqlcmd -Query $computedSql -ServerInstance $server -Database $database
 
-    SetIdentityInsertOn -server $server -database $destination
+    $primaryKeysSql = Get-Content -Path "PrimaryKeys.sql" -Raw
+    $primaryKeys = Invoke-Sqlcmd -Query $primaryKeysSql -ServerInstance $server -Database $database
 
     $groups = $result | Group-Object -Property Schema, TableName
     foreach ($group in $groups)
     {
         foreach ($item in $group.Group)
         {
-            #$sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] SELECT * FROM " + $source + "." + $schema + ".[" +  $tableName + "]"
-            #Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $destination
+            $tableName = $item.TableName
+            $schema = $item.Schema
+            $tableColumns = GetTableSelect -Columns $columns -TableName $tableName -Schema $schema -Computed $computed -Raw $true
+            $tableSelect = GetTableSelect -Columns $columns -TableName $tableName -Schema $schema -Computed $computed -Raw $false
+
+            $where = GetTableWhere -Columns $columns -TableName $tableName -Schema $schema -PrimaryKeys $primaryKeys -Key1 $item.Key1 -Key2 $item.Key2 -Key3 $item.Key3 -Key4 $item.Key4
+
+            $isIdentity = HasIdentity -Schema $schema -TableName $tableName -Identifies $identityTables
+
+            $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] (" + $tableColumns + ") SELECT " + $tableSelect +  " FROM " + $source + "." + $schema + ".[" +  $tableName + "]"
+        
+            $sql = $sql + $where
+
+            if ($isIdentity)
+            {
+                $sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON " + $sql + " SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF" 
+            }
+            $_ = Invoke-Sqlcmd -Query $sql -ServerInstance $server -Database $destination
         }
     }
-
-    SetIdentityInsertOff -server $server -database $destination
 }
 
 

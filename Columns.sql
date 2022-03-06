@@ -1,7 +1,7 @@
 SELECT
-    TABLE_SCHEMA, 
-    TABLE_NAME,
-    COLUMN_NAME, 
-    DATA_TYPE 
+    TABLE_SCHEMA [schema], 
+    TABLE_NAME [table],
+    COLUMN_NAME [column], 
+    DATA_TYPE [dataType]
 FROM 
     INFORMATION_SCHEMA.COLUMNS
