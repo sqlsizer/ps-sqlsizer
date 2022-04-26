@@ -23,7 +23,8 @@
         $tableName = $table.TableName
         
         $tableColumns = GetTableSelect -TableInfo $table -Raw $true
-        $tableSelect = GetTableSelect -TableInfo $table -Raw $true
+        $tableSelect = GetTableSelect -TableInfo $table -Raw $false
+
         $where = GetTableWhere -Database $Source -TableInfo $table
 
         $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] (" + $tableColumns + ") SELECT " + $tableSelect +  " FROM " + $Source + "." + $schema + ".[" +  $tableName + "]"
@@ -46,6 +47,7 @@ function GetTableSelect
     )
 
     
+    $select = ""
     for ($i = 0; $i -lt $table.Columns.Count; $i++)
     {
         $column = $table.Columns[$i]
@@ -59,7 +61,6 @@ function GetTableSelect
         }
         else
         {
-        
             if ($i -gt 0)
             {
                 $select += ","
@@ -71,7 +72,7 @@ function GetTableSelect
             }
             else
             {
-                $select += GetColumnValue -columnName $columnName -dataType $table.ColumnsTypes[$i]
+                $select += GetColumnValue -columnName $columnName -dataType $column.DataType -prefix ""
             }
         }
     }
@@ -87,28 +88,19 @@ function GetTableWhere
         [TableInfo]$TableInfo
      )
 
-     $primaryKey = $TableInfo.PrimaryKeys
-     
-     
-     if ($primaryKey.Count -eq 1)
+     $primaryKey = $TableInfo.PrimaryKey
+     $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".SqlSizer.Processing WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
+
+     $i = 0
+     foreach ($column in $primaryKey)
      {
-         " WHERE EXISTS(SELECT * FROM " + $Database + ".SqlSizer.Processing WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' " + "AND Key1 = " + $primaryKey.Name  + ")"
-     }
-     
-     if ($primaryKey.Count -eq 2)
-     {
-        " WHERE EXISTS(SELECT * FROM " + $Database + ".SqlSizer.Processing WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' " + "AND Key1 = " + $primaryKey[0].Name + " AND Key2 = " + $primaryKey[1].Name + ")"
+        $where += " AND Key" + $i + " = " + $column.Name + " " 
+        $i += 1
      }
 
-     if ($primaryKey.Count -eq 3)
-     {
-        " WHERE EXISTS(SELECT * FROM " + $Database + ".SqlSizer.Processing WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' " + "AND Key1 = " + $primaryKey[0].Name + " AND Key2 = " + $primaryKey[1].Name + " AND Key3 = " + $primaryKey[2].Name + ")"
-     }
+     $where += ")"
 
-     if ($primaryKey.Count -eq 4)
-     {
-        " WHERE EXISTS(SELECT * FROM " + $Database + ".SqlSizer.Processing WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' " + "AND Key1 = " + $primaryKey[0].Name + " AND Key2 = " + $primaryKey[1].Name + " AND Key3 = " + $primaryKey[2].Name + " AND Key4 = " + $primaryKey[3].Name + ")"
-     }
+     $where
 }
 
 function GetColumnValue
@@ -126,7 +118,7 @@ function GetColumnValue
     }
     else 
     {
-        if ($type -eq "xml")
+        if ($dataType -eq "xml")
         {
             "CONVERT(nvarchar(max), " + $prefix + $columnName + ")"
         }

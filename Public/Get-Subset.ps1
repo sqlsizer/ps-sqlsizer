@@ -8,10 +8,13 @@
         [string]$Database,
 
         [Parameter(Mandatory=$true)]
-        [string[]]$Queries,
+        [Query[]]$Queries,
 
-        [Parameter(Mandatory=$true)]
-        [bool]$ReturnData,
+        [Parameter()]
+        [bool]$Compute = $true,
+
+        [Parameter()]
+        [bool]$ReturnData = $false,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -19,22 +22,33 @@
 
     $processed = @{ }
     $result = @()
-    
-    $red = 1 # find all data that is referenced by the row (recursively)
-    $green = 2 # find all data that is dependent on the row
-    $yellow = 3 # find all related data to the row (subset)
-    
-
+  
     $info = Get-TablesInfo -Database $Database -ConnectionInfo $ConnectionInfo
 
     $_ = Init-Structures -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
     
-
+    Write-Verbose "Processing init"
     foreach ($query in $queries)
     {
-        $tmp = "INSERT INTO SqlSizer.Processing " + $query
-        $_ = Execute-SQL -Sql $tmp -Database $database -ConnectionInfo $ConnectionInfo
+        $tmp = "INSERT INTO SqlSizer.Processing SELECT '" + $query.Schema + "', '" + $query.Table + "', "
+
+        $i = 0
+        foreach ($column in $query.KeyColumns)
+        {
+            $tmp += $column + ","
+            $i += 1
+        }
+
+        for ($i; $i -lt $info.PrimaryKeyMaxSize; $i = $i + 1)
+        {
+           $tmp  += "NULL" + ","
+        }
+
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, 1 FROM " + $query.Schema + "." + $query.Table + " as x WHERE " + $query.Where
+        $_ = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
+    Write-Verbose "Processing init: finised"
+
     $_ = Init-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
     
     $keys = ""
@@ -77,7 +91,7 @@
         }
             
         # Red color - 1
-        if ($color -eq $red) 
+        if ($color -eq [int][Color]::Red) 
         {
            foreach ($fk in $table.ForeignKeys)
            {
@@ -118,7 +132,7 @@
                $i = 0
                foreach ($fkColumn in $fk.FkColumns)
                {
-                    $columns = $columns + " f." + $fkColumn.Name + " as val" + $i + ","
+                    $columns = $columns + (GetColumnValue -columnName $fkColumn.Name -prefix "f" -dataType $fkColumn.dataType) + " as val" + $i + ","
                     $i += 1
                }
 
@@ -151,7 +165,7 @@
         }
 
         # Green Color - 2
-        if ($color -eq $green)
+        if ($color -eq [int][Color]::Green) 
         {
            foreach ($referencedByTable in $table.IsReferencedBy)
            {
@@ -197,8 +211,8 @@
                 $i = 0
                 foreach ($primaryKeyColumn in $primaryKey)
                 {
-                     $columns = $columns + " f." + $primaryKeyColumn.Name + " as val" + $i + ","
-                     $i += 1
+                    $columns = $columns + (GetColumnValue -columnName $primaryKeyColumn.Name -prefix "f" -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
+                    $i += 1
                 }
                 
                 if ($i -lt $info.PrimaryKeyMaxSize)
@@ -219,7 +233,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns + " 1, 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns + " 3, 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -231,7 +245,7 @@
         }
         
         # Yellow - 3 -> Split into Red and Green
-        if ($first.Type -eq $yellow)
+        if ($color -eq [int][Color]::Yellow) 
         {
             $columns = ""
             for ($i = 0; $i -lt $info.PrimaryKeyMaxSize; $i++)
@@ -260,7 +274,7 @@
         
         # Update status
         $q = "UPDATE p SET Status = 1 FROM SqlSizer.Processing p WHERE [Schema] = '" + $schema + "' and TableName = '" + $tableName + "' and [Type] = " + $color + " and Status = 0 and EXISTS(SELECT * FROM SqlSizer.Slice s WHERE " + $cond + ") SELECT @@ROWCOUNT AS Count"
-        $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo 
 
         # update stats
         $q = "UPDATE SqlSizer.ProcessingStats SET Processed = Processed + " + $results.Count + ", ToProcess = ToProcess - " + $results.Count +  " WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "'"
@@ -285,3 +299,29 @@
     }
 }
 
+
+function GetColumnValue
+{
+    param 
+    (
+        [string]$columnName,
+        [string]$dataType,
+        [string]$prefix
+    )
+
+    if ($dataType -eq "hierarchyid")
+    {
+        "CONVERT(nvarchar(max), " + $prefix + $columnName + ")"
+    }
+    else 
+    {
+        if ($dataType -eq "xml")
+        {
+            "CONVERT(nvarchar(max), " + $prefix + $columnName + ")"
+        }
+        else
+        {
+            "[" + $columnName + "]"
+        }
+    }
+}

@@ -12,8 +12,17 @@
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-
-   Invoke-Sqlcmd -Query $Sql -ServerInstance $ConnectionInfo.Server -Database $Database -Username $ConnectionInfo.Login -Password $ConnectionInfo.Password -QueryTimeout 600000
-
-   Write-Verbose $Sql
+    
+    try
+    {
+        Invoke-Sqlcmd -Query $Sql -ServerInstance $ConnectionInfo.Server -Database $Database -Username $ConnectionInfo.Login -Password $ConnectionInfo.Password -QueryTimeout 600000 -ErrorAction Stop 
+        Write-Verbose $Sql
+    }
+    catch
+    {
+        Write-Host "Exception message: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Error: " $_.Exception -ForegroundColor Red            
+        Write-Host $Sql
+        Write-Host "=="
+    }
 }
