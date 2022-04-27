@@ -19,7 +19,7 @@ Finding of neighbours of graph nodes is done in bulks and depends on the color i
 Colors have following meaning:
  - Blue: find all rows that are required to remove that row
  - Red: find all rows that are referenced by the row (recursively) 
- - Green: find all depeneded rows on the row
+ - Green: find all dependent rows on the row
  - Yellow: find all related data to the row
 
 # How to start?
