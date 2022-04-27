@@ -1,4 +1,4 @@
-﻿function Get-TablesInfo
+﻿function Get-DatabaseInfo
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -86,10 +86,7 @@
             $table.ForeignKeys += $fk
         }
 
-
         $result.Tables += $table
-
-
     }
 
     $primaryKeyMaxSize = 0

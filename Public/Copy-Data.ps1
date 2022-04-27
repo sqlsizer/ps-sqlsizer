@@ -14,7 +14,7 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-TablesInfo -Database $Source -Connection  $ConnectionInfo
+    $info = Get-DatabaseInfo -Database $Source -Connection $ConnectionInfo
 
     foreach ($table in $info.Tables)
     {

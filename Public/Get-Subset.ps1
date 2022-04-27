@@ -8,13 +8,7 @@
         [string]$Database,
 
         [Parameter(Mandatory=$true)]
-        [Query[]]$Queries,
-
-        [Parameter()]
-        [bool]$Compute = $true,
-
-        [Parameter()]
-        [bool]$ReturnData = $false,
+        [bool]$Return,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -23,34 +17,9 @@
     $processed = @{ }
     $result = @()
   
-    $info = Get-TablesInfo -Database $Database -ConnectionInfo $ConnectionInfo
-
-    $_ = Init-Structures -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
-    
-    Write-Verbose "Processing init"
-    foreach ($query in $queries)
-    {
-        $tmp = "INSERT INTO SqlSizer.Processing SELECT '" + $query.Schema + "', '" + $query.Table + "', "
-
-        $i = 0
-        foreach ($column in $query.KeyColumns)
-        {
-            $tmp += $column + ","
-            $i += 1
-        }
-
-        for ($i; $i -lt $info.PrimaryKeyMaxSize; $i = $i + 1)
-        {
-           $tmp  += "NULL" + ","
-        }
-
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, 1 FROM " + $query.Schema + "." + $query.Table + " as x WHERE " + $query.Where
-        $_ = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-    Write-Verbose "Processing init: finised"
-
     $_ = Init-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
-    
+    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+
     $keys = ""
     for ($i = 0; $i -lt $info.PrimaryKeyMaxSize; $i++)
     {
@@ -80,14 +49,14 @@
         $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
         $cond = ""
-        for ($i = 0; $i -lt $info.PrimaryKeyMaxSize; $i++)
+        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
             if ($i -gt 0)
             {
                 $cond += " and "
             }
 
-            $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + " OR s.Key" + $i + " IS NULL)"
+            $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
         }
             
         # Red color - 1
@@ -104,12 +73,12 @@
                { 
                     if ($i -gt 0)
                     {
-                        $join = " and "
+                        $columns += " and "
                     }
                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                     $i += 1
                }
-               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = 1 and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Red + " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
 
 
                # from
@@ -132,7 +101,7 @@
                $i = 0
                foreach ($fkColumn in $fk.FkColumns)
                {
-                    $columns = $columns + (GetColumnValue -columnName $fkColumn.Name -prefix "f" -dataType $fkColumn.dataType) + " as val" + $i + ","
+                    $columns = $columns + (GetColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType) + " as val" + $i + ","
                     $i += 1
                }
 
@@ -154,7 +123,7 @@
                     $columns = $columns + "x.val" + $i + ","
                }
 
-               $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " 1, 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
+               $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + [int][Color]::Red + ", 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -181,12 +150,12 @@
                 { 
                      if ($i -gt 0)
                      {
-                         $join += " and "
+                         $columns += " and "
                      }
                      $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = 1 and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
                 
                 
                 # from
@@ -197,7 +166,7 @@
                 {
                     if ($i -gt 0)
                     {
-                         $join = " and "
+                         $join += " and "
                     }
                 
                     $join += " s.Key" + $i + " = f." + $fkColumn.Name
@@ -211,7 +180,7 @@
                 $i = 0
                 foreach ($primaryKeyColumn in $primaryKey)
                 {
-                    $columns = $columns + (GetColumnValue -columnName $primaryKeyColumn.Name -prefix "f" -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
+                    $columns = $columns + (GetColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
                     $i += 1
                 }
                 
@@ -233,7 +202,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns + " 3, 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -254,8 +223,8 @@
             }
             
             # insert 
-            $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = 1 and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " 1, 0, s.Depth, s.ProcessingId, 0 FROM SqlSizer.Slice s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", 0, s.Depth, s.ProcessingId, 0 FROM SqlSizer.Slice s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update stats
@@ -263,8 +232,8 @@
             $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # insert 
-            $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = 2 and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " 2, 0, s.Depth, s.ProcessingId, 0 FROM SqlSizer.Slice s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", 0, s.Depth, s.ProcessingId, 0 FROM SqlSizer.Slice s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update stats
@@ -273,7 +242,7 @@
         }
         
         # Update status
-        $q = "UPDATE p SET Status = 1 FROM SqlSizer.Processing p WHERE [Schema] = '" + $schema + "' and TableName = '" + $tableName + "' and [Type] = " + $color + " and Status = 0 and EXISTS(SELECT * FROM SqlSizer.Slice s WHERE " + $cond + ") SELECT @@ROWCOUNT AS Count"
+        $q = "UPDATE p SET Status = 1 FROM SqlSizer.Processing p WHERE [Schema] = '" + $schema + "' and TableName = '" + $tableName + "' and [Type] = " + $color + " and Status = 0 and EXISTS(SELECT 1 FROM SqlSizer.Slice s WHERE " + $cond + ") SELECT @@ROWCOUNT AS Count"
         $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo 
 
         # update stats
@@ -281,21 +250,21 @@
         $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     }
     
-    if ($ReturnData)
+   
+    if ($Return)
     {
         $columns = ""
         for ($i = 0; $i -lt $info.PrimaryKeyMaxSize; $i++)
         {
-           $columns = $columns + "Key" + $i
-
-           if ($i -lt ($info.PrimaryKeyMaxSize - 1))
-           {
-              $columns += ","
-           }
-        }
+            $columns = $columns + "Key" + $i
     
-        $q = "SELECT DISTINCT [Schema], TableName, " + $columns + "  FROM SqlSizer.Processing"
-        Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            if ($i -lt ($info.PrimaryKeyMaxSize - 1))
+            {
+                $columns += ","
+            }
+            $q = "SELECT DISTINCT [Schema], TableName, " + $columns + "  FROM SqlSizer.Processing"
+            Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        }
     }
 }
 

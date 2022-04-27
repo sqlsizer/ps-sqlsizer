@@ -1,4 +1,4 @@
-﻿function Enable-IntegrityChecks
+﻿function Disable-IntegrityChecks
 {
     [cmdletbinding()]
     param
@@ -12,12 +12,12 @@
 
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
 
+    $sql = "sp_msforeachtable 'ALTER TABLE ? DISABLE TRIGGER all'"
+    $_ = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
     foreach ($table in $info.Tables)
     {
-        $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " CHECK CONSTRAINT ALL"
+        $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " NOCHECK CONSTRAINT ALL"
         $_ = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
-
-    $sql = "sp_msforeachtable 'ALTER TABLE ? ENABLE TRIGGER all'"
-    $_ = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }

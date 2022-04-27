@@ -1,5 +1,5 @@
-﻿$Public  = @( Get-ChildItem -Path .\Public\*.ps1 -ErrorAction SilentlyContinue )
-$Private = @( Get-ChildItem -Path .\Private\*.ps1 -ErrorAction SilentlyContinue )
+﻿$Public  = @( Get-ChildItem -Path ($PSScriptRoot + ".\Public\*.ps1") -ErrorAction SilentlyContinue )
+$Private = @( Get-ChildItem -Path ($PSScriptRoot + ".\Private\*.ps1") -ErrorAction SilentlyContinue )
 
 foreach ($import in @($Public + $Private))
 {
