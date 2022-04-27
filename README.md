@@ -14,7 +14,7 @@ Each graph node is represented by the row in *SqlSizer.Processing* table that ha
 -  Depth
 -  Parent
 
-Finding of neigbours of graph nodes is done in bulks and depends on the color in order to optimize number of queries needed.
+Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of queries needed.
 
 Colors have following meaning:
  - Blue: find all rows that are required to remove that row
