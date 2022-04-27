@@ -2,8 +2,28 @@
 A set of PowerShell scripts to make a subset of Microsoft SQL database
 
 # Details
+The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
 
-The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database
+The initial set of graph nodes needs to be defined before start of the scripts.
+
+Each graph node is represented by the row in *SqlSizer.Processing* table that has following information:
+-  Schema name
+-  Table name
+-  Primary key values
+-  One of the colors: RED, GREEN, YELLOW or BLUE
+-  Depth
+-  Parent
+
+Finding of neigbours of graph nodes is done in bulks and depends on the color in order to optimize number of queries needed.
+
+Colors have following meaning:
+ - Blue: find all rows that are required to remove that row
+ - Red: find all rows that are referenced by the row (recursively) 
+ - Green: find all depeneded rows on the row
+ - Yellow: find all related data to the row
+
+# How to start?
+Please take a look at examples in *Examples* folder.
 
 # Example
 ```powershell
