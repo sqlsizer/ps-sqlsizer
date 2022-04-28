@@ -18,6 +18,11 @@
 
     foreach ($table in $info.Tables)
     {
+        if ($table.IsHistoric -eq $true)
+        {
+            continue
+        }
+
         $isIdentity = $table.IsIdentity
         $schema = $table.SchemaName
         $tableName = $table.TableName

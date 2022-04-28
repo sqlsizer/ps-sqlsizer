@@ -30,6 +30,7 @@
         $table.SchemaName = $row["schema"]
         $table.TableName = $row["table"]
         $table.IsIdentity = $row["identity"]
+        $table.IsHistoric = $row["is_historic"]
 
         $key = $table.SchemaName + ", " + $table.TableName
 

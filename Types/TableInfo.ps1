@@ -9,6 +9,7 @@ class TableInfo
     [string]$SchemaName
     [string]$TableName
     [bool]$IsIdentity
+    [bool]$IsHistoric
     
     [ColumnInfo[]]$PrimaryKey
     [ColumnInfo[]]$Columns
