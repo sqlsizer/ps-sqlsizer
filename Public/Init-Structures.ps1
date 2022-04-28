@@ -87,7 +87,7 @@ function GetCreateProcessingTableIndexQuery
         $keys = $keys + "Key" + $i + " ASC,"
     }
 
-    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.[Processing] ([Schema] ASC, TableName ASC, " + $keys + " [type] ASC)"
+    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.[Processing] ([Schema] ASC, TableName ASC, " + $keys + " [type] ASC, [Depth] ASC)"
 
     $sql
 }
