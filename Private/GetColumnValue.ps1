@@ -18,15 +18,9 @@
             "CONVERT(nvarchar(max), " + $prefix + $columnName + ")"
         }
         else
-        {
-            if ($dataType -eq "timestamp")
-            {
-                "DEFAULT"
-            }
-            else
-            {
-                "[" + $columnName + "]"
-            }
+        {            
+            
+            "[" + $columnName + "]"            
         }
     }
 }

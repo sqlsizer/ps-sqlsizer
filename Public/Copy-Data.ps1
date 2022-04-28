@@ -55,7 +55,7 @@ function GetTableSelect
         $columnName = $column.Name
         $isComputed = $column.IsComputed
 
-        if ($isComputed -eq $true)
+        if (($isComputed -eq $true) -or ($column.DataType -eq "timestamp"))
         {
             continue
         }
