@@ -113,7 +113,7 @@
                     }
                }
 
-               $select = "SELECT " + $columns + " s.Depth as Depth, s.ProcessingId as ProcessingId "
+               $select = "SELECT " + $columns + " s.Depth as Depth "
                $sql = $select + $from + $where
 
 
@@ -192,7 +192,7 @@
                      }
                 }
                 
-                $select = "SELECT " + $columns + " s.Depth as Depth, s.ProcessingId as ProcessingId "
+                $select = "SELECT " + $columns + " s.Depth as Depth "
                 $sql = $select + $from + $where
                 
                 
