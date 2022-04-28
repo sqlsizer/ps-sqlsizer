@@ -54,6 +54,7 @@
             $column.Name = $tableColumn["column"]
             $column.DataType = $tableColumn["dataType"]
             $column.IsComputed = $tableColumn["isComputed"]
+            $column.IsGenerated = $tableColumn["isGenerated"]
             $column.IsNullable = $tableColumn["isNullable"] -eq "YES"
             $table.Columns += $column
         }

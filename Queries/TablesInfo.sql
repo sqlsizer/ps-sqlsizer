@@ -9,8 +9,9 @@ SELECT
 	END as [is_historic]
 FROM INFORMATION_SCHEMA.TABLES tables
 LEFT JOIN 
-	(	SELECT OBJECT_NAME(history_table_id) as history_table_name, OBJECT_NAME(schema_id) as [schema]
-		FROM sys.tables
+	(	SELECT OBJECT_NAME(history_table_id) as history_table_name, s.[name] as [schema]
+		FROM sys.tables t
+			INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
 		WHERE OBJECT_NAME(history_table_id) IS NOT NULL
 	) t ON tables.TABLE_NAME = t.history_table_name AND tables.TABLE_SCHEMA = t.[schema]
 WHERE tables.TABLE_TYPE = 'BASE TABLE'

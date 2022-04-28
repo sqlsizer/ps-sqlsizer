@@ -22,6 +22,11 @@
         $schema = $table.SchemaName
         $tableName = $table.TableName
         
+        if ($table.IsHistoric -eq $true)
+        {
+            continue
+        }
+
         $where = GetTableWhere -Database $Source -TableInfo $table
         $sql = "DELETE FROM " + $schema + ".[" +  $tableName + "] " + $where
         

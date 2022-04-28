@@ -30,6 +30,7 @@ class ColumnInfo
     [string]$DataType
     [bool]$IsNullable
     [bool]$IsComputed
+    [bool]$IsGenerated
 }
 
 

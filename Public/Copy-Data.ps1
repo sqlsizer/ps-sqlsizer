@@ -53,20 +53,19 @@ function GetTableSelect
 
     
     $select = ""
+    $j = 0
     for ($i = 0; $i -lt $table.Columns.Count; $i++)
     {
         $column = $table.Columns[$i]
-
         $columnName = $column.Name
-        $isComputed = $column.IsComputed
 
-        if (($isComputed -eq $true) -or ($column.DataType -eq "timestamp"))
+        if (($column.IsComputed -eq $true) -or ($column.IsGenerated -eq $true) -or ($column.DataType -eq "timestamp"))
         {
             continue
         }
         else
         {
-            if ($i -gt 0)
+            if ($j -gt 0)
             {
                 $select += ","
             }
@@ -79,6 +78,8 @@ function GetTableSelect
             {
                 $select += GetColumnValue -columnName $columnName -dataType $column.DataType -prefix ""
             }
+
+            $j += 1
         }
     }
 
