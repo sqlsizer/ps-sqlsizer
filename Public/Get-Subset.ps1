@@ -155,7 +155,7 @@
                      $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
                 
                 
                 # from
@@ -263,7 +263,7 @@
                      $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Blue +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Blue +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
                 
                 
                 # from
@@ -281,7 +281,7 @@
                     $i += 1
                 }
          
-                $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName   + " f " + $join
+                $from = " FROM " + $fk.FkSchema + "." + $fk.FkTable   + " f " + $join
                 
                 # select
                 $columns = ""

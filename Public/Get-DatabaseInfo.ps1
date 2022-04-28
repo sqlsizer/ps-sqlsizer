@@ -14,12 +14,15 @@
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesPrimaryKeys.sql")
     $primaryKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $primaryKeyRowsGrouped = $primaryKeyRows | Group-Object -Property schema, table -AsHashTable -AsString
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesColumns.sql")
     $columnsRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $columnsRowsGrouped = $columnsRows | Group-Object -Property schema, table -AsHashTable -AsString
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesForeignKeys.sql")
     $foreignKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $foreignKeyRowsGrouped = $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
 
     foreach ($row in $rows)
     {
@@ -27,7 +30,10 @@
         $table.SchemaName = $row["schema"]
         $table.TableName = $row["table"]
         $table.IsIdentity = $row["identity"]
-        $tableKey = $primaryKeyRows | Where-Object {($_.schema -eq $table.SchemaName) -and ($_.table -eq $table.TableName)}
+
+        $key = $table.SchemaName + ", " + $table.TableName
+
+        $tableKey = $primaryKeyRowsGrouped[$key]
 
         foreach ($tableKeyColumn in $tableKey)
         {
@@ -39,7 +45,7 @@
             $table.PrimaryKey += $pkColumn
         }
 
-        $tableColumns = $columnsRows | Where-Object {($_.schema -eq $table.SchemaName) -and ($_.table -eq $table.TableName)}
+        $tableColumns = $columnsRowsGrouped[$key]
 
         foreach ($tableColumn in $tableColumns)
         {
@@ -51,7 +57,7 @@
             $table.Columns += $column
         }
 
-        $tableForeignKeys = $foreignKeyRows | Where-Object {($_.fk_schema -eq $table.SchemaName) -and ($_.fk_table -eq $table.TableName)}
+        $tableForeignKeys = $foreignKeyRowsGrouped[$key]
 
         $tableForeignKeysGrouped = $tableForeignKeys | Group-Object -Property fk_name
 
@@ -90,6 +96,13 @@
     }
 
     $primaryKeyMaxSize = 0
+
+    $tablesGrouped = @{}
+    foreach ($table in $result.Tables)
+    {
+        $tablesGrouped[$table.SchemaName + ", " + $table.TableName] = $table
+    }
+
     foreach ($table in $result.Tables)
     {
         if ($table.PrimaryKey.Count -gt $primaryKeyMaxSize)
@@ -102,7 +115,7 @@
             $schema = $fk.Schema
             $tableName = $fk.Table
 
-            $primaryTable = $result.Tables | Where-Object {($_.SchemaName -eq $schema) -and ($_.TableName -eq $tableName)}
+            $primaryTable = $tablesGrouped[$schema + ", " + $tableName]
             $primaryTable.IsReferencedBy += $table
         }
     }
