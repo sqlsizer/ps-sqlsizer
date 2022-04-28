@@ -146,13 +146,13 @@
                 #where
                 $columns = ""
                 $i = 0
-                foreach ($fkColumn in $fk.FkColumns)
+                foreach ($pk in $primaryKey)
                 { 
                      if ($i -gt 0)
                      {
                          $columns += " and "
                      }
-                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
+                     $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
@@ -254,13 +254,13 @@
                 #where
                 $columns = ""
                 $i = 0
-                foreach ($fkColumn in $fk.FkColumns)
+                foreach ($pk in $primaryKey)
                 { 
                      if ($i -gt 0)
                      {
                          $columns += " and "
                      }
-                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
+                     $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Blue +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
