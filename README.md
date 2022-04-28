@@ -12,7 +12,6 @@ Each graph node is represented by the row in *SqlSizer.Processing* table that ha
 -  Primary key values
 -  One of the colors: RED, GREEN, YELLOW or BLUE
 -  Depth
--  Parent
 
 Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of queries needed.
 

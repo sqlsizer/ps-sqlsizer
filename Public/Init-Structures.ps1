@@ -67,7 +67,7 @@ function GetCreateProcessingTableQuery
         $keys = $keys + "Key" + $i + " varchar(32),"
     }
 
-    $sql = "CREATE TABLE SqlSizer.Processing (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), " + $keys + " [type] int, [status] int, [depth] int, [parent] int, initial bit NULL)"
+    $sql = "CREATE TABLE SqlSizer.Processing (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), " + $keys + " [type] int, [status] int, [depth] int, [initial] bit NULL)"
 
     $sql
 }
@@ -87,7 +87,7 @@ function GetCreateProcessingTableIndexQuery
         $keys = $keys + "Key" + $i + " ASC,"
     }
 
-    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.[Processing] ([Schema] ASC, TableName ASC, " + $keys + " [type] ASC, [parent] ASC)"
+    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.[Processing] ([Schema] ASC, TableName ASC, " + $keys + " [type] ASC)"
 
     $sql
 }
@@ -107,7 +107,7 @@ function GetCreateSliceTableQuery
         $keys = $keys + "Key" + $i + " varchar(32),"
     }
 
-    $sql = "CREATE TABLE SqlSizer.Slice (Id int primary key identity(1,1), " + $keys +  " Depth int NULL, ProcessingId int NULL)"
+    $sql = "CREATE TABLE SqlSizer.Slice (Id int primary key identity(1,1), " + $keys +  " Depth int NULL)"
 
     $sql
 }
@@ -128,7 +128,7 @@ function GetCreateSliceTableIndexQuery
         $keys = $keys + "Key" + $i + " ASC,"
     }
 
-    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.Slice (" + $keys +  " [ProcessingId] ASC)"
+    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.Slice (" + $keys +  " [Depth] ASC)"
 
     $sql
 }

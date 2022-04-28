@@ -45,7 +45,7 @@
         $q = "TRUNCATE TABLE SqlSizer.Slice"
         $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
-        $q = "INSERT INTO SqlSizer.Slice " +  "SELECT DISTINCT " + $keys + " Depth, Id FROM SqlSizer.Processing WHERE Status = 0 AND Type = " + $color + " AND TableName = '" + $tableName + "' and [Schema] = '" + $schema + "'"
+        $q = "INSERT INTO SqlSizer.Slice " +  "SELECT DISTINCT " + $keys + " Depth FROM SqlSizer.Processing WHERE Status = 0 AND Type = " + $color + " AND TableName = '" + $tableName + "' and [Schema] = '" + $schema + "'"
         $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
         $cond = ""
@@ -78,7 +78,7 @@
                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                     $i += 1
                }
-               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Red + " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Red + " and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
 
 
                # from
@@ -123,7 +123,7 @@
                     $columns = $columns + "x.val" + $i + ","
                }
 
-               $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + [int][Color]::Red + ", 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
+               $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + [int][Color]::Red + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -155,7 +155,7 @@
                      $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
                 
                 
                 # from
@@ -202,7 +202,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -224,7 +224,7 @@
             
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", 0, s.Depth, s.ProcessingId, 0 FROM SqlSizer.Slice s" + $where
+            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", 0, s.Depth, 0 FROM SqlSizer.Slice s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update stats
@@ -233,7 +233,7 @@
 
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", 0, s.Depth, s.ProcessingId, 0 FROM SqlSizer.Slice s" + $where
+            $q = "INSERT INTO SqlSizer.Processing " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", 0, s.Depth, 0 FROM SqlSizer.Slice s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update stats
@@ -263,7 +263,7 @@
                      $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Blue +  " and p.parent = s.ProcessingId and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Blue +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
                 
                 
                 # from
@@ -300,7 +300,7 @@
                      }
                 }
                 
-                $select = "SELECT " + $columns + " s.Depth as Depth, s.ProcessingId as ProcessingId "
+                $select = "SELECT " + $columns + " s.Depth as Depth "
                 $sql = $select + $from + $where
                 
                 
@@ -310,7 +310,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Blue +  ", 0, x.Depth + 1, x.ProcessingId, 0 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO SqlSizer.Processing SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Blue +  ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
