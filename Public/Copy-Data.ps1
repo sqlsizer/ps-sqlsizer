@@ -124,7 +124,14 @@ function GetColumnValue
         }
         else
         {
-            "[" + $columnName + "]"
+            if ($dataType -eq "timestamp")
+            {
+                "DEFAULT"
+            }
+            else
+            {
+                "[" + $columnName + "]"
+            }
         }
     }
 }
