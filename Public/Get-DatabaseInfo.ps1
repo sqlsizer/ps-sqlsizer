@@ -31,7 +31,8 @@
         $table.TableName = $row["table"]
         $table.IsIdentity = $row["identity"]
         $table.IsHistoric = $row["is_historic"]
-
+        $table.HistoryOwner = $row["history_owner"]
+        $table.HistoryOwnerSchema = $row["history_owner_schema"]
         $key = $table.SchemaName + ", " + $table.TableName
 
         $tableKey = $primaryKeyRowsGrouped[$key]
@@ -110,6 +111,13 @@
         if ($table.PrimaryKey.Count -gt $primaryKeyMaxSize)
         {
             $primaryKeyMaxSize = $table.PrimaryKey.Count
+        }
+
+        $table.HasHistory = $false
+        $historic = $result.Tables | Where-Object { ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName) }
+        if ($historic)        
+        {
+            $table.HasHistory = $true
         }
 
         foreach ($fk in $table.ForeignKeys)

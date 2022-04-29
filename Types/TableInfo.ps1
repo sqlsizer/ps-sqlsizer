@@ -10,7 +10,9 @@ class TableInfo
     [string]$TableName
     [bool]$IsIdentity
     [bool]$IsHistoric
-    
+    [bool]$HasHistory
+    [string]$HistoryOwner
+    [string]$HistoryOwnerSchema
     [ColumnInfo[]]$PrimaryKey
     [ColumnInfo[]]$Columns
 

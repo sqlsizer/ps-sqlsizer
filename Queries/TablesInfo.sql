@@ -6,10 +6,12 @@ SELECT
 		WHEN t.history_table_name IS NOT NULL 
 			THEN 1
 			ELSE 0
-	END as [is_historic]
+	END as [is_historic],
+	t.table_name as [history_owner],
+	t.[schema] as [history_owner_schema]
 FROM INFORMATION_SCHEMA.TABLES tables
 LEFT JOIN 
-	(	SELECT OBJECT_NAME(history_table_id) as history_table_name, s.[name] as [schema]
+	(	SELECT t.name as table_name, OBJECT_NAME(history_table_id) as history_table_name, s.[name] as [schema]
 		FROM sys.tables t
 			INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
 		WHERE OBJECT_NAME(history_table_id) IS NOT NULL
