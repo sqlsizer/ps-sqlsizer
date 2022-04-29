@@ -26,7 +26,7 @@ $query.Color = [Color]::Yellow
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "x.FirstName = 'Mary'"
+$query.Where = "[`$table].FirstName = 'Mary'"
 
 # Query 2: All employees with SickLeaveHours > 30
 $query2 = New-Object -TypeName Query
@@ -34,7 +34,7 @@ $query2.Color = [Color]::Yellow
 $query2.Schema = "HumanResources"
 $query2.Table = "Employee"
 $query2.KeyColumns = @('BusinessEntityID')
-$query2.Where = "x.SickLeaveHours > 30"
+$query2.Where = "[`$table].SickLeaveHours > 30"
 
 Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 

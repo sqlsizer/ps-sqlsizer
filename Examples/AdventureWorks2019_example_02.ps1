@@ -26,7 +26,7 @@ $query.Color = [Color]::Blue
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "x.FirstName = 'Michael'"
+$query.Where = "[`$table].FirstName = 'Michael'"
 
 Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
 
@@ -35,7 +35,7 @@ Get-Subset -Database $database -ConnectionInfo $connection -Return $false
 
 Copy-Database -Database $database -Prefix "S." -ConnectionInfo $connection
 Disable-IntegrityChecks -Database ("S." + $database) -ConnectionInfo $connection
-Delete-Data -Source $database -Target ("S." + $database) -ConnectionInfo $connection
+Delete-Data -Source $database -Target ("S." + $database) -ConnectionInfo $connection -Verbose
 Enable-IntegrityChecks -Database ("S." + $database) -ConnectionInfo $connection
 
 # end of script
