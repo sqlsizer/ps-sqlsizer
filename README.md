@@ -71,12 +71,14 @@ Get-Subset -Database $database -ConnectionInfo $connection -Return $false
 
 
 # Create a new db with found subset of data
-Copy-Database -Database $database -Prefix "S." -ConnectionInfo $connection
-Disable-IntegrityChecks -Database ("S." + $database) -ConnectionInfo $connection
-Truncate-Database -Database ("S." + $database) -ConnectionInfo $connection
-Copy-Data -Source $database -Destination ("S." + $database) -ConnectionInfo $connection
-Enable-IntegrityChecks -Database ("S." + $database) -ConnectionInfo $connection
 
+$newDatabase = "AdventureWorks2019_subset_01"
+
+Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
+Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
+Truncate-Database -Database $newDatabase -ConnectionInfo $connection
+Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
+Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 
 # end of script
 ```

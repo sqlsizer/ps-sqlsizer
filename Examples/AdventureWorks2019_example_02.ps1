@@ -33,9 +33,12 @@ Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
 # Find smallest subset that allows to remove start set from the database
 Get-Subset -Database $database -ConnectionInfo $connection -Return $false
 
-Copy-Database -Database $database -Prefix "S." -ConnectionInfo $connection
-Disable-IntegrityChecks -Database ("S." + $database) -ConnectionInfo $connection
-Delete-Data -Source $database -Target ("S." + $database) -ConnectionInfo $connection -Verbose
-Enable-IntegrityChecks -Database ("S." + $database) -ConnectionInfo $connection
+
+$newDatabase = "AdventureWorks2019_subset_02"
+
+Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
+Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
+Delete-Data -Source $database -Target $newDatabase -ConnectionInfo $connection -Verbose
+Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 
 # end of script
