@@ -21,6 +21,12 @@ Colors have following meaning:
  - Green: find all dependent rows on the row
  - Yellow: find all related data to the row
 
+# Prerequisites
+
+```powershell
+Install-Module dbatools -Scope CurrentUser
+```
+
 # How to start?
 Please take a look at examples in *Examples* folder.
 
