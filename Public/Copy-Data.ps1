@@ -39,7 +39,7 @@
         {
             $sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON " + $sql + " SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF" 
         }
-        $_ = Execute-SQL -Sql $sql -Database $Destination -ConnectionInfo $ConnectionInfo 
+        $null = Execute-SQL -Sql $sql -Database $Destination -ConnectionInfo $ConnectionInfo 
     }
    
 }
@@ -76,7 +76,7 @@ function GetTableSelect
             }
             else
             {
-                $select += GetColumnValue -columnName $columnName -dataType $column.DataType -prefix ""
+                $select += Get-ColumnValue -columnName $columnName -dataType $column.DataType -prefix ""
             }
 
             $j += 1

@@ -15,9 +15,9 @@
     foreach ($table in $info.Tables)
     {
         $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " CHECK CONSTRAINT ALL"
-        $_ = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     $sql = "sp_msforeachtable 'ALTER TABLE ? ENABLE TRIGGER all'"
-    $_ = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }

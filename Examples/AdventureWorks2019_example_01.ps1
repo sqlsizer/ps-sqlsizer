@@ -36,15 +36,22 @@ $query2.Table = "Employee"
 $query2.KeyColumns = @('BusinessEntityID')
 $query2.Where = "[`$table].SickLeaveHours > 30"
 
+# Define ignored tables
+
+$ignored = New-Object -Type TableInfo2
+$ignored.SchemaName = "dbo"
+$ignored.TableName = "ErrorLog"
+
+
 Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 
 # Find subset
-Get-Subset -Database $database -ConnectionInfo $connection -Return $false
+Get-Subset -Database $database -ConnectionInfo $connection -Return $false -IgnoredTables @($ignored)
 
 
 # Create a new db with found subset of data
 
-$newDatabase = "AdventureWorks2019_subset_01"
+$newDatabase = "AdventureWorks2019_subset_03"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection

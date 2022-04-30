@@ -31,6 +31,6 @@
         }
 
         $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, 1 FROM " + $query.Schema + "." + $query.Table + " as [`$table] WHERE " + $query.Where
-        $_ = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }

@@ -4,6 +4,28 @@
     [int]$PrimaryKeyMaxSize
 }
 
+class TableInfo2
+{
+    [string]$SchemaName
+    [string]$TableName
+
+    static [bool] IsIgnored([string] $schemaName, [string] $tableName, [TableInfo2[]] $ignoredTables)
+    {
+        $result = $false
+
+        foreach ($ignoredTable in $ignoredTables)
+        {
+            if (($ignoredTable.SchemaName -eq $schemaName) -and ($ignoredTable.TableName -eq $tableName))
+            {
+                $result = $true
+                break
+            }
+        }
+
+        return $result
+    }
+}
+
 class TableInfo
 {
     [string]$SchemaName
@@ -19,7 +41,6 @@ class TableInfo
     [Tablefk[]]$ForeignKeys
 
     [TableInfo[]]$IsReferencedBy
-
 
     [string] ToString() {
       return "$($this.SchemaName).$($this.TableName)"

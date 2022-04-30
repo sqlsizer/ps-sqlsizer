@@ -1,4 +1,4 @@
-﻿function GetColumnValue
+﻿function Get-ColumnValue
 {
     param 
     (

@@ -10,15 +10,18 @@
         [Parameter(Mandatory=$true)]
         [bool]$Return,
 
+        [Parameter(Mandatory=$false)]
+        [TableInfo2[]]$IgnoredTables,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $processed = @{ }
-    $result = @()
-  
-    $_ = Init-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Init-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+
+    # Validate ignored tables
+    Validate-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
 
     $keys = ""
     for ($i = 0; $i -lt $info.PrimaryKeyMaxSize; $i++)
@@ -31,7 +34,7 @@
         $q = "SELECT TOP 1 p.[Schema], p.TableName, Type  FROM SqlSizer.Processing p JOIN SqlSizer.ProcessingStats ps ON p.[Schema] = ps.[Schema] and p.[TableName] = ps.[TableName] WHERE Status = 0 ORDER BY ToProcess DESC"
         $first = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
-        if ($first -eq $null)
+        if ($null -eq $first)
         {
             break
         }
@@ -43,10 +46,10 @@
         $table = $info.Tables | Where-Object {($_.SchemaName -eq $schema) -and ($_.TableName -eq $tableName)}
     
         $q = "TRUNCATE TABLE SqlSizer.Slice"
-        $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
         $q = "INSERT INTO SqlSizer.Slice " +  "SELECT DISTINCT " + $keys + " Depth FROM SqlSizer.Processing WHERE Status = 0 AND Type = " + $color + " AND TableName = '" + $tableName + "' and [Schema] = '" + $schema + "'"
-        $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
@@ -64,6 +67,11 @@
         {
            foreach ($fk in $table.ForeignKeys)
            {
+               if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true)
+               {
+                    continue
+               }
+
                $primaryKey = $table.PrimaryKey
 
                #where
@@ -101,7 +109,7 @@
                $i = 0
                foreach ($fkColumn in $fk.FkColumns)
                {
-                    $columns = $columns + (GetColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType) + " as val" + $i + ","
+                    $columns = $columns + (Get-ColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType) + " as val" + $i + ","
                     $i += 1
                }
 
@@ -129,7 +137,7 @@
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
 
                $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "'"
-               $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+               $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
             }
         }
 
@@ -141,6 +149,11 @@
              $fks = $referencedByTable.ForeignKeys | Where-Object {($_.Schema -eq $schema) -and ($_.Table -eq $tableName)}
              foreach ($fk in $fks)
              {
+                if ([TableInfo2]::IsIgnored($fk.FkSchema, $fk.FkTable, $ignoredTables) -eq $true)
+                {
+                    continue
+                }
+
                 $primaryKey = $referencedByTable.PrimaryKey
 
                 #where
@@ -180,7 +193,7 @@
                 $i = 0
                 foreach ($primaryKeyColumn in $primaryKey)
                 {
-                    $columns = $columns + (GetColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
+                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
                     $i += 1
                 }
                 
@@ -208,7 +221,7 @@
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
                 
                 $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.FkSchema + "' and [TableName] = '" +   $fk.FkTable + "'"
-                $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
              }
            }
         }
@@ -229,7 +242,7 @@
 
             # update stats
             $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "'"
-            $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM SqlSizer.Processing p WHERE p.[Type] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
@@ -238,7 +251,7 @@
 
             # update stats
             $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "'"
-            $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
         }
 
         # Blue Color
@@ -249,6 +262,11 @@
              $fks = $referencedByTable.ForeignKeys | Where-Object {($_.Schema -eq $schema) -and ($_.Table -eq $tableName)}
              foreach ($fk in $fks)
              {
+                if ([TableInfo2]::IsIgnored($fk.FkSchema, $fk.FkTable, $ignoredTables) -eq $true)
+                {
+                    continue
+                }
+
                 $primaryKey = $referencedByTable.PrimaryKey
 
                 #where
@@ -288,7 +306,7 @@
                 $i = 0
                 foreach ($primaryKeyColumn in $primaryKey)
                 {
-                    $columns = $columns + (GetColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
+                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
                     $i += 1
                 }
                 
@@ -316,7 +334,7 @@
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
                 
                 $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.FkSchema + "' and [TableName] = '" +   $fk.FkTable + "'"
-                $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
              }
            }
         }
@@ -327,7 +345,7 @@
 
         # update stats
         $q = "UPDATE SqlSizer.ProcessingStats SET Processed = Processed + " + $results.Count + ", ToProcess = ToProcess - " + $results.Count +  " WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "'"
-        $_ = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     }
     
    

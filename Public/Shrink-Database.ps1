@@ -10,5 +10,5 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
     $sql = "DBCC SHRINKDATABASE ([" + ($Database) + "])"
-    $_ = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }

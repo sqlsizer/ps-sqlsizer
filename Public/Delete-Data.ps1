@@ -18,7 +18,6 @@
 
     foreach ($table in $info.Tables)
     {
-        $isIdentity = $table.IsIdentity
         $schema = $table.SchemaName
         $tableName = $table.TableName
         
@@ -30,7 +29,7 @@
         $where = GetTableWhere -Database $Source -TableInfo $table
         $sql = "DELETE FROM " + $schema + ".[" +  $tableName + "] " + $where
         
-        $_ = Execute-SQL -Sql $sql -Database $Target -ConnectionInfo $ConnectionInfo 
+        $null = Execute-SQL -Sql $sql -Database $Target -ConnectionInfo $ConnectionInfo 
     }
    
 }
