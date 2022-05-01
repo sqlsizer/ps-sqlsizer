@@ -30,16 +30,17 @@ class TableInfo
 {
     [string]$SchemaName
     [string]$TableName
+    [int]$RowCount
     [bool]$IsIdentity
     [bool]$IsHistoric
     [bool]$HasHistory
     [string]$HistoryOwner
     [string]$HistoryOwnerSchema
+    
     [ColumnInfo[]]$PrimaryKey
     [ColumnInfo[]]$Columns
 
     [Tablefk[]]$ForeignKeys
-
     [TableInfo[]]$IsReferencedBy
 
     [string] ToString() {

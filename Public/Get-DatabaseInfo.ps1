@@ -4,6 +4,9 @@
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
+        [Parameter(Mandatory=$false)]
+        [bool]$MeasureSize,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
@@ -33,6 +36,14 @@
         $table.IsHistoric = $row["is_historic"]
         $table.HistoryOwner = $row["history_owner"]
         $table.HistoryOwnerSchema = $row["history_owner_schema"]
+
+        if ($true -eq $MeasureSize)
+        {
+            $count = Execute-SQL -Sql ("SELECT COUNT(*) as Count FROM [" + $table.SchemaName + "].[" + $table.TableName + "]") -Database $Database -ConnectionInfo $ConnectionInfo
+            $table.RowCount = $count["Count"]
+        }
+
+
         $key = $table.SchemaName + ", " + $table.TableName
 
         $tableKey = $primaryKeyRowsGrouped[$key]
