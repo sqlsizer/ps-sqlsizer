@@ -33,7 +33,7 @@
             $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
 
 
-            $sql = "ALTER TABLE " + $table.SchemaName + ".[" +  $table.TableName + "] SET ( SYSTEM_VERSIONING = ON  (HISTORY TABLE = " + $historyTable.SchemaName + ".[" + $historyTable.TableName +  "] ))"
+            $sql = "ALTER TABLE " + $table.SchemaName + ".[" +  $table.TableName + "] SET ( SYSTEM_VERSIONING = ON  (HISTORY_TABLE = " + $historyTable.SchemaName + ".[" + $historyTable.TableName +  "] ))"
             $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
         }
         else

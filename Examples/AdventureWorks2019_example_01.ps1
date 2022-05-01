@@ -20,13 +20,15 @@ Init-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $i
 
 # Define start set
 
-# Query 1: All persons with first name = 'Mary'
+# Query 1: 10 persons with first name = 'John'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "[`$table].FirstName = 'Mary'"
+$query.Where = "[`$table].FirstName = 'John'"
+$query.Top = 10
+$query.OrderBy = "[`$table].LastName ASC"
 
 # Query 2: All employees with SickLeaveHours > 30
 $query2 = New-Object -TypeName Query
@@ -51,13 +53,12 @@ Get-Subset -Database $database -ConnectionInfo $connection -Return $false -Ignor
 
 # Create a new db with found subset of data
 
-$newDatabase = "AdventureWorks2019_subset_03"
+$newDatabase = "AdventureWorks2019_subset_01"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 Truncate-Database -Database $newDatabase -ConnectionInfo $connection
 Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
-
-
+Shrink-Database -Database $newDatabase -ConnectionInfo $connection
 # end of script

@@ -5,4 +5,6 @@
     [string]$Table
     [string[]]$KeyColumns
     [string]$Where
+    [int]$Top
+    [string]$OrderBy
 }

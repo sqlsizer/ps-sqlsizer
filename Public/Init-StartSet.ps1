@@ -16,7 +16,13 @@
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
     foreach ($query in $Queries)
     {
-        $tmp = "INSERT INTO SqlSizer.Processing SELECT '" + $query.Schema + "', '" + $query.Table + "', "
+        $top = "";
+        if ($query.Top -ne 0)
+        {   
+            $top = " TOP " + $query.Top;
+        }
+
+        $tmp = "INSERT INTO SqlSizer.Processing SELECT " + $top  + "'" + $query.Schema + "', '" + $query.Table + "', "
 
         $i = 0
         foreach ($column in $query.KeyColumns)
@@ -30,7 +36,12 @@
            $tmp  += "NULL" + ","
         }
 
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, 1 FROM " + $query.Schema + "." + $query.Table + " as [`$table] WHERE " + $query.Where
+        $order = "";
+        if ($null -ne $query.OrderBy)
+        {   
+            $order = " ORDER BY " + $query.OrderBy
+        }
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, 1 FROM " + $query.Schema + "." + $query.Table + " as [`$table] WHERE " + $query.Where + $order
         $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
