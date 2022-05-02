@@ -1,5 +1,5 @@
 ﻿# Import of module
-Import-Module ..\MSSQL-SqlSizer -Verbose
+Import-Module ..\MSSQL-SqlSizer
 
 
 # Connection settings
@@ -13,7 +13,7 @@ $connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $pas
 
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
 # Init SqlSizer structures
 Init-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info

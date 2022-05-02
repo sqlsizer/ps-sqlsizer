@@ -2,6 +2,7 @@
 {
     [TableInfo[]]$Tables
     [int]$PrimaryKeyMaxSize
+    [string]$DatabaseSize
 }
 
 class TableInfo2
@@ -26,11 +27,24 @@ class TableInfo2
     }
 }
 
+class TableStatistics
+{
+    [long]$Rows
+    [long]$ReservedKB
+    [long]$DataKB
+    [long]$IndexSize
+    [long]$UnusedKB
+
+    [string] ToString() {
+        return "$($this.Rows) rows  => [$($this.DataKB) / $($this.ReservedKB) KB, $($this.IndexSize) index KB]"
+     }
+}
+
 class TableInfo
 {
     [string]$SchemaName
     [string]$TableName
-    [int]$RowCount
+    
     [bool]$IsIdentity
     [bool]$IsHistoric
     [bool]$HasHistory
@@ -42,6 +56,8 @@ class TableInfo
 
     [Tablefk[]]$ForeignKeys
     [TableInfo[]]$IsReferencedBy
+
+    [TableStatistics]$Statistics
 
     [string] ToString() {
       return "$($this.SchemaName).$($this.TableName)"

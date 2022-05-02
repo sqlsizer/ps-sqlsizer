@@ -14,7 +14,7 @@
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesInfo.sql")
     $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $result = New-Object -TypeName DatabaseInfo
-
+  
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesPrimaryKeys.sql")
     $primaryKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $primaryKeyRowsGrouped = $primaryKeyRows | Group-Object -Property schema, table -AsHashTable -AsString
@@ -26,6 +26,12 @@
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesForeignKeys.sql")
     $foreignKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $foreignKeyRowsGrouped = $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
+
+    if ($true -eq $MeasureSize)
+    {
+        $statsRows = Execute-SQL -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
+        $result.DatabaseSize = $statsRows[0]["database_size"]
+    }
 
     foreach ($row in $rows)
     {
@@ -39,13 +45,19 @@
 
         if ($true -eq $MeasureSize)
         {
-            $count = Execute-SQL -Sql ("SELECT COUNT(*) as Count FROM [" + $table.SchemaName + "].[" + $table.TableName + "]") -Database $Database -ConnectionInfo $ConnectionInfo
-            $table.RowCount = $count["Count"]
+            $statsRow = Execute-SQL -Sql ("EXEC sp_spaceused [" + $table.SchemaName + "." + $table.TableName + "]") -Database $Database -ConnectionInfo $ConnectionInfo
+            $stats = New-Object -TypeName TableStatistics
+            
+            $stats.Rows = $statsRow["rows"]
+            $stats.DataKB = $statsRow["data"].Trim(' KB')
+            $stats.IndexSize = $statsRow["index_size"].Trim(' KB')
+            $stats.UnusedKB = $statsRow["unused"].Trim(' KB')
+            $stats.ReservedKB = $statsRow["reserved"].Trim(' KB')
+
+            $table.Statistics = $stats
         }
 
-
         $key = $table.SchemaName + ", " + $table.TableName
-
         $tableKey = $primaryKeyRowsGrouped[$key]
 
         foreach ($tableKeyColumn in $tableKey)
