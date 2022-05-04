@@ -16,8 +16,12 @@
 
     $info = Get-DatabaseInfo -Database $Source -Connection $ConnectionInfo
 
+    $i = 0
     foreach ($table in $info.Tables)
     {
+        $i += 1
+        Write-Progress -Activity "Copying data" -PercentComplete (100 * ($i / ($info.Tables.Count)))
+
         if ($table.IsHistoric -eq $true)
         {
             continue
@@ -41,7 +45,8 @@
         }
         $null = Execute-SQL -Sql $sql -Database $Destination -ConnectionInfo $ConnectionInfo 
     }
-   
+    
+    Write-Progress -Activity "Copying data" -Completed
 }
 
 function GetTableSelect

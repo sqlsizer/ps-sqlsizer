@@ -60,6 +60,8 @@ Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 Truncate-Database -Database $newDatabase -ConnectionInfo $connection
 Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
+Rebuild-Indexes -Database $newDatabase -ConnectionInfo $connection
+
 Shrink-Database -Database $newDatabase -ConnectionInfo $connection
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true

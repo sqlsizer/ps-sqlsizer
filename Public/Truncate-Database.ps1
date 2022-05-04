@@ -11,8 +11,12 @@
     )
 
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $i = 0
     foreach ($table in $info.Tables)
     {
+        $i += 1
+        Write-Progress -Activity "Database truncate" -PercentComplete (100 * ($i / ($info.Tables.Count)))
+
         if ($table.IsHistoric -eq $true)
         {
             continue
@@ -42,4 +46,6 @@
             $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
+
+    Write-Progress -Activity "Database truncate" -Completed
 }

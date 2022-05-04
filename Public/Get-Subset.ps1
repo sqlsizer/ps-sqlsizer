@@ -17,6 +17,8 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    $start = Get-Date
+
     $null = Init-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
 
@@ -28,14 +30,27 @@
     {
        $keys = $keys + "Key" + $i + ","
     }
-    
+    $interval = 5
+
     while ($true)
     { 
+        # Progress handling
+        $totalSeconds = (New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds
+        if ($totalSeconds -gt ($lastTotalSeconds + $interval))
+        {
+            $lastTotalSeconds = $totalSeconds
+            $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
+
+            Write-Progress -Activity "Finding subset" -PercentComplete (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
+        }
+
+        # Logic
         $q = "SELECT TOP 1 p.[Schema], p.TableName, Type  FROM SqlSizer.Processing p JOIN SqlSizer.ProcessingStats ps ON p.[Schema] = ps.[Schema] and p.[TableName] = ps.[TableName] WHERE Status = 0 ORDER BY ToProcess DESC"
         $first = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
         if ($null -eq $first)
         {
+            Write-Progress -Activity "Finding subset" -Completed
             break
         }
 

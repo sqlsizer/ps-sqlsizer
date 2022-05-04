@@ -27,6 +27,12 @@ class TableInfo2
     }
 }
 
+class SubsettingProcess
+{
+    [long]$ToProcess
+    [long]$Processed
+}
+
 class TableStatistics
 {
     [long]$Rows
@@ -36,7 +42,7 @@ class TableStatistics
     [long]$UnusedKB
 
     [string] ToString() {
-        return "$($this.Rows) rows  => [$($this.DataKB) / $($this.ReservedKB) KB, $($this.IndexSize) index KB]"
+        return "$($this.Rows) rows  => [$($this.DataKB) used of $($this.ReservedKB) reserved KB, $($this.IndexSize) index KB]"
      }
 }
 
