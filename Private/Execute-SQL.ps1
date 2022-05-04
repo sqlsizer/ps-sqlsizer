@@ -15,7 +15,7 @@
     
     try
     {
-        Invoke-Sqlcmd -Query $Sql -ServerInstance $ConnectionInfo.Server -Database $Database -Username $ConnectionInfo.Login -Password $ConnectionInfo.Password -QueryTimeout 600000 -ErrorAction Stop 
+        Invoke-Sqlcmd -Query $Sql -ServerInstance $ConnectionInfo.Server -Database $Database -Username $ConnectionInfo.Login -Password $ConnectionInfo.Password -QueryTimeout 6000 -ErrorAction Stop 
         Write-Verbose $Sql
     }
     catch
