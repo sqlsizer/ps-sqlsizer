@@ -6,7 +6,7 @@ The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first s
 
 The initial set of graph nodes needs to be defined before start of the scripts.
 
-Each graph node is represented by the row in *SqlSizer.Processing* table that has following information:
+Each graph node is represented by the row in *SqlSizer.Processing* tables that has following information:
 -  Schema name
 -  Table name
 -  Primary key values
@@ -73,7 +73,7 @@ $query2.Where = "[`$table].SickLeaveHours > 30"
 Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 
 # Find subset
-Get-Subset -Database $database -ConnectionInfo $connection -Return $false
+Get-Subset -Database $database -ConnectionInfo $connection
 
 
 # Create a new db with found subset of data

@@ -48,7 +48,7 @@ $ignored.TableName = "ErrorLog"
 Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 
 # Find subset
-Get-Subset -Database $database -ConnectionInfo $connection -Return $false -IgnoredTables @($ignored)
+Get-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored)
 
 
 # Create a new db with found subset of data
@@ -62,8 +62,8 @@ Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connecti
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 Rebuild-Indexes -Database $newDatabase -ConnectionInfo $connection
 
+Drop-Structures -Database $newDatabase -ConnectionInfo $connection  -DatabaseInfo $info
 Shrink-Database -Database $newDatabase -ConnectionInfo $connection
-
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 # end of script

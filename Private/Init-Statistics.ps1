@@ -11,24 +11,33 @@
     )
 
     # init stats
+    $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo
+    $structure = [Structure]::new($info)
+    $structure.Init()
 
     $sql = "DELETE FROM SqlSizer.ProcessingStats"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
-    $sql = "INSERT INTO SqlSizer.ProcessingStats([Schema], [TableName], [ToProcess], [Processed])
-            SELECT [Schema], TableName, COUNT(*), 0
-            FROM [SqlSizer].[Processing]
-            GROUP BY [Schema], TableName"
-    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
-    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    
+    foreach ($signature in $structure._signatures.Keys)
+    {
+        $processing = $structure.GetProcessingName($signature)
+        
+        $sql = "INSERT INTO SqlSizer.ProcessingStats([Schema], [TableName], [ToProcess], [Processed], [Type])
+                SELECT p.[Schema], p.TableName, COUNT(*), 0, p.[Type]
+                FROM $($processing) p
+                GROUP BY [Schema], TableName, [Type]"
+        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    }
 
     foreach ($table in $info.Tables)
     {
         if ($table.SchemaName -ne "SqlSizer")
         {
-            $sql = "IF NOT EXISTS(SELECT * FROM SqlSizer.ProcessingStats WHERE [Schema] = '" + $table.SchemaName + "' and TableName = '" + $table.TableName + "') INSERT INTO SqlSizer.ProcessingStats VALUES('" +  $table.SchemaName + "', '" + $table.TableName + "', 0, 0)"
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            for ($i = 1; $i -lt 5; $i++)
+            {
+                $sql = "IF NOT EXISTS(SELECT * FROM SqlSizer.ProcessingStats WHERE [Schema] = '" + $table.SchemaName + "' and TableName = '" + $table.TableName + "' and [Type] = $($i)) INSERT INTO SqlSizer.ProcessingStats VALUES('" +  $table.SchemaName + "', '" + $table.TableName + "', 0, 0, $($i))"
+                $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            }
         }
     }
 }

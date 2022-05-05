@@ -13,122 +13,72 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $tmp = "IF OBJECT_ID('SqlSizer.Slice') IS NOT NULL  
-        Drop Table SqlSizer.Slice"
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    
     $tmp = "IF OBJECT_ID('SqlSizer.ProcessingStats') IS NOT NULL  
         Drop Table SqlSizer.ProcessingStats"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    
-    $tmp = "IF OBJECT_ID('SqlSizer.Processing') IS NOT NULL
-        Drop Table SqlSizer.Processing"
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    
+
+    $structure = [Structure]::new($DatabaseInfo)
+    $structure.Init()
+
+    foreach ($signature in $structure._signatures.Keys)
+    {
+        $slice = $structure.GetSliceName($signature)
+        $tmp = "IF OBJECT_ID('$($slice)') IS NOT NULL  
+            Drop Table $($slice)"
+        Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    foreach ($signature in $structure._signatures.Keys)
+    {
+        $processing = $structure.GetProcessingName($signature)
+        $tmp = "IF OBJECT_ID('$($processing)') IS NOT NULL  
+            Drop Table $($processing)"
+        Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
     $tmp = "DROP SCHEMA IF EXISTS SqlSizer"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     
     $tmp = "CREATE SCHEMA SqlSizer"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $tmp = "CREATE TABLE SqlSizer.ProcessingStats (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), ToProcess int, Processed int)"
+    $tmp = "CREATE TABLE SqlSizer.ProcessingStats (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), ToProcess int, Processed int, [Type] int)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     
-    $tmp = GetCreateSliceTableQuery -DatabaseInfo $DatabaseInfo
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-     
-    $tmp = GetCreateSliceTableIndexQuery -DatabaseInfo $DatabaseInfo
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    
-    $tmp = GetCreateProcessingTableQuery -DatabaseInfo $DatabaseInfo
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-   
-    $tmp = GetCreateProcessingTableIndexQuery -DatabaseInfo $DatabaseInfo
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    
-    $tmp = "TRUNCATE TABLE SqlSizer.Processing"
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-}
-
- 
-
-function GetCreateProcessingTableQuery
-{
-    param
-    (   
-        [Parameter(Mandatory=$true)]
-        [DatabaseInfo]$DatabaseInfo
-    )
-
-    $i = 0
-    $keys = ""
-    for ($i; $i -lt $DatabaseInfo.PrimaryKeyMaxSize; $i++)
+    foreach ($signature in $structure._signatures.Keys)
     {
-        $keys = $keys + "Key" + $i + " varchar(32),"
+        $slice = $structure.GetSliceName($signature)
+        $processing = $structure.GetProcessingName($signature)
+
+        $keys = ""
+        $keysIndex = ""
+        $i = 0
+        foreach ($column in $structure._signatures[$signature])
+        {
+            $keys += "Key$($i) "
+            $keysIndex += "Key$($i) ASC, "
+
+            if ($column.DataType -in @('varchar', 'nvarchar', 'char', 'nchar'))
+            {
+                $keys += $column.DataType + "(" + $column.Length + ") NOT NULL, "
+            }
+            else
+            {
+                $keys += $column.DataType + " NOT NULL,"
+            }
+            $i += 1
+        }
+
+        $sql = "CREATE TABLE $($slice) (Id int primary key identity(1,1), $($keys) Depth int NULL)"
+        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+        $sql = "CREATE UNIQUE INDEX [Index] ON $($slice) ($($keysIndex) [Depth] ASC)"
+        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+        $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, TableName varchar(64) NOT NULL, $($keys) [type] INT NOT NULL, [status] INT NOT NULL, [depth] INT NOT NULL, [initial] bit NULL)"
+        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+        $sql = "CREATE UNIQUE INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex) [Type] ASC, [Depth] ASC)"
+        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
-
-    $sql = "CREATE TABLE SqlSizer.Processing (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), " + $keys + " [type] int, [status] int, [depth] int, [initial] bit NULL)"
-
-    $sql
-}
-
-function GetCreateProcessingTableIndexQuery
-{
-    param
-    (   
-        [Parameter(Mandatory=$true)]
-        [DatabaseInfo]$DatabaseInfo
-    )
-
-    $i = 0
-    $keys = ""
-    for ($i; $i -lt $DatabaseInfo.PrimaryKeyMaxSize; $i++)
-    {
-        $keys = $keys + "Key" + $i + " ASC,"
-    }
-
-    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.[Processing] ([Schema] ASC, TableName ASC, " + $keys + " [type] ASC, [Depth] ASC)"
-
-    $sql
-}
-
-function GetCreateSliceTableQuery
-{
-    param
-    (   
-        [Parameter(Mandatory=$true)]
-        [DatabaseInfo]$DatabaseInfo
-    )
-
-    $i = 0
-    $keys = ""
-    for ($i; $i -lt $DatabaseInfo.PrimaryKeyMaxSize; $i++)
-    {
-        $keys = $keys + "Key" + $i + " varchar(32),"
-    }
-
-    $sql = "CREATE TABLE SqlSizer.Slice (Id int primary key identity(1,1), " + $keys +  " Depth int NULL)"
-
-    $sql
-}
-
-
-function GetCreateSliceTableIndexQuery
-{
-    param
-    (   
-        [Parameter(Mandatory=$true)]
-        [DatabaseInfo]$DatabaseInfo
-    )
-
-    $i = 0
-    $keys = ""
-    for ($i; $i -lt $DatabaseInfo.PrimaryKeyMaxSize; $i++)
-    {
-        $keys = $keys + "Key" + $i + " ASC,"
-    }
-
-    $sql = "CREATE UNIQUE INDEX [Index] ON SqlSizer.Slice (" + $keys +  " [Depth] ASC)"
-
-    $sql
 }

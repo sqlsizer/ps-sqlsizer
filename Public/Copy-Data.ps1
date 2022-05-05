@@ -15,6 +15,8 @@
     )
 
     $info = Get-DatabaseInfo -Database $Source -Connection $ConnectionInfo
+    $structure = [Structure]::new($info)
+    $structure.Init()
 
     $i = 0
     foreach ($table in $info.Tables)
@@ -34,7 +36,7 @@
         $tableColumns = GetTableSelect -TableInfo $table -Raw $true
         $tableSelect = GetTableSelect -TableInfo $table -Raw $false
 
-        $where = GetTableWhere -Database $Source -TableInfo $table
+        $where = GetTableWhere -Database $Source -TableInfo $table -Structure $structure
 
         $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] (" + $tableColumns + ") SELECT " + $tableSelect +  " FROM " + $Source + "." + $schema + ".[" +  $tableName + "]"
         
@@ -96,11 +98,13 @@ function GetTableWhere
 {
      param (
         [string]$Database,
-        [TableInfo]$TableInfo
+        [TableInfo]$TableInfo,
+        [Structure]$Structure
      )
 
      $primaryKey = $TableInfo.PrimaryKey
-     $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".SqlSizer.Processing WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
+     $processing = $Structure.GetProcessingName($Structure._tables[$TableInfo])
+     $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
 
      $i = 0
      foreach ($column in $primaryKey)

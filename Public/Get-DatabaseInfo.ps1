@@ -35,6 +35,11 @@
 
     foreach ($row in $rows)
     {
+        if ($row["schema"] -eq "SqlSizer")
+        {
+            continue
+        }
+        
         $table = New-Object -TypeName TableInfo
         $table.SchemaName = $row["schema"]
         $table.TableName = $row["table"]
@@ -65,6 +70,7 @@
             $pkColumn = New-Object -TypeName ColumnInfo
             $pkColumn.Name = $tableKeyColumn["column"]
             $pkColumn.DataType = $tableKeyColumn["dataType"]
+            $pkColumn.Length = $tableKeyColumn["length"]
             $pkColumn.IsNullable = $false
             $pkColumn.IsComputed = $false
             $table.PrimaryKey += $pkColumn

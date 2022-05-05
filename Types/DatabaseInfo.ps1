@@ -67,13 +67,14 @@ class TableInfo
 
     [string] ToString() {
       return "$($this.SchemaName).$($this.TableName)"
-   }
+    }
 }
 
 class ColumnInfo
 {
     [string]$Name
     [string]$DataType
+    [string]$Length
     [bool]$IsNullable
     [bool]$IsComputed
     [bool]$IsGenerated
