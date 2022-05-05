@@ -26,6 +26,7 @@
     Validate-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
 
     $interval = 5
+    $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
     while ($true)
     { 
@@ -53,7 +54,7 @@
         $tableName = $first.TableName
         $color = $first.Type
 
-        $table = $info.Tables | Where-Object {($_.SchemaName -eq $schema) -and ($_.TableName -eq $tableName)}
+        $table = $tablesGrouped[$schema + ", " + $tableName]
         $signature = $structure._tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
@@ -90,8 +91,7 @@
                {
                     continue
                }
-
-               $baseTable = $info.Tables | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+               $baseTable = $tablesGrouped[$fk.Schema + ", " + $fk.Table]
                $baseSignature = $structure._tables[$baseTable]
                $baseProcessing = $structure.GetProcessingName($baseSignature)
 
@@ -167,8 +167,7 @@
                 {
                     continue
                 }
-
-                $fkTable = $info.Tables | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
+                $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
                 $fkSignature = $structure._tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
  
@@ -277,7 +276,7 @@
                     continue
                 }
 
-                $fkTable = $info.Tables | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
+                $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
                 $fkSignature = $structure._tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
  
