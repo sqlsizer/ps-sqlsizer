@@ -135,6 +135,8 @@
         $tablesGrouped[$table.SchemaName + ", " + $table.TableName] = $table
     }
 
+    $tablesGroupedByHistory = $result.Tables | Group-Object -Property HistoryOwnerSchema, HistoryOwner
+
     foreach ($table in $result.Tables)
     {
         if ($table.PrimaryKey.Count -gt $primaryKeyMaxSize)
@@ -143,8 +145,7 @@
         }
 
         $table.HasHistory = $false
-        $historic = $result.Tables | Where-Object { ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName) }
-        if ($historic)        
+        if ($null -ne $tablesGroupedByHistory[$table.SchemaName + ", " + $table.TableName])
         {
             $table.HasHistory = $true
         }
