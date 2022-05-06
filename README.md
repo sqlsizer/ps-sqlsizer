@@ -4,7 +4,7 @@ A set of PowerShell scripts to make a copy of a Microsoft SQL database with a su
 # Details
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
 
-The initial set of graph nodes needs to be defined before start of the scripts.
+The initial set of table rows needs to be defined before start of the scripts.
 
 Each graph node is represented by the row in *SqlSizer.Processing* tables that has following information:
 -  Schema name
