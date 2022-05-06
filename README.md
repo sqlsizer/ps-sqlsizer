@@ -1,5 +1,5 @@
 # mssql-sqlsizer
-A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from that database.
+A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
 # Details
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
