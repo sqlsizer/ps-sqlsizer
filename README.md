@@ -13,7 +13,7 @@ Each graph node is represented by the row in *SqlSizer.Processing* tables that h
 -  One of the colors: RED, GREEN, YELLOW or BLUE
 -  Depth
 
-Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of queries needed.
+Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of SQL queries needed.
 
 Colors have following meaning:
  - Blue: find all rows that are required to remove that row (recursively) 
