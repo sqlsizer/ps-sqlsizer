@@ -80,7 +80,7 @@ $newDatabase = "AdventureWorks2019_subset_01"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
-Compress-Database -Database $newDatabase -ConnectionInfo $connection
+Clear-Database -Database $newDatabase -ConnectionInfo $connection
 Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 
