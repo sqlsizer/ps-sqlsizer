@@ -1,10 +1,10 @@
 # mssql-sqlsizer
-A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from that database.
+A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
 # Details
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
 
-The initial set of graph nodes needs to be defined before start of the scripts.
+The initial set of table rows needs to be defined before start of the scripts.
 
 Each graph node is represented by the row in *SqlSizer.Processing* tables that has following information:
 -  Schema name
@@ -13,7 +13,7 @@ Each graph node is represented by the row in *SqlSizer.Processing* tables that h
 -  One of the colors: RED, GREEN, YELLOW or BLUE
 -  Depth
 
-Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of queries needed.
+Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of SQL queries needed.
 
 Colors have following meaning:
  - Blue: find all rows that are required to remove that row (recursively) 
