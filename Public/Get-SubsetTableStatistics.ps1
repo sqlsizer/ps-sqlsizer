@@ -1,4 +1,4 @@
-function Get-SubsetStatistics
+function Get-SubsetTableStatistics
 {
     [cmdletbinding()]
     param
