@@ -1,4 +1,4 @@
-function Rebuild-Indexes
+﻿function Compress-Database
 {
     [cmdletbinding()]
     param
@@ -9,10 +9,11 @@ function Rebuild-Indexes
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    Write-Progress -Activity "Rebuilding indexes on database" -PercentComplete 0
     
-    $sql = "EXEC sp_msforeachtable 'SET QUOTED_IDENTIFIER ON; ALTER INDEX ALL ON ? REBUILD'"
+    Write-Progress -Activity "Shrinking database" -PercentComplete 0
+
+    $sql = "DBCC SHRINKDATABASE ([" + ($Database) + "])"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    Write-Progress -Activity "Rebuilding indexes on database" -Completed
+    Write-Progress -Activity "Shrinking database" -Completed
 }

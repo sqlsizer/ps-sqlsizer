@@ -45,12 +45,11 @@ $password = "pass"
 # Create connection
 $connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $password
 
-
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Init SqlSizer structures
-Init-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Install-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -70,11 +69,10 @@ $query2.Table = "Employee"
 $query2.KeyColumns = @('BusinessEntityID')
 $query2.Where = "[`$table].SickLeaveHours > 30"
 
-Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 
 # Find subset
 Get-Subset -Database $database -ConnectionInfo $connection
-
 
 # Create a new db with found subset of data
 
@@ -82,10 +80,9 @@ $newDatabase = "AdventureWorks2019_subset_01"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
-Truncate-Database -Database $newDatabase -ConnectionInfo $connection
+Compress-Database -Database $newDatabase -ConnectionInfo $connection
 Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 
 # end of script
 ```
-

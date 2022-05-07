@@ -1,4 +1,4 @@
-﻿function Init-StartSet
+﻿function Initialize-StartSet
 {
     [cmdletbinding()]
     param
@@ -15,8 +15,6 @@
 
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $structure = [Structure]::new($info)
-    $structure.Init()
-
 
     foreach ($query in $Queries)
     {
@@ -26,7 +24,7 @@
             $top = " TOP " + $query.Top;
         }
         $table = $info.Tables | Where-Object {($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table)}
-        $procesing = $Structure.GetProcessingName($structure._tables[$table])
+        $procesing = $Structure.GetProcessingName($structure.Tables[$table])
         $tmp = "INSERT INTO $($procesing) SELECT " + $top  + "'" + $query.Schema + "', '" + $query.Table + "', "
 
         $i = 0

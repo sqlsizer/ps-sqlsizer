@@ -1,4 +1,4 @@
-﻿function Truncate-Database
+﻿function Clear-Database
 {
     [cmdletbinding()]
     param

@@ -1,37 +1,34 @@
 class Structure
 {
-    [DatabaseInfo] $_databaseInfo
-    [System.Collections.Generic.Dictionary[String, ColumnInfo[]]] $_signatures
-    [System.Collections.Generic.Dictionary[TableInfo, String]] $_tables
+    [DatabaseInfo] $DatabaseInfo
+    [System.Collections.Generic.Dictionary[String, ColumnInfo[]]] $Signatures
+    [System.Collections.Generic.Dictionary[TableInfo, String]] $Tables
 
     Structure(
         [DatabaseInfo]$DatabaseInfo
     )
     {
-        $this._databaseInfo = $DatabaseInfo    
-        $this._signatures = New-Object System.Collections.Generic.Dictionary"[String, ColumnInfo[]]"
-        $this._tables = New-Object System.Collections.Generic.Dictionary"[TableInfo, String]"
-    }
+        $this.DatabaseInfo = $DatabaseInfo    
+        $this.Signatures = New-Object System.Collections.Generic.Dictionary"[String, ColumnInfo[]]"
+        $this.Tables = New-Object System.Collections.Generic.Dictionary"[TableInfo, String]"
 
-    [void] Init() { 
-
-        foreach ($table in $this._databaseInfo.Tables) {
+        foreach ($table in $this.DatabaseInfo.Tables) {
             $signature = $this.GetTablePrimaryKeySignature($table)
-            $this._tables[$table] = $signature
+            $this.Tables[$table] = $signature
 
-            if ($this._signatures.ContainsKey($signature) -eq $false)
+            if ($this.Signatures.ContainsKey($signature) -eq $false)
             {
-                $this._signatures.Add($signature, $table.PrimaryKey)
+                $this.Signatures.Add($signature, $table.PrimaryKey)
             }
         }
     }
 
-    [string] GetProcessingName([string] $signature) {
-        return "SqlSizer.Processing" + $signature
+    [string] GetProcessingName([string] $Signature) {
+        return "SqlSizer.Processing" + $Signature
     }
 
-    [string] GetSliceName([string] $signature) {
-        return "SqlSizer.Slice" + $signature
+    [string] GetSliceName([string] $Signature) {
+        return "SqlSizer.Slice" + $Signature
     }
 
     [string] GetTablePrimaryKeySignature([TableInfo]$Table) {

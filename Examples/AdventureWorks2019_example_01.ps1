@@ -1,5 +1,5 @@
 ﻿# Import of module
-Import-Module ..\MSSQL-SqlSizer
+Import-Module ..\MSSQL-SqlSizer -Verbose
 
 
 # Connection settings
@@ -11,12 +11,11 @@ $password = "pass"
 # Create connection
 $connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $password
 
-
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
 # Init SqlSizer structures
-Init-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Install-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -45,10 +44,10 @@ $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
 
-Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 
 # Find subset
-Get-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored)
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored)
 
 
 # Create a new db with found subset of data
@@ -57,13 +56,13 @@ $newDatabase = "AdventureWorks2019_subset_01"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
-Truncate-Database -Database $newDatabase -ConnectionInfo $connection
+Clear-Database -Database $newDatabase -ConnectionInfo $connection
 Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
-Rebuild-Indexes -Database $newDatabase -ConnectionInfo $connection
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection
 
-Drop-Structures -Database $newDatabase -ConnectionInfo $connection  -DatabaseInfo $info
-Shrink-Database -Database $newDatabase -ConnectionInfo $connection
+Uninstall-Structures -Database $newDatabase -ConnectionInfo $connection  -DatabaseInfo $info
+Compress-Database -Database $newDatabase -ConnectionInfo $connection
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 # end of script

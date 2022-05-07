@@ -1,6 +1,5 @@
-﻿function Get-Subset
+﻿function Find-Subset
 {
-    
     [cmdletbinding()]
     param
     (   
@@ -15,15 +14,13 @@
     )
 
     $start = Get-Date
-
-    $null = Init-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
     
     $structure = [Structure]::new($info)
-    $structure.Init()
 
-    # Validate ignored tables
-    Validate-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
+    # Test ignored tables
+    Test-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
 
     $interval = 5
     $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
@@ -55,7 +52,7 @@
         $color = $first.Type
 
         $table = $tablesGrouped[$schema + ", " + $tableName]
-        $signature = $structure._tables[$table]
+        $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
         
@@ -92,7 +89,7 @@
                     continue
                }
                $baseTable = $tablesGrouped[$fk.Schema + ", " + $fk.Table]
-               $baseSignature = $structure._tables[$baseTable]
+               $baseSignature = $structure.Tables[$baseTable]
                $baseProcessing = $structure.GetProcessingName($baseSignature)
 
                $primaryKey = $table.PrimaryKey
@@ -168,7 +165,7 @@
                     continue
                 }
                 $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
-                $fkSignature = $structure._tables[$fkTable]
+                $fkSignature = $structure.Tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
  
                 $primaryKey = $referencedByTable.PrimaryKey
@@ -277,7 +274,7 @@
                 }
 
                 $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
-                $fkSignature = $structure._tables[$fkTable]
+                $fkSignature = $structure.Tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
  
                 $primaryKey = $referencedByTable.PrimaryKey

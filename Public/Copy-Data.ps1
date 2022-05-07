@@ -16,8 +16,6 @@
 
     $info = Get-DatabaseInfo -Database $Source -Connection $ConnectionInfo
     $structure = [Structure]::new($info)
-    $structure.Init()
-
     $i = 0
     foreach ($table in $info.Tables)
     {
@@ -103,7 +101,7 @@ function GetTableWhere
      )
 
      $primaryKey = $TableInfo.PrimaryKey
-     $processing = $Structure.GetProcessingName($Structure._tables[$TableInfo])
+     $processing = $Structure.GetProcessingName($Structure.Tables[$TableInfo])
      $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
 
      $i = 0

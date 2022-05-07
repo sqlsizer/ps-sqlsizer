@@ -1,4 +1,4 @@
-﻿function Init-Structures
+﻿function Install-Structures
 {
     [cmdletbinding()]
     param
@@ -18,9 +18,7 @@
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $structure = [Structure]::new($DatabaseInfo)
-    $structure.Init()
-
-    foreach ($signature in $structure._signatures.Keys)
+    foreach ($signature in $structure.Signatures.Keys)
     {
         $slice = $structure.GetSliceName($signature)
         $tmp = "IF OBJECT_ID('$($slice)') IS NOT NULL  
@@ -28,7 +26,7 @@
         Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    foreach ($signature in $structure._signatures.Keys)
+    foreach ($signature in $structure.Signatures.Keys)
     {
         $processing = $structure.GetProcessingName($signature)
         $tmp = "IF OBJECT_ID('$($processing)') IS NOT NULL  
@@ -45,7 +43,7 @@
     $tmp = "CREATE TABLE SqlSizer.ProcessingStats (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), ToProcess int, Processed int, [Type] int)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     
-    foreach ($signature in $structure._signatures.Keys)
+    foreach ($signature in $structure.Signatures.Keys)
     {
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
@@ -53,7 +51,7 @@
         $keys = ""
         $keysIndex = ""
         $i = 0
-        foreach ($column in $structure._signatures[$signature])
+        foreach ($column in $structure.Signatures[$signature])
         {
             $keys += "Key$($i) "
             $keysIndex += "Key$($i) ASC, "

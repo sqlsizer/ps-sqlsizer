@@ -1,4 +1,4 @@
-function Validate-IgnoredTables
+function Test-IgnoredTables
 {
     [cmdletbinding()]
     param

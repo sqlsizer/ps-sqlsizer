@@ -16,7 +16,7 @@ $connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $pas
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Init SqlSizer structures
-Init-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Install-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -28,7 +28,7 @@ $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
-Init-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
 
 # Find smallest subset that allows to remove start set from the database
-Get-Subset -Database $database -ConnectionInfo $connection
+Find-Subset -Database $database -ConnectionInfo $connection

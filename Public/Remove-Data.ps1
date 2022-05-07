@@ -1,6 +1,5 @@
-﻿function Delete-Data
+﻿function Remove-Data
 {
-    
     [cmdletbinding()]
     param
     (   
@@ -16,7 +15,6 @@
 
     $info = Get-DatabaseInfo -Database $Source -Connection $ConnectionInfo
     $structure = [Structure]::new($info)
-    $structure.Init()
     
     foreach ($table in $info.Tables)
     {
@@ -33,7 +31,6 @@
         
         $null = Execute-SQL -Sql $sql -Database $Target -ConnectionInfo $ConnectionInfo 
     }
-   
 }
 
 # Function that creates a where part of query
@@ -46,7 +43,7 @@ function GetTableWhere
      )
 
      $primaryKey = $TableInfo.PrimaryKey
-     $processing = $Structure.GetProcessingName($Structure._tables[$TableInfo])
+     $processing = $Structure.GetProcessingName($Structure.Tables[$TableInfo])
      $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
 
      $i = 0

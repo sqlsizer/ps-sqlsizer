@@ -1,4 +1,4 @@
-﻿function Init-Statistics
+﻿function Initialize-Statistics
 {
     [cmdletbinding()]
     param
@@ -13,12 +13,10 @@
     # init stats
     $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo
     $structure = [Structure]::new($info)
-    $structure.Init()
-
     $sql = "DELETE FROM SqlSizer.ProcessingStats"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     
-    foreach ($signature in $structure._signatures.Keys)
+    foreach ($signature in $structure.Signatures.Keys)
     {
         $processing = $structure.GetProcessingName($signature)
         
