@@ -1,4 +1,4 @@
-﻿function Uninstall-Structures
+﻿function Uninstall-SqlSizer
 {
     [cmdletbinding()]
     param

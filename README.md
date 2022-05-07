@@ -42,14 +42,14 @@ $database = "AdventureWorks2019"
 $login = "someuser"
 $password = "pass"
 
-# Create connection
-$connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $password
+# New connection info
+$connection = New-SqlConnectionInfo -Server $server -Login $login -Password $password
 
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
-# Init SqlSizer structures
-Install-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Init SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 

@@ -9,13 +9,13 @@ $login = "someuser"
 $password = "pass"
 
 # Create connection
-$connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $password
+$connection = New-SqlConnectionInfo -Server $server -Login $login -Password $password
 
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Init SqlSizer structures
-Install-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -60,9 +60,9 @@ Clear-Database -Database $newDatabase -ConnectionInfo $connection
 Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
 Format-Indexes -Database $newDatabase -ConnectionInfo $connection
-
-Uninstall-Structures -Database $newDatabase -ConnectionInfo $connection  -DatabaseInfo $info
+Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection  -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
+
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 # end of script

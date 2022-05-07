@@ -1,4 +1,4 @@
-﻿function Get-SqlConnectionInfo
+﻿function New-SqlConnectionInfo
 {
     [cmdletbinding()]
     param

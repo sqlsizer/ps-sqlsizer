@@ -9,14 +9,13 @@ $login = "someuser"
 $password = "pass"
 
 # Create connection
-$connection = Get-SqlConnectionInfo -Server $server -Login $login -Password $password
-
+$connection = New-SqlConnectionInfo -Server $server -Login $login -Password $password
 
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
-# Init SqlSizer structures
-Install-Structures -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 

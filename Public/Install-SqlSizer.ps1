@@ -1,4 +1,4 @@
-﻿function Install-Structures
+﻿function Install-SqlSizer
 {
     [cmdletbinding()]
     param

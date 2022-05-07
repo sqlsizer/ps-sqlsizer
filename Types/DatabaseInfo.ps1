@@ -27,6 +27,13 @@ class TableInfo2
     }
 }
 
+class SubsettingTableResult
+{
+    [string]$SchemaName
+    [string]$TableName
+    [long]$RowCount
+}
+
 class SubsettingProcess
 {
     [long]$ToProcess
