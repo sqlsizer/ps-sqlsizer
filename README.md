@@ -72,7 +72,7 @@ $query2.Where = "[`$table].SickLeaveHours > 30"
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
 
 # Find subset
-Get-Subset -Database $database -ConnectionInfo $connection
+Find-Subset -Database $database -ConnectionInfo $connection
 
 # Create a new db with found subset of data
 
