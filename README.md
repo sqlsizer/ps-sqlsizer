@@ -1,4 +1,6 @@
+![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
 # mssql-sqlsizer
+
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
 # Details
