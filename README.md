@@ -4,7 +4,7 @@
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
 Additionally the scripts are able to:
-- Delete data from the database quickly (respecting all foreign keys)
+- Delete selected data from the database quickly (respecting all foreign keys)
 - Extract a subset of the data from the database (currently only to XML)
 
 # Internals
