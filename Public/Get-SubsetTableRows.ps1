@@ -51,7 +51,7 @@ function Get-SubsetTableRows
 
                 for ($i = 0; $i -lt $table.Columns.Count; $i++)
                 {
-                    $columns += "t.$($table.Columns[$i].Name)"
+                    $columns += "ISNULL(t.$($table.Columns[$i].Name), '')"
                     if ($i -lt ($table.Columns.Count - 1))
                     {
                         $columns += ", "
