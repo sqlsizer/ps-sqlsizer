@@ -34,6 +34,17 @@ class TableInfo2WithColor
     [Color]$Color
 }
 
+class TableInfo2WithRows
+{
+    [string]$SchemaName
+    [string]$TableName
+    [TableInfo2Row[]]$Rows
+}
+
+class TableInfo2Row
+{
+    [Object[]]$Columns
+}
 
 class SubsettingTableResult
 {
