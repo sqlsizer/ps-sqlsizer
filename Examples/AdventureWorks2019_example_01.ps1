@@ -1,6 +1,7 @@
-﻿# Import of module
-Import-Module ..\MSSQL-SqlSizer -Verbose
+﻿## Example that shows how to create a new database with the subset of data based on queries which define initial data
 
+# Import of module
+Import-Module ..\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"
@@ -49,6 +50,8 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 # Find subset
 Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored)
 
+# Get subset info
+Get-SubsetTables -Database $database -Connection $connection
 
 # Create a new db with found subset of data
 
@@ -65,4 +68,5 @@ Compress-Database -Database $newDatabase -ConnectionInfo $connection
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
+Write-Host "Subset size: $($infoNew.DatabaseSize)"
 # end of script

@@ -1,4 +1,4 @@
-﻿## Example that shows how to find data needed to remove initial data set
+﻿## Example that shows how to check how many tables are reachable by queries
 
 # Import of module
 Import-Module ..\MSSQL-SqlSizer
@@ -11,26 +11,22 @@ $password = "pass"
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -Login $login -Password $password
-
-# Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-# Define start set
 
 # Query 1: All persons with first name = 'Michael'
 $query = New-Object -TypeName Query
-$query.Color = [Color]::Blue
+$query.Color = [Color]::Yellow
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
 
-# Find smallest subset that allows to remove start set from the database
-Find-Subset -Database $database -ConnectionInfo $connection
+$results = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query)
 
-Get-SubsetTables -Database $database -Connection $connection
+
+Write-Host "$($info.Tables.Count) tables in total"
+Write-Host "-"
+Write-Host "$($results.Length) tables are not reachable by queries: "
+$results | Foreach-Object { $_.SchemaName + "." + $_.TableName }

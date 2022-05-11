@@ -27,6 +27,14 @@ class TableInfo2
     }
 }
 
+class TableInfo2WithColor
+{
+    [string]$SchemaName
+    [string]$TableName
+    [Color]$Color
+}
+
+
 class SubsettingTableResult
 {
     [string]$SchemaName
