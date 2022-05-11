@@ -22,10 +22,10 @@ Each graph node is represented by the row in *SqlSizer.Processing* tables that h
 Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of SQL queries needed.
 
 Colors have following meaning:
- - Blue: find all rows that are required to remove that row (recursively) 
  - Red: find all rows that are referenced by the row (recursively) 
  - Green: find all dependent rows on the row (recursively) 
  - Yellow: find all related data to the row (recursively) 
+ - Blue: find all rows that are required to remove that row (recursively) 
 
 # Prerequisites
 
