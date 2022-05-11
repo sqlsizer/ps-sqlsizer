@@ -39,7 +39,15 @@
         {   
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, 1 FROM " + $query.Schema + "." + $query.Table + " as [`$table] WHERE " + $query.Where + $order
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, 1 FROM " + $query.Schema + "." + $query.Table + " as [`$table] " 
+
+        if ($null -ne $query.Where)
+        {
+            $tmp += " WHERE " + $query.Where 
+        }
+
+        $tmp += " " + $order
+
         $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
