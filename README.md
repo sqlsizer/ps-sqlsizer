@@ -3,7 +3,7 @@
 
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
-# Details
+# Internals
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
 
 The initial set of table rows needs to be defined before start of the scripts.
