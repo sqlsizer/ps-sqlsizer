@@ -5,6 +5,9 @@ function Get-SubsetXml
     (   
         [Parameter(Mandatory=$true)]
         [string]$Database,
+        
+        [Parameter(Mandatory=$false)]
+        [bool]$AllColumns = $false,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -20,7 +23,7 @@ function Get-SubsetXml
     {
         Write-Progress -Activity "Exploring to XML" -PercentComplete (100 * ($index / $subsetTables.Count))
 
-        $subsetTableRows = Get-SubsetTableRows -AllColumns $true -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -Database $Database -ConnectionInfo $ConnectionInfo 
+        $subsetTableRows = Get-SubsetTableRows -AllColumns $AllColumns -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -Database $Database -ConnectionInfo $ConnectionInfo 
         $rows = @()
 
         foreach ($subsetTableRow in $subsetTableRows)
@@ -29,9 +32,12 @@ function Get-SubsetXml
             $i = 0
             foreach ($item in $subsetTableRow.ItemArray)
             {
-                if ($i -gt 1)
+                if (($AllColumns -eq $false) -or ($i -gt 1))
                 {
-                    $row.Columns += $item
+                    $column = New-Object TableInfo2Column
+                    $column.Value = $item
+                    $column.Name = $subsetTableRow.Table.Columns[$i]
+                    $row.Columns += $column
                 }
                 $i += 1
             }

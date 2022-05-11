@@ -43,7 +43,13 @@ class TableInfo2WithRows
 
 class TableInfo2Row
 {
-    [Object[]]$Columns
+    [TableInfo2Column[]]$Columns
+}
+
+class TableInfo2Column
+{
+    [string]$Name
+    [Object]$Value
 }
 
 class SubsettingTableResult
