@@ -26,6 +26,7 @@ Colors have following meaning:
 # Prerequisites
 
 ```powershell
+Install-Module sqlserver -Scope CurrentUser
 Install-Module dbatools -Scope CurrentUser
 ```
 
