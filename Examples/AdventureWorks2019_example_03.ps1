@@ -23,10 +23,9 @@ $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
 
-$results = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query)
+$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query)
 
-
-Write-Host "$($info.Tables.Count) tables in total"
-Write-Host "-"
-Write-Host "$($results.Length) tables are not reachable by queries: "
-$results | Foreach-Object { $_.SchemaName + "." + $_.TableName }
+if ($testResult -eq $false)
+{
+    Write-Host "Unreachable tables detected" -ForegroundColor Red
+}
