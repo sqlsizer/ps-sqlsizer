@@ -19,6 +19,8 @@
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
+    $null = Clear-SqlSizer -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+
     foreach ($query in $Queries)
     {
         $top = "";
