@@ -1,4 +1,4 @@
-function Install-MissingIndexes
+function Install-ForeignKeyIndexes
 {
     [cmdletbinding()]
     param

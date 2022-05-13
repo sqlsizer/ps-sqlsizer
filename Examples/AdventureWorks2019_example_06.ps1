@@ -28,4 +28,4 @@ $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
-Install-MissingIndexes -Database $database -ConnectionInfo $connection -Queries @($query) -Verbose
+Install-ForeignKeyIndexes -Database $database -ConnectionInfo $connection -Queries @($query) -Verbose
