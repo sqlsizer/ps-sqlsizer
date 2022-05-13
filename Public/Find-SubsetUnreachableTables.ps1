@@ -9,11 +9,15 @@ function Find-SubsetUnreachableTables
         [Parameter(Mandatory=$true)]
         [Query[]]$Queries,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+
     $reachableTables = New-Object 'System.Collections.Generic.HashSet[string]'
     $processedTableColors = New-Object 'System.Collections.Generic.HashSet[string]'
     $processingQueue = New-Object System.Collections.Generic.Queue"[TableInfo2WithColor]"

@@ -6,11 +6,15 @@ function Get-SubsetTableStatistics
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+
     $structure = [Structure]::new($info)
     $result = @()
     

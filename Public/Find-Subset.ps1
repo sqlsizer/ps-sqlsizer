@@ -9,13 +9,16 @@
         [Parameter(Mandatory=$false)]
         [TableInfo2[]]$IgnoredTables,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     $start = Get-Date
-    $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo
-    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
     
     $structure = [Structure]::new($info)
 

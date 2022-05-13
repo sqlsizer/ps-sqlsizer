@@ -6,11 +6,14 @@
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $i = 0
     foreach ($table in $info.Tables)
     {

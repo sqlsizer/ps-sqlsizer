@@ -6,12 +6,16 @@
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     # init stats
-    $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    
     $structure = [Structure]::new($info)
     $sql = "DELETE FROM SqlSizer.ProcessingStats"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

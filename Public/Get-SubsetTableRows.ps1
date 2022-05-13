@@ -15,11 +15,14 @@ function Get-SubsetTableRows
         [Parameter(Mandatory=$false)]
         [bool]$AllColumns = $false,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
     
     foreach ($table in $info.Tables)

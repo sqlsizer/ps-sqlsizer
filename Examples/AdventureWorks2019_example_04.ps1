@@ -28,11 +28,11 @@ $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find smallest subset that allows to remove start set from the database
-Find-Subset -Database $database -ConnectionInfo $connection
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false
+$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
 
 $xml | Out-File -FilePath "subset.xml"

@@ -23,7 +23,7 @@ $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
 
-$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query)
+$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 if ($testResult -eq $false)
 {

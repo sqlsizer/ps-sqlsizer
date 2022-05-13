@@ -6,12 +6,15 @@
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     Write-Progress -Activity "Disabling integrity checks on database" -PercentComplete 0 
-    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $sql = "sp_msforeachtable 'ALTER TABLE ? DISABLE TRIGGER all'"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

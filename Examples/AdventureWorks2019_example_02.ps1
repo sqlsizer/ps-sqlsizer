@@ -28,9 +28,9 @@ $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query)
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find smallest subset that allows to remove start set from the database
-Find-Subset -Database $database -ConnectionInfo $connection
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-Get-SubsetTables -Database $database -Connection $connection
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info

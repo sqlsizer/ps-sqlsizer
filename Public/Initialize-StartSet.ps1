@@ -9,11 +9,14 @@
         [Parameter(Mandatory=$true)]
         [Query[]]$Queries,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
     foreach ($query in $Queries)

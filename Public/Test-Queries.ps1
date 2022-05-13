@@ -9,11 +9,14 @@ function Test-Queries
         [Parameter(Mandatory=$true)]
         [Query[]]$Queries,
 
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $unreachableTables = Find-SubsetUnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo
+    $unreachableTables = Find-SubsetUnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     if ($unreachableTables.Count -gt 0)
     {
