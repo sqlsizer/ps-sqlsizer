@@ -10,22 +10,25 @@ Additionally the scripts are able to:
 # Internals
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
 
-The initial set of table rows needs to be defined before start of the scripts.
+The initial set of table rows needs to be defined before the start of the scripts and added to processing tables 
+which consists of multiple tables with all possible primary key definitions from the database.
 
-Each graph node is represented by the row in *SqlSizer.Processing* tables that has following information:
--  Schema name
--  Table name
--  Primary key values
--  One of the colors: RED, GREEN, YELLOW or BLUE
--  Depth
-
-Finding of neighbours of graph nodes is done in bulks and depends on the color in order to optimize number of SQL queries needed.
+At every iteration the algorithm finds the best set of data with a single color to process based on the number of unprocessed records. 
+Then data rows are fetched into the slices tables. Later based on the color of the slice the appropriate rows are added to processing tables.
+This process continues until there are no unprocessed rows of any color.
 
 Colors have following meaning:
- - Red: find all rows that are referenced by the row (recursively) 
- - Green: find all dependent rows on the row (recursively) 
- - Yellow: find all related data to the row (recursively) 
- - Blue: find all rows that are required to remove that row (recursively) 
+
+- Red: find all rows that are referenced by the row (recursively)
+- Green: find all dependent rows on the row (recursively)
+- Yellow: find all referenced and dependent data to the row (recursively)
+- Blue: find all rows that are required to remove that row (recursively)
+
+Note: SqlSizer doesn't support well at the moment tables with no primary keys
+
+## Example: Created help structures when subsetting AdventureWorks2019 database
+![image](https://user-images.githubusercontent.com/115426/168351591-df226e88-8098-46fa-bb4a-bfc735915d1e.png)
+
 
 # Prerequisites
 
