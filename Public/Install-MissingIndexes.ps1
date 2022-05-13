@@ -53,7 +53,6 @@ function Install-MissingIndexes
                 $sql = "IF IndexProperty(OBJECT_ID('$($table.SchemaName).$($table.TableName)'), '$($indexName)', 'IndexId') IS NULL"
                 $sql += " CREATE INDEX [$($indexName)] ON [$($table.SchemaName)].[$($table.TableName)] ($($columns))"
                 $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
-                Write-Verbose $sql
             }
         }
     }
