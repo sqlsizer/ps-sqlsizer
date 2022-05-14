@@ -148,16 +148,14 @@
                     $columns = $columns + "x.val" + $i + ","
                }
 
+               $forcedColor = $color
+               
                if ($null -ne $ColorMap)
                {
                     $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
                     if ($null -ne $item)
                     {
                         $forcedColor = [int]$item.ForcedColor
-                    }
-                    else
-                    {
-                        $forcedColor = $color
                     }
                }
                $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $forcedColor + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
