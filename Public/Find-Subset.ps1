@@ -12,6 +12,9 @@
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
+        [Parameter(Mandatory=$false)]
+        [ColorMap]$ColorMap = $null,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
@@ -145,12 +148,24 @@
                     $columns = $columns + "x.val" + $i + ","
                }
 
-               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + [int][Color]::Red + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
+               if ($null -ne $ColorMap)
+               {
+                    $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+                    if ($null -ne $item)
+                    {
+                        $forcedColor = [int]$item.ForcedColor
+                    }
+                    else
+                    {
+                        $forcedColor = $color
+                    }
+               }
+               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $forcedColor + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
 
-               $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "' and [Type]  = $([int][Color]::Red)"
+               $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "' and [Type]  = $($forcedColor)"
                $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
             }
         }
@@ -187,7 +202,7 @@
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
                 
-                
+
                 # from
                 $join = " INNER JOIN $($slice) s ON "
                 $i = 0    

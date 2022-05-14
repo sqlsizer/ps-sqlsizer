@@ -30,25 +30,26 @@ $query.Where = "[`$table].FirstName = 'John'"
 $query.Top = 10
 $query.OrderBy = "[`$table].LastName ASC"
 
-# Query 2: All employees with SickLeaveHours > 30
-$query2 = New-Object -TypeName Query
-$query2.Color = [Color]::Yellow
-$query2.Schema = "HumanResources"
-$query2.Table = "Employee"
-$query2.KeyColumns = @('BusinessEntityID')
-$query2.Where = "[`$table].SickLeaveHours > 30"
-
 # Define ignored tables
 
 $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
+# Define color map
+$colorMapItem = New-Object -Type ColorItem
+$colorMapItem.SchemaName = 'Person'
+$colorMapItem.TableName = 'PhoneNumberType'
+$colorMapItem.ForcedColor = [Color]::Yellow
+$colorMap = New-Object -Type ColorMap
+$colorMap.Items += $colorMapItem
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2) -DatabaseInfo $info
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
@@ -69,4 +70,11 @@ Compress-Database -Database $newDatabase -ConnectionInfo $connection
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 Write-Host "Subset size: $($infoNew.DatabaseSize)"
+$sum = 0
+foreach ($table in $infoNew.Tables)
+{
+    $sum += $table.Statistics.Rows
+}
+
+Write-Host "Total rows: $($sum)"
 # end of script
