@@ -20,8 +20,8 @@ This process continues until there are no unprocessed rows of any color.
 Colors have following meaning:
 
 - Red: find all rows that are referenced by the row (recursively)
-- Green: find all dependent rows on the row (recursively)
-- Yellow: find all referenced and dependent data to the row (recursively)
+- Green: find all dependent rows on the row
+- Yellow: find all referenced and dependent data on the row
 - Blue: find all rows that are required to remove that row (recursively)
 
 Note: SqlSizer doesn't support well at the moment tables with no primary keys
