@@ -117,13 +117,13 @@
                 $fkColumn.IsNullable = $column["fk_column_is_nullable"]
                 $fkColumn.IsComputed = $false
 
-                $column = New-Object -TypeName ColumnInfo
-                $column.Name = $column["column"]
-                $column.DataType = $column["fk_column_data_type"]
-                $column.IsNullable = $false
-                $column.IsComputed = $false
+                $baseColumn = New-Object -TypeName ColumnInfo
+                $baseColumn.Name = $column["column"]
+                $baseColumn.DataType = $column["fk_column_data_type"]
+                $baseColumn.IsNullable = $false
+                $baseColumn.IsComputed = $false
 
-                $fk.Columns += $column
+                $fk.Columns += $baseColumn
                 $fk.FkColumns += $fkColumn
             }
 
