@@ -7,20 +7,14 @@
         [string]$prefix
     )
 
-    if ($dataType -eq "hierarchyid")
+    $toConvert = @('hierarchyid', 'geography', 'xml')
+
+    if ($dataType -in $toConvert)
     {
         "CONVERT(nvarchar(max), " + $prefix + $columnName + ")"
     }
     else 
     {
-        if ($dataType -eq "xml")
-        {
-            "CONVERT(nvarchar(max), " + $prefix + $columnName + ")"
-        }
-        else
-        {            
-            
-            "[" + $columnName + "]"            
-        }
+        "$($prefix)[" + $columnName + "]"
     }
 }

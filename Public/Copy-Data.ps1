@@ -36,11 +36,11 @@
         $tableColumns = GetTableSelect -TableInfo $table -Raw $true
         $tableSelect = GetTableSelect -TableInfo $table -Raw $false
 
-        $where = GetTableWhere -Database $Source -TableInfo $table -Structure $structure
+        $join = GetTableJoin -Database $Source -TableInfo $table -Structure $structure
 
-        $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] (" + $tableColumns + ") SELECT " + $tableSelect +  " FROM " + $Source + "." + $schema + ".[" +  $tableName + "]"
+        $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] (" + $tableColumns + ") SELECT DISTINCT " + $tableSelect +  " FROM " + $Source + "." + $schema + ".[" +  $tableName + "] t"
         
-        $sql = $sql + $where
+        $sql = $sql + $join
         if ($isIdentity)
         {
             $sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON " + $sql + " SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF" 
@@ -83,7 +83,7 @@ function GetTableSelect
             }
             else
             {
-                $select += Get-ColumnValue -columnName $columnName -dataType $column.DataType -prefix ""
+                $select += Get-ColumnValue -columnName $columnName -dataType $column.DataType -prefix "t."
             }
 
             $j += 1
@@ -93,8 +93,8 @@ function GetTableSelect
     $select
 }
 
-# Function that creates a where part of query
-function GetTableWhere
+# Function that creates join part of query
+function GetTableJoin
 {
      param (
         [string]$Database,
@@ -104,16 +104,14 @@ function GetTableWhere
 
      $primaryKey = $TableInfo.PrimaryKey
      $processing = $Structure.GetProcessingName($Structure.Tables[$TableInfo])
-     $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
+     $where = " INNER JOIN $($Database).$($processing) p ON p.[Schema] = '" +  $Schema + "' and p.TableName = '" + $TableName + "' "
 
      $i = 0
      foreach ($column in $primaryKey)
      {
-        $where += " AND Key" + $i + " = " + $column.Name + " " 
+        $where += " AND p.Key" + $i + " = " + $column.Name + " " 
         $i += 1
      }
-
-     $where += ")"
 
      $where
 }
