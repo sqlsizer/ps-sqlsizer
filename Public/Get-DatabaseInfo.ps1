@@ -27,6 +27,12 @@
     $foreignKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $foreignKeyRowsGrouped = $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
 
+
+    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesIndexes.sql")
+    $indexesRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $indexesRowsGrouped = $indexesRows | Group-Object -Property schema, table -AsHashTable -AsString
+
+
     if ($true -eq $MeasureSize)
     {
         $statsRows = Execute-SQL -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
@@ -122,6 +128,22 @@
             }
 
             $table.ForeignKeys += $fk
+        }
+
+        $indexesForTable = $indexesRowsGrouped[$key]
+        $indexesForTableGrouped = $indexesForTable | Group-Object -Property index
+
+        foreach ($item in $indexesForTableGrouped)
+        {
+            $index = New-Object -TypeName Index
+            $index.Name = $item.Name
+            
+            foreach ($column in $item.Group)
+            {
+                $index.Columns += $column["column"]
+            }
+
+            $table.Indexes += $index
         }
 
         $result.Tables += $table

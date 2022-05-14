@@ -97,9 +97,17 @@ class TableInfo
 
     [TableStatistics]$Statistics
 
+    [Index[]]$Indexes
+
     [string] ToString() {
       return "$($this.SchemaName).$($this.TableName)"
     }
+}
+
+class Index 
+{
+    [string]$Name
+    [string[]]$Columns
 }
 
 class ColumnInfo

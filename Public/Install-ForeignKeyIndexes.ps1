@@ -10,6 +10,9 @@ function Install-ForeignKeyIndexes
         [Query[]]$Queries,
 
         [Parameter(Mandatory=$false)]
+        [bool]$OnlyMissing = $true,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
         [Parameter(Mandatory=$true)]
@@ -38,6 +41,17 @@ function Install-ForeignKeyIndexes
                 {
                     break
                 }
+
+                if ($OnlyMissing -eq $true)
+                {
+                    $index = $tableInfo.Indexes | Where-Object {$_.Columns.Contains($fkColumn.Name)}
+
+                    if ($null -ne $index)
+                    {
+                        Write-Verbose "Index $($index.Name) already exists that covers $($fkColumn.Name) column"
+                        break
+                    }
+                }   
 
                 if ($columns -ne "")
                 {
