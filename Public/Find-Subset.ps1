@@ -94,6 +94,17 @@
                {
                     continue
                }
+
+               $newColor = $color
+               if ($null -ne $ColorMap)
+               {
+                    $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+                    if ($null -ne $item)
+                    {
+                        $newColor = [int]$item.ForcedColor
+                    }
+               }
+
                $baseTable = $tablesGrouped[$fk.Schema + ", " + $fk.Table]
                $baseSignature = $structure.Tables[$baseTable]
                $baseProcessing = $structure.GetProcessingName($baseSignature)
@@ -112,7 +123,7 @@
                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                     $i += 1
                }
-               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Type] = " + [int][Color]::Red + " and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Type] = " + $newColor + " and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
 
 
                # from
@@ -148,22 +159,13 @@
                     $columns = $columns + "x.val" + $i + ","
                }
 
-               $forcedColor = $color
-               
-               if ($null -ne $ColorMap)
-               {
-                    $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
-                    if ($null -ne $item)
-                    {
-                        $forcedColor = [int]$item.ForcedColor
-                    }
-               }
-               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $forcedColor + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
+             
+               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
 
-               $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "' and [Type]  = $($forcedColor)"
+               $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "' and [Type]  = $($newColor)"
                $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
             }
         }
