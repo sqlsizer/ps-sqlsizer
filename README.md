@@ -7,6 +7,15 @@ Additionally the scripts are able to:
 - Delete selected data from the database quickly (respecting all foreign keys)
 - Extract a subset of the data from the database (currently only to XML)
 
+# Flow (simplified)
+
+- Step 1: Provide configuration
+    - Queries that define initial data (the table rows with colors)
+    - (Optional) Color map that allow to configure which tables will get forced YELLOW color
+
+- Step 2: Execute `Find-Subset` function to find the subset you want
+- Step 3: Copy data to new db or just do your own processing of the subset
+
 # Internals
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
 
@@ -35,10 +44,10 @@ Install-Module sqlserver -Scope CurrentUser # if not present
 Install-Module dbatools -Scope CurrentUser
 ```
 
-# How to start?
+# Examples
 Please take a look at examples in *Examples* folder.
 
-# Example
+## Sample
 ```powershell
 # Import of module
 Import-Module ..\MSSQL-SqlSizer -Verbose
