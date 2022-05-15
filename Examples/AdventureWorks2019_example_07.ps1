@@ -81,6 +81,8 @@ Format-Indexes -Database $newDatabase -ConnectionInfo $connection
 Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
 
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 Write-Host "Subset size: $($infoNew.DatabaseSize)"

@@ -9,8 +9,12 @@
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
+        [Parameter(Mandatory=$false)]
+        [string]$Silent = $true,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
+
     )
     
     try
@@ -20,9 +24,13 @@
     }
     catch
     {
-        Write-Host "Exception message: $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "Error: " $_.Exception -ForegroundColor Red            
-        Write-Host $Sql
-        Write-Host "=="
+        if ($Silent -eq $false)
+        {
+            Write-Host "Exception message: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "Error: " $_.Exception -ForegroundColor Red            
+            Write-Host $Sql
+            Write-Host "=="
+        }
+        return $false
     }
 }

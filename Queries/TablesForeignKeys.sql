@@ -27,4 +27,4 @@ INNER JOIN sys.schemas [schemas2]
 INNER JOIN sys.columns [columns2]
     ON [columns2].column_id = [fk].referenced_column_id AND [columns2].object_id = [tables2].object_id
 ORDER BY 
- fk_name
+ fk_name, fk_column

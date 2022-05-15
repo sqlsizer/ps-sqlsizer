@@ -25,7 +25,7 @@
     foreach ($table in $info.Tables)
     {
         $i += 1
-        Write-Progress -Activity "Copying data" -PercentComplete (100 * ($i / ($info.Tables.Count)))
+        Write-Progress -Activity "Copying data" -PercentComplete (100 * ($i / ($info.Tables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
 
         if ($table.IsHistoric -eq $true)
         {
