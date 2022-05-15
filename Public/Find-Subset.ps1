@@ -217,7 +217,10 @@
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
-
+                
+                # Fix for algorithm :)
+                $where += " AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Depth] < s.[Depth] AND p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "') ";
+                
                 # from
                 $join = " INNER JOIN $($slice) s ON "
                 $i = 0    

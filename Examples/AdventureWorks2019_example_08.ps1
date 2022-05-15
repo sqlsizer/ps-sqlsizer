@@ -1,4 +1,4 @@
-﻿## Example that shows how to create a new database with the subset of data based on queries which define initial data
+﻿## Example that shows color maps feature
 
 # Import of module
 Import-Module ..\MSSQL-SqlSizer
@@ -39,11 +39,8 @@ foreach ($table in $info.Tables)
     $colorMapItem.SchemaName = $table.SchemaName
     $colorMapItem.TableName = $table.TableName
 
-    if ($table.TableName -in @('Person'))
-    {
-        $colorMapItem.ForcedColor = New-Object -Type ForcedColor
-        $colorMapItem.ForcedColor.Color = [Color]::Yellow
-    }
+    $colorMapItem.ForcedColor = New-Object -Type ForcedColor
+    $colorMapItem.ForcedColor.Color = [Color]::Yellow
     
     $colorMapItem.Condition = New-Object -Type Condition
     $colorMapItem.Condition.Top = 10 # limit all dependend data for each fk by 10 rows (it doesn't mean that there will be no more rows!)
