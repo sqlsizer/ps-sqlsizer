@@ -33,6 +33,7 @@
         $sql = "INSERT INTO SqlSizer.ProcessingStats([Schema], [TableName], [ToProcess], [Processed], [Type])
         SELECT p.[Schema], p.TableName, COUNT(*), 0, p.[Type]
         FROM $($processing) p
+        WHERE p.[Schema] = '$($table.SchemaName)' AND p.[TableName] = '$($table.TableName)'
         GROUP BY [Schema], TableName, [Type]"
         $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         
