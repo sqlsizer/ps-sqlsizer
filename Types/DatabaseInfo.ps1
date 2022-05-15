@@ -25,6 +25,10 @@ class TableInfo2
 
         return $result
     }
+
+    [string] ToString() {
+        return "$($this.SchemaName).$($this.TableName)"
+     }
 }
 
 class TableInfo2WithColor

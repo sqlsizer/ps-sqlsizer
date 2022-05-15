@@ -10,6 +10,9 @@ function Find-SubsetUnreachableTables
         [Query[]]$Queries,
 
         [Parameter(Mandatory=$false)]
+        [bool]$EdgeMode = $false,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
         [Parameter(Mandatory=$true)]
@@ -18,6 +21,7 @@ function Find-SubsetUnreachableTables
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
+    $reachableEdges = New-Object 'System.Collections.Generic.HashSet[string]'
     $reachableTables = New-Object 'System.Collections.Generic.HashSet[string]'
     $processedTableColors = New-Object 'System.Collections.Generic.HashSet[string]'
     $processingQueue = New-Object System.Collections.Generic.Queue"[TableInfo2WithColor]"
@@ -74,6 +78,7 @@ function Find-SubsetUnreachableTables
                 $newItem.TableName = $fk.Table
                 $newItem.Color = [Color]::Red
                 $null = $processingQueue.Enqueue($newItem)
+                $null = $reachableEdges.Add("$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)")
             }
         }
 
@@ -96,6 +101,7 @@ function Find-SubsetUnreachableTables
                         $newItem.Color = [Color]::Blue
                     }
                     $null = $processingQueue.Enqueue($newItem)
+                    $null = $reachableEdges.Add("$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)")
                 }
             }
         }
@@ -105,20 +111,38 @@ function Find-SubsetUnreachableTables
     }
 
     $toReturn = @()
-    foreach ($table in $info.Tables)
+
+    if ($EdgeMode)
     {
-        $key = $table.SchemaName + "." + $table.TableName
-
-        if ($reachableTables.Contains($key) -eq $false)
-        {   
-            $item = New-Object TableInfo2
-            
-            $item.SchemaName = $table.SchemaName
-            $item.TableName = $table.TableName
-
-            $toReturn += $item
+        foreach ($table in $info.Tables)
+        {
+            foreach ($fk in $table.ForeignKeys)
+            {
+                $key = "$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)"
+                if ($reachableEdges.Contains($key) -eq $false)
+                {   
+                    $toReturn += $key
+                }
+            }
         }
     }
+    else
+    {
+        foreach ($table in $info.Tables)
+        {
+            $key = $table.SchemaName + "." + $table.TableName
 
+            if ($reachableTables.Contains($key) -eq $false)
+            {   
+                $item = New-Object TableInfo2
+
+                $item.SchemaName = $table.SchemaName
+                $item.TableName = $table.TableName
+
+                $toReturn += $item
+            }
+        }
+
+    }
     return $toReturn
 }

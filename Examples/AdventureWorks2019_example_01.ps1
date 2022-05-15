@@ -36,13 +36,6 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
-# Define color map
-$colorMapItem = New-Object -Type ColorItem
-$colorMapItem.SchemaName = 'Person'
-$colorMapItem.TableName = 'PhoneNumberType'
-$colorMapItem.ForcedColor = [Color]::Yellow
-$colorMap = New-Object -Type ColorMap
-$colorMap.Items += $colorMapItem
 
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 

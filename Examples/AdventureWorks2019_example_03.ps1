@@ -23,9 +23,4 @@ $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
 
-$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
-
-if ($testResult -eq $false)
-{
-    Write-Host "Unreachable tables detected" -ForegroundColor Red
-}
+$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -EdgeMode $true

@@ -10,20 +10,23 @@ function Test-Queries
         [Query[]]$Queries,
 
         [Parameter(Mandatory=$false)]
+        [bool]$EdgeMode = $false,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $unreachableTables = Find-SubsetUnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $unreachable = Find-SubsetUnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -EdgeMode $EdgeMode
 
-    if ($unreachableTables.Count -gt 0)
+    if ($unreachable.Count -gt 0)
     {
-        Write-Host "$($unreachableTables.Length) tables are not reachable by queries:" -ForegroundColor Red
-        foreach ($table in $unreachableTables)
+        Write-Host "$($unreachable.Length) are not reachable by queries:" -ForegroundColor Red
+        foreach ($item in $unreachable)
         {
-            Write-Host ($table.SchemaName + "." + $table.TableName)
+            Write-Host $item
         }
         return $false
     }
