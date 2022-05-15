@@ -30,6 +30,7 @@
 
     $interval = 5
     $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+    $percent = 0
 
     while ($true)
     { 
@@ -39,8 +40,8 @@
         {
             $lastTotalSeconds = $totalSeconds
             $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
-
-            Write-Progress -Activity "Finding subset" -PercentComplete (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
+            $percent = (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
+            Write-Progress -Activity "Finding subset" -PercentComplete $percent
         }
 
         # Logic
@@ -56,6 +57,8 @@
         $schema = $first.Schema
         $tableName = $first.TableName
         $color = $first.Type
+
+        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($schema).$($tableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
         $table = $tablesGrouped[$schema + ", " + $tableName]
         $signature = $structure.Tables[$table]
@@ -165,8 +168,11 @@
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
 
-               $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "' and [Type]  = $($newColor)"
-               $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+               if ($results.Count -gt 0)
+               {
+                    $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.Schema + "' and [TableName] = '" +  $fk.Table + "' and [Type]  = $($newColor)"
+                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+               }
             }
         }
 
@@ -242,10 +248,13 @@
                 $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
+
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
-                
-                $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.FkSchema + "' and [TableName] = '" +   $fk.FkTable + "' and [Type]  = $([int][Color]::Yellow)"
-                $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                if ($results.Count -gt 0)
+                {
+                    $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.FkSchema + "' and [TableName] = '" +   $fk.FkTable + "' and [Type]  = $([int][Color]::Yellow)"
+                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                }
              }
            }
         }
@@ -353,8 +362,11 @@
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
                 
-                $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.FkSchema + "' and [TableName] = '" +   $fk.FkTable + "' and [Type] = $([int][Color]::Blue)"
-                $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                if ($results.Count -gt 0)
+                {
+                    $q = "UPDATE SqlSizer.ProcessingStats SET ToProcess = ToProcess + " + $results.Count + " WHERE [Schema] = '" +  $fk.FkSchema + "' and [TableName] = '" +   $fk.FkTable + "' and [Type] = $([int][Color]::Blue)"
+                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                }
              }
            }
         }
@@ -364,7 +376,10 @@
         $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo 
 
         # update stats
-        $q = "UPDATE SqlSizer.ProcessingStats SET Processed = Processed + " + $results.Count + ", ToProcess = ToProcess - " + $results.Count +  " WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "' and [Type] = $($color)"
-        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        if ($results.Count -gt 0)
+        {
+            $q = "UPDATE SqlSizer.ProcessingStats SET Processed = Processed + " + $results.Count + ", ToProcess = ToProcess - " + $results.Count +  " WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "' and [Type] = $($color)"
+            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        }
     }
 }
