@@ -11,6 +11,9 @@
 
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory=$false)]
+        [TableInfo2[]]$IgnoredTables,
         
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -33,8 +36,8 @@
         $schema = $table.SchemaName
         $tableName = $table.TableName
         
-        $tableColumns = GetTableSelect -TableInfo $table -Raw $true
-        $tableSelect = GetTableSelect -TableInfo $table -Raw $false
+        $tableColumns = GetTableSelect -TableInfo $table -Raw $true -IgnoredTables $IgnoredTables
+        $tableSelect = GetTableSelect -TableInfo $table -Raw $false -IgnoredTables $IgnoredTables
 
         $join = GetTableJoin -Database $Source -TableInfo $table -Structure $structure
 
@@ -55,15 +58,15 @@ function GetTableSelect
 {
     param (
         [bool]$Raw,
-        [TableInfo]$TableInfo
+        [TableInfo]$TableInfo,
+        [TableInfo2[]]$IgnoredTables
     )
-
     
     $select = ""
     $j = 0
-    for ($i = 0; $i -lt $table.Columns.Count; $i++)
+    for ($i = 0; $i -lt $TableInfo.Columns.Count; $i++)
     {
-        $column = $table.Columns[$i]
+        $column = $TableInfo.Columns[$i]
         $columnName = $column.Name
 
         if (($column.IsComputed -eq $true) -or ($column.IsGenerated -eq $true) -or ($column.DataType -eq "timestamp"))
@@ -77,13 +80,37 @@ function GetTableSelect
                 $select += ","
             }
 
+            $include = $true
+
+            foreach ($fk in $TableInfo.ForeignKeys)
+            {
+                if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true)
+                {
+                    foreach ($fkColumn in $fk.FkColumns)
+                    {
+                        if ($fkColumn.Name -eq $columnName)
+                        {
+                            $include = $false
+                            break
+                        }
+                    }
+                }
+            }
+
             if ($Raw)
             {
                 $select +=  "[" + $columnName + "]"
             }
             else
             {
-                $select += Get-ColumnValue -columnName $columnName -dataType $column.DataType -prefix "t."
+                if ($include)
+                {
+                    $select += Get-ColumnValue -columnName $columnName -dataType $column.DataType -prefix "t."
+                }
+                else
+                {
+                    $select += " NULL "
+                }
             }
 
             $j += 1
