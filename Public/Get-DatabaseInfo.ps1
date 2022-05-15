@@ -53,7 +53,8 @@
         $table.IsHistoric = $row["is_historic"]
         $table.HistoryOwner = $row["history_owner"]
         $table.HistoryOwnerSchema = $row["history_owner_schema"]
-
+        $table.IsReferencedBy = @()
+        
         if ($true -eq $MeasureSize)
         {
             $statsRow = Execute-SQL -Sql ("EXEC sp_spaceused [" + $table.SchemaName + "." + $table.TableName + "]") -Database $Database -ConnectionInfo $ConnectionInfo
@@ -178,7 +179,12 @@
             $tableName = $fk.Table
 
             $primaryTable = $tablesGrouped[$schema + ", " + $tableName]
-            $primaryTable.IsReferencedBy += $table
+            
+            if ($primaryTable.IsReferencedBy.Contains($table) -eq $false)
+            {
+                $primaryTable.IsReferencedBy += $table
+            }
+
         }
     }
     
