@@ -24,8 +24,6 @@ Colors have following meaning:
 - Yellow: find all referenced and dependent data on the row
 - Blue: find all rows that are required to remove that row (recursively)
 
-Note: SqlSizer doesn't support well at the moment tables with no primary keys
-
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/168351591-df226e88-8098-46fa-bb4a-bfc735915d1e.png)
 
