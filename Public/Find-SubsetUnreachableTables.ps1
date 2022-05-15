@@ -50,19 +50,34 @@ function Find-SubsetUnreachableTables
 
         $table = $info.Tables.Where(({($_.TableName -eq $item.TableName) -and ($_.SchemaName -eq $item.SchemaName)}))[0]
 
-        if (($item.Color -eq [Color]::Red) -or ($item.Color -eq [Color]::Yellow))
+        if ($item.Color -eq [Color]::Yellow)
+        {
+            $newItem = New-Object TableInfo2WithColor
+            $newItem.SchemaName = $item.SchemaName
+            $newItem.TableName = $item.TableName
+            $newItem.Color = [Color]::Green
+            $null = $processingQueue.Enqueue($newItem)
+
+            $newItem = New-Object TableInfo2WithColor
+            $newItem.SchemaName = $item.SchemaName
+            $newItem.TableName = $item.TableName
+            $newItem.Color = [Color]::Red
+            $null = $processingQueue.Enqueue($newItem)
+        }
+
+        if ($item.Color -eq [Color]::Red)
         {
             foreach ($fk in $table.ForeignKeys)
             {
                 $newItem = New-Object TableInfo2WithColor
                 $newItem.SchemaName = $fk.Schema
                 $newItem.TableName = $fk.Table
-                $newItem.Color = $item.Color 
+                $newItem.Color = [Color]::Red
                 $null = $processingQueue.Enqueue($newItem)
             }
         }
 
-        if (($item.Color -eq [Color]::Green) -or ($item.Color -eq [Color]::Blue) -or ($item.Color -eq [Color]::Yellow))
+        if (($item.Color -eq [Color]::Green) -or ($item.Color -eq [Color]::Blue))
         {
             foreach ($referencedByTable in $table.IsReferencedBy)
             {
@@ -72,7 +87,14 @@ function Find-SubsetUnreachableTables
                     $newItem = New-Object TableInfo2WithColor
                     $newItem.SchemaName = $fk.FkSchema
                     $newItem.TableName = $fk.FkTable
-                    $newItem.Color = $item.Color 
+                    if ($item.Color -eq [Color]::Green)
+                    {
+                        $newItem.Color = [Color]::Yellow
+                    }
+                    if ($item.Color -eq [Color]::Blue)
+                    {
+                        $newItem.Color = [Color]::Blue
+                    }
                     $null = $processingQueue.Enqueue($newItem)
                 }
             }

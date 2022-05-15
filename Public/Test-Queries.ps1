@@ -20,7 +20,7 @@ function Test-Queries
 
     if ($unreachableTables.Count -gt 0)
     {
-        Write-Host "$($unreachableTables.Length) tables are not subset-reachable: " -ForegroundColor Red
+        Write-Host "$($unreachableTables.Length) tables are not reachable by queries:" -ForegroundColor Red
         foreach ($table in $unreachableTables)
         {
             Write-Host ($table.SchemaName + "." + $table.TableName)

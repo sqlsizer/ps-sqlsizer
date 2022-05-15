@@ -17,77 +17,15 @@ function Find-SubsetReachableTables
     )
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $reachableTables = New-Object 'System.Collections.Generic.HashSet[string]'
-    $processedTableColors = New-Object 'System.Collections.Generic.HashSet[string]'
-    $processingQueue = New-Object System.Collections.Generic.Queue"[TableInfo2WithColor]"
-
-    # Add all tables to processing
-    foreach ($query in $Queries)
-    {
-        $item = New-Object TableInfo2WithColor
-        $item.SchemaName = $query.Schema
-        $item.TableName = $query.Table
-        $item.Color = $query.Color
-
-       $null = $processingQueue.Enqueue($item)
-    }
-
-    while ($true)
-    {
-        if ($processingQueue.Count -eq 0)
-        {
-            break
-        }
-
-        $item = $processingQueue.Dequeue()
-        $key = $item.SchemaName + "." + $item.TableName + "." + $item.Color
-
-        if ($processedTableColors.Contains($key))
-        {
-            continue
-        }
-
-        $table = $info.Tables.Where(({($_.TableName -eq $item.TableName) -and ($_.SchemaName -eq $item.SchemaName)}))[0]
-
-        if (($item.Color -eq [Color]::Red) -or ($item.Color -eq [Color]::Yellow))
-        {
-            foreach ($fk in $table.ForeignKeys)
-            {
-                $newItem = New-Object TableInfo2WithColor
-                $newItem.SchemaName = $fk.Schema
-                $newItem.TableName = $fk.Table
-                $newItem.Color = $item.Color 
-                $null = $processingQueue.Enqueue($newItem)
-            }
-        }
-
-        if (($item.Color -eq [Color]::Green) -or ($item.Color -eq [Color]::Blue) -or ($item.Color -eq [Color]::Yellow))
-        {
-            foreach ($referencedByTable in $table.IsReferencedBy)
-            {
-                $fks = $referencedByTable.ForeignKeys | Where-Object {($_.Schema -eq $item.SchemaName) -and ($_.Table -eq $item.TableName)}
-                foreach ($fk in $fks)
-                {
-                    $newItem = New-Object TableInfo2WithColor
-                    $newItem.SchemaName = $fk.FkSchema
-                    $newItem.TableName = $fk.FkTable
-                    $newItem.Color = $item.Color 
-                    $null = $processingQueue.Enqueue($newItem)
-                }
-            }
-        }
-
-        $null = $reachableTables.Add($item.SchemaName + "." + $item.TableName)
-        $null = $processedTableColors.Add($key)
-    }
+    $unreachable = Find-SubsetUnreachableTables -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $toReturn = @()
     foreach ($table in $info.Tables)
     {
-        $key = $table.SchemaName + "." + $table.TableName
-
-        if ($reachableTables.Contains($key) -eq $true)
+        $unreachableTable = $unreachable | Where-Object {($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName)}
+        $isUnreachable = $null -ne $unreachableTable
+        
+        if ($isUnreachable)
         {   
             $item = New-Object TableInfo2
             
