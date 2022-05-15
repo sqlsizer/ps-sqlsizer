@@ -7,5 +7,16 @@ class ColorItem
 {
     [string]$SchemaName
     [string]$TableName
-    [Color]$ForcedColor
+    [ForcedColor]$ForcedColor
+    [Condition]$Condition
+}
+
+class ForcedColor
+{
+    [Color]$Color
+}
+
+class Condition
+{
+    [int]$Top
 }

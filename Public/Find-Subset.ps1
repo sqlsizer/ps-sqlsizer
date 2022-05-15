@@ -102,9 +102,9 @@
                if ($null -ne $ColorMap)
                {
                     $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
-                    if ($null -ne $item)
+                    if (($null -ne $item) -and ($null -ne $item.ForcedColor))
                     {
-                        $newColor = [int]$item.ForcedColor
+                        $newColor = [int]$item.ForcedColor.Color
                     }
                }
 
@@ -161,7 +161,6 @@
                {
                     $columns = $columns + "x.val" + $i + ","
                }
-
              
                $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
               
@@ -188,6 +187,17 @@
                 {
                     continue
                 }
+
+                $top = $null
+                if ($null -ne $ColorMap)
+                {
+                     $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
+                     if (($null -ne $item) -and ($null -ne $item.Condition))
+                     {
+                         $top = [int]$item.Condition.Top
+                     }
+                }
+
                 $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
                 $fkSignature = $structure.Tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
@@ -207,7 +217,6 @@
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
-                
 
                 # from
                 $join = " INNER JOIN $($slice) s ON "
@@ -234,8 +243,15 @@
                     $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
                     $i += 1
                 }
+
+                $topPhrase = " "
+
+                if ($null -ne $top)
+                {
+                    $topPhrase = " TOP $($top) "
+                }
                
-                $select = "SELECT DISTINCT " + $columns + " s.Depth as Depth "
+                $select = "SELECT DISTINCT " + $topPhrase + $columns + " s.Depth as Depth "
                 $sql = $select + $from + $where
                 
                 
