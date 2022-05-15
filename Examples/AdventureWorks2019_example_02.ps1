@@ -28,9 +28,25 @@ $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
+$ignored = New-Object -Type TableInfo2
+$ignored.SchemaName = "Sales"
+$ignored.TableName = "Store"
+
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find smallest subset that allows to remove start set from the database
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored)
 
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+$rows = Get-SubsetTableRows -Database $database -Connection $connection -DatabaseInfo $info -SchemaName "Sales" -TableName "Customer" -AllColumns $true -IgnoredTables  @($ignored)
+
+foreach ($row in $rows)
+{
+    $i = 0
+    foreach ($column in $row.ItemArray)
+    {
+        "Column $($row.Table.Columns[$i]) = '$($column)'"
+        $i += 1
+    }
+    "==========="
+}

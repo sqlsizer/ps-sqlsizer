@@ -16,6 +16,9 @@ function Get-SubsetTableRows
         [bool]$AllColumns = $false,
 
         [Parameter(Mandatory=$false)]
+        [TableInfo2[]]$IgnoredTables,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
         [Parameter(Mandatory=$true)]
@@ -54,7 +57,31 @@ function Get-SubsetTableRows
 
                 for ($i = 0; $i -lt $table.Columns.Count; $i++)
                 {
-                    $columns += "ISNULL(t.$($table.Columns[$i].Name), '')"
+                    $include = $true
+                    foreach ($fk in $table.ForeignKeys)
+                    {
+                        if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true)
+                        {
+                            foreach ($fkColumn in $fk.FkColumns)
+                            {
+                                if ($fkColumn.Name -eq $table.Columns[$i].Name)
+                                {
+                                    $include = $false
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                    if ($include)
+                    {
+                        $columns += "ISNULL(t.$($table.Columns[$i].Name), '') as $($table.Columns[$i].Name)"
+                    }
+                    else
+                    {
+                        $columns += "NULL as $($table.Columns[$i].Name)"
+                    }
+                    
                     if ($i -lt ($table.Columns.Count - 1))
                     {
                         $columns += ", "
@@ -70,7 +97,7 @@ function Get-SubsetTableRows
                         $cond += " and "
                     }
                 }
-                $sql = "SELECT '$($table.TableName)' as SchemaName, '$($table.SchemaName)' as TableName, $($columns)
+                $sql = "SELECT '$($table.SchemaName)' as SchemaName, '$($table.TableName)' as TableName, $($columns)
                         FROM $($processing) p 
                         INNER JOIN $($table.SchemaName).$($table.TableName) t ON $($cond)
                         WHERE p.[Schema] = '$($table.SchemaName)' AND p.TableName = '$($table.TableName)'"

@@ -34,5 +34,7 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 $xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
-
 $xml | Out-File -FilePath "subset.xml"
+
+$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $true -DatabaseInfo $info
+$xml | Out-File -FilePath "subset_full.xml"

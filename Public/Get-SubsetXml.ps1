@@ -12,6 +12,9 @@ function Get-SubsetXml
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
+        [Parameter(Mandatory=$false)]
+        [TableInfo2[]]$IgnoredTables,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
@@ -27,7 +30,7 @@ function Get-SubsetXml
     {
         Write-Progress -Activity "Exploring to XML" -PercentComplete (100 * ($index / $subsetTables.Count))
 
-        $subsetTableRows = Get-SubsetTableRows -AllColumns $AllColumns -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -Database $Database -ConnectionInfo $ConnectionInfo  -DatabaseInfo $info
+        $subsetTableRows = Get-SubsetTableRows -AllColumns $AllColumns -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -Database $Database -ConnectionInfo $ConnectionInfo  -DatabaseInfo $info -IgnoredTables $IgnoredTables
         $rows = @()
 
         foreach ($subsetTableRow in $subsetTableRows)
