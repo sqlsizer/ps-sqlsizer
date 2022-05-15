@@ -51,34 +51,49 @@
         $processing = $structure.GetProcessingName($signature)
 
         $keys = ""
+        $columns = ""
         $keysIndex = ""
         $i = 0
+        $len = $structure.Signatures[$signature].Count
+
         foreach ($column in $structure.Signatures[$signature])
         {
-            $keys += "Key$($i) "
-            $keysIndex += "Key$($i) ASC, "
+            $keys += " Key$($i) "
+            $columns += " Key$($i) "
+            $keysIndex += " Key$($i) ASC "
 
             if ($column.DataType -in @('varchar', 'nvarchar', 'char', 'nchar'))
             {
-                $keys += $column.DataType + "(" + $column.Length + ") NOT NULL, "
+                $columns += $column.DataType + "(" + $column.Length + ") NOT NULL "
             }
             else
             {
-                $keys += $column.DataType + " NOT NULL,"
+                $columns += $column.DataType + " NOT NULL "
             }
+
+            if ($i -lt ($len - 1))
+            {
+                $keysIndex += ", "
+                $keys += ", "
+                $columns += ", "
+            }
+
             $i += 1
         }
 
-        $sql = "CREATE TABLE $($slice) (Id int primary key identity(1,1), $($keys) Depth int NULL)"
-        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        if ($len -gt 0)
+        {
+            $sql = "CREATE TABLE $($slice) (Id int primary key identity(1,1), $($columns), Depth int NULL)"
+            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $sql = "CREATE UNIQUE INDEX [Index] ON $($slice) ($($keysIndex) [Depth] ASC)"
-        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($slice) ($($keysIndex), [Depth] ASC)"
+            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, TableName varchar(64) NOT NULL, $($keys) [type] INT NOT NULL, [status] INT NOT NULL, [depth] INT NOT NULL, [initial] bit NULL)"
-        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Type] INT NOT NULL, [Status] INT NOT NULL, [depth] INT NOT NULL, [initial] bit NULL)"
+            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $sql = "CREATE UNIQUE INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex) [Type] ASC, [Depth] ASC)"
-        Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Type] ASC, [Status] ASC, [Depth] ASC)"
+            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
     }
 }
