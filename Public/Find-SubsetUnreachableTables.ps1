@@ -121,7 +121,10 @@ function Find-SubsetUnreachableTables
                 $key = "$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)"
                 if ($reachableEdges.Contains($key) -eq $false)
                 {   
-                    $toReturn += $key
+                    if ($toReturn.Contains($key) -eq $false)
+                    {
+                        $toReturn += $key
+                    }
                 }
             }
         }
