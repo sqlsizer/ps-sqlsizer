@@ -10,7 +10,7 @@
         [string]$Database,
 
         [Parameter(Mandatory=$false)]
-        [string]$Silent = $true,
+        [string]$Silent = $false,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo

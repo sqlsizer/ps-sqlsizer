@@ -31,6 +31,14 @@
     $interval = 5
     $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
     $percent = 0
+    
+    $tablesIndex = New-Object System.Collections.Generic.Dictionary"[String, Object]"
+
+    foreach ($table in $info.Tables)
+    {
+        $tablesIndex["$($table.SchemaName).$($table.TableName)"] = $i
+        $i += 1
+    }
 
     while ($true)
     { 
@@ -64,7 +72,8 @@
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
-        
+        $index = $tablesIndex[$schema + "." + $tableName]
+
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -74,7 +83,7 @@
         $q = "TRUNCATE TABLE $($slice)"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
-        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " Depth FROM $($processing) WHERE Status = 0 AND Type = " + $color + " AND TableName = '" + $tableName + "' and [Schema] = '" + $schema + "'"
+        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source] FROM $($processing) WHERE [Status] = 0 AND [Type] = " + $color + " AND [TableName] = '" + $tableName + "' and [Schema] = '" + $schema + "'"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
         $cond = ""
@@ -128,7 +137,6 @@
                }
                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Type] = " + $newColor + " and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
 
-
                # from
                $join = " INNER JOIN $($slice) s ON "
                $i = 0             
@@ -149,11 +157,15 @@
                $i = 0
                foreach ($fkColumn in $fk.FkColumns)
                {
-                    $columns = $columns + (Get-ColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType) + " as val" + $i + ","
-                    $i += 1
+                   if ($columns -ne "")
+                   {
+                     $columns += ","
+                   }
+                   $columns = $columns + (Get-ColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType) + " as val" + $i 
+                   $i += 1
                }
 
-               $select = "SELECT DISTINCT " + $columns + " s.Depth as Depth "
+               $select = "SELECT DISTINCT " + $columns
                $sql = $select + $from + $where
 
                $columns = ""
@@ -162,7 +174,7 @@
                     $columns = $columns + "x.val" + $i + ","
                }
              
-               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
+               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", 0, $($index) FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -217,10 +229,7 @@
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
-                
-                # Fix for algorithm :)
-                $where += " AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Depth] < s.[Depth] AND p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "') ";
-                
+                $where += "  AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Source] = $($index) AND p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "')"
                 # from
                 $join = " INNER JOIN $($slice) s ON "
                 $i = 0    
@@ -243,7 +252,11 @@
                 $i = 0
                 foreach ($primaryKeyColumn in $primaryKey)
                 {
-                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
+                    if ($columns -ne "")
+                    {
+                        $columns += ", "
+                    }
+                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i 
                     $i += 1
                 }
 
@@ -254,9 +267,8 @@
                     $topPhrase = " TOP $($top) "
                 }
                
-                $select = "SELECT DISTINCT " + $topPhrase + $columns + " s.Depth as Depth "
+                $select = "SELECT DISTINCT " + $topPhrase + $columns 
                 $sql = $select + $from + $where
-                
                 
                 $columns = ""
                 for ($i = 0; $i -lt $primaryKey.Count; $i = $i + 1)
@@ -264,7 +276,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", 0, $($index) FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
@@ -288,8 +300,8 @@
             }
             
             # insert 
-            $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Depth] = s.[Depth] and p.[Type] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", 0, s.Depth, 0 FROM $($slice) s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Type] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", 0, s.Source FROM $($slice) s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update stats
@@ -297,8 +309,8 @@
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # insert 
-            $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Depth] = s.[Depth] and p.[Type] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", 0, s.Depth, 0 FROM $($slice) s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Type] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", 0, s.Source FROM $($slice) s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update stats
@@ -366,7 +378,7 @@
                     $i += 1
                 }
              
-                $select = "SELECT DISTINCT " + $columns + " s.Depth as Depth "
+                $select = "SELECT DISTINCT " + $columns
                 $sql = $select + $from + $where
                 
                 
@@ -376,7 +388,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Blue +  ", 0, x.Depth + 1, 0 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Blue +  ", 0,  $($index) FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -391,7 +403,7 @@
         }
         
         # Update status
-        $q = "UPDATE p SET Status = 1 FROM $($processing) p WHERE [Schema] = '" + $schema + "' and TableName = '" + $tableName + "' and [Type] = " + $color + " and Status = 0 and EXISTS(SELECT 1 FROM $($slice) s WHERE " + $cond + ") SELECT @@ROWCOUNT AS Count"
+        $q = "UPDATE p SET Status = 1 FROM $($processing) p INNER JOIN $($slice) s ON $($cond) and ((s.[Source] = p.[Source]) or (s.[Source] IS NULL and p.[Source] IS NULL)) WHERE [Schema] = '" + $schema + "' and TableName = '" + $tableName + "' and [Type] = " + $color + " and Status = 0 SELECT @@ROWCOUNT AS Count"
         $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo 
 
         # update stats

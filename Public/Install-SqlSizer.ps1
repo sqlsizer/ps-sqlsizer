@@ -83,16 +83,19 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($slice) (Id int primary key identity(1,1), $($columns), Depth int NULL)"
+            $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NULL)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($slice) ($($keysIndex), [Depth] ASC)"
+            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($slice) ($($keysIndex), [Source] ASC)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Type] INT NOT NULL, [Status] INT NOT NULL, [depth] INT NOT NULL, [initial] bit NULL)"
+            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Type] tinyint NOT NULL, [Status] BIT NOT NULL, [Source] smallint NULL)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Type] ASC, [Status] ASC, [Depth] ASC)"
+            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Type] ASC, [Status] ASC)"
+            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, TableName ASC, [Type] ASC) INCLUDE ($($keys))"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }

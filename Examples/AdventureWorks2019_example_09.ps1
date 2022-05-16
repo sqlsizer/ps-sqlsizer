@@ -43,16 +43,9 @@ foreach ($table in $info.Tables)
     $colorMapItem.ForcedColor.Color = [Color]::Yellow
     
     $colorMapItem.Condition = New-Object -Type Condition
-    $colorMapItem.Condition.Top = 10 # limit all dependend data for each fk by 10 rows (it doesn't mean that there will be no more rows!)
+    $colorMapItem.Condition.Top = 100 # limit all dependend data for each fk by 100 rows (it doesn't mean that there will be no more rows!)
     $colorMap.Items += $colorMapItem
 }
-
-
-# Define ignored tables
-
-$ignored = New-Object -Type TableInfo2
-$ignored.SchemaName = "Sales"
-$ignored.TableName = "Store"
 
 
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -61,7 +54,6 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 
 # Find subset
 Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
-
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
