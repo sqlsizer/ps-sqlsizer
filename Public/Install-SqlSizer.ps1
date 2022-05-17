@@ -45,6 +45,9 @@
     $tmp = "CREATE TABLE SqlSizer.ProcessingStats (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), ToProcess int, Processed int, [Type] int)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     
+    $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.ProcessingStats ([Schema] ASC, [TableName] ASC, [Type] ASC)"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
     foreach ($signature in $structure.Signatures.Keys)
     {
         $slice = $structure.GetSliceName($signature)
@@ -95,7 +98,7 @@
             $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Type] ASC, [Status] ASC)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, TableName ASC, [Type] ASC) INCLUDE ($($keys))"
+            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, TableName ASC, [Type] ASC, [Source] ASC) INCLUDE ($($keys))"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }

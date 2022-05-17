@@ -17,7 +17,7 @@ function Find-SubsetReachableTables
     )
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $unreachable = Find-SubsetUnreachableTables -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $unreachable = Find-SubsetUnreachableTables -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo -Queries $Queries
 
     $toReturn = @()
     foreach ($table in $info.Tables)
@@ -25,7 +25,7 @@ function Find-SubsetReachableTables
         $unreachableTable = $unreachable | Where-Object {($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName)}
         $isUnreachable = $null -ne $unreachableTable
         
-        if ($isUnreachable)
+        if ($isUnreachable -eq $false)
         {   
             $item = New-Object TableInfo2
             

@@ -34,6 +34,7 @@
     
     $tablesIndex = New-Object System.Collections.Generic.Dictionary"[String, Object]"
 
+    $i = 0
     foreach ($table in $info.Tables)
     {
         $tablesIndex["$($table.SchemaName).$($table.TableName)"] = $i
@@ -74,6 +75,7 @@
         $processing = $structure.GetProcessingName($signature)
         $index = $tablesIndex[$schema + "." + $tableName]
 
+       
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
