@@ -4,4 +4,5 @@ enum Color
    Green = 2 
    Yellow = 3
    Blue = 4
+   Purple = 5
 }

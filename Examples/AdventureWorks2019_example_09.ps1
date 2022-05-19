@@ -39,10 +39,10 @@ foreach ($table in $info.Tables)
     $colorMapItem.TableName = $table.TableName
 
     $colorMapItem.ForcedColor = New-Object -Type ForcedColor
-    $colorMapItem.ForcedColor.Color = [Color]::Yellow
+    $colorMapItem.ForcedColor.Color = [Color]::Purple
     
-    $colorMapItem.Condition = New-Object -Type Condition
-    $colorMapItem.Condition.Top = 100 # limit all dependend data for each fk by 100 rows (it doesn't mean that there will be no more rows!)
+    #$colorMapItem.Condition = New-Object -Type Condition
+    #$colorMapItem.Condition.Top = 100 # limit all dependend data for each fk by 100 rows (it doesn't mean that there will be no more rows!)
     $colorMap.Items += $colorMapItem
 }
 
@@ -56,6 +56,8 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 Measure-Command {
     Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 }
+
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 # Create a new db with found subset of data
 

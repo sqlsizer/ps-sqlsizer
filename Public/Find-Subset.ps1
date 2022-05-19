@@ -113,8 +113,8 @@
             $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
         }
             
-        # Red color
-        if ($color -eq [int][Color]::Red) 
+        # Red and Purple color
+        if (($color -eq [int][Color]::Red) -or ($color -eq [int][Color]::Purple))
         {
            foreach ($fk in $table.ForeignKeys)
            {
@@ -123,7 +123,8 @@
                     continue
                }
 
-               $newColor = $color
+               $newColor = [int][Color]::Red
+
                if ($null -ne $ColorMap)
                {
                     $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
@@ -203,8 +204,8 @@
             }
         }
 
-        # Green Color
-        if ($color -eq [int][Color]::Green) 
+        # Green/Purple/Blue Color
+        if (($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue))
         {
            foreach ($referencedByTable in $table.IsReferencedBy)
            {
@@ -217,12 +218,36 @@
                 }
 
                 $top = $null
+                $newColor = $null
+
+                # default new color
+                if ($color -eq [int][Color]::Green)
+                {
+                    $newColor = [int][Color]::Yellow
+                }
+
+                if ($color -eq [int][Color]::Purple)
+                {
+                    $newColor = [int][Color]::Red
+                }
+
+                if ($color -eq [int][Color]::Blue)
+                {
+                    $newColor = [int][Color]::Blue
+                }
+
+                # forced color from color map
                 if ($null -ne $ColorMap)
                 {
                      $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
                      if (($null -ne $item) -and ($null -ne $item.Condition))
                      {
                          $top = [int]$item.Condition.Top
+                     }
+
+                     if (($null -ne $item) -and ($null -ne $item.ForcedColor))
+                     {
+                         $newColor = [int]$item.ForcedColor.Color
                      }
                 }
 
@@ -244,8 +269,7 @@
                      $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
-                #$where += "  AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Source] = $($index) AND p.[Type] = " + [int][Color]::Yellow +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "')"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
                 # from
                 $join = " INNER JOIN $($slice) s ON "
                 $i = 0    
@@ -292,14 +316,14 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Yellow +  ", $($index), x.Depth + 1 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + $newColor +  ", $($index), x.Depth + 1 FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
                 if ($results.Count -gt 0)
                 {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $([int][Color]::Yellow), $($results.Count), 0, $($i), $($depth + 1))"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($i), $($depth + 1))"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
                 }
              }
@@ -334,89 +358,6 @@
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
         }
 
-        # Blue Color
-        if ($color -eq [int][Color]::Blue) 
-        {
-           foreach ($referencedByTable in $table.IsReferencedBy)
-           {
-             $fks = $referencedByTable.ForeignKeys | Where-Object {($_.Schema -eq $schema) -and ($_.Table -eq $tableName)}
-             foreach ($fk in $fks)
-             {
-                if ([TableInfo2]::IsIgnored($fk.FkSchema, $fk.FkTable, $ignoredTables) -eq $true)
-                {
-                    continue
-                }
-
-                $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
-                $fkSignature = $structure.Tables[$fkTable]
-                $fkProcessing = $structure.GetProcessingName($fkSignature)
- 
-                $primaryKey = $referencedByTable.PrimaryKey
-
-                #where
-                $columns = ""
-                $i = 0
-                foreach ($pk in $primaryKey)
-                { 
-                     if ($i -gt 0)
-                     {
-                         $columns += " and "
-                     }
-                     $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
-                     $i += 1
-                }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + [int][Color]::Blue +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
-                
-                
-                # from
-                $join = " INNER JOIN $($slice) s ON "
-                $i = 0    
-
-                foreach ($fkColumn in $fk.FkColumns)
-                {
-                    if ($i -gt 0)
-                    {
-                         $join += " and "
-                    }
-                
-                    $join += " s.Key" + $i + " = f." + $fkColumn.Name
-                    $i += 1
-                }
-         
-                $from = " FROM " + $fk.FkSchema + "." + $fk.FkTable   + " f " + $join
-                
-                # select
-                $columns = ""
-                $i = 0
-                foreach ($primaryKeyColumn in $primaryKey)
-                {
-                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i + ","
-                    $i += 1
-                }
-             
-                $select = "SELECT DISTINCT " + $columns + " s.Depth"
-                $sql = $select + $from + $where
-                
-                $columns = ""
-                for ($i = 0; $i -lt $primaryKey.Count; $i = $i + 1)
-                {
-                     $columns = $columns + "x.val" + $i + ","
-                }
-                
-                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + [int][Color]::Blue +  ", $($index), x.Depth + 1 FROM (" + $sql + ") x"
-                
-                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
-                
-                if ($results.Count -gt 0)
-                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $([int][Color]::Blue), $($results.Count), 0, $($i), $($depth + 1))"
-                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
-                }
-             }
-           }
-        }
-        
         # update operations
         $q = "UPDATE SqlSizer.Operations SET Processed = 1 WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "' and [Color] = $($color) and [Depth] = $($depth)"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
