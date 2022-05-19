@@ -89,13 +89,13 @@
             $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($slice) ($($keysIndex), [Source] ASC)"
-            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
             $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Color] ASC)"
+            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, [TableName] ASC, [Color] ASC) INCLUDE ([Depth], [Source], $($keys))"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
