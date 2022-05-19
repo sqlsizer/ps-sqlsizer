@@ -36,7 +36,7 @@ Colors have following meaning:
 - Blue: find all rows that are required to remove that row (recursively)
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
-![image](https://user-images.githubusercontent.com/115426/168351591-df226e88-8098-46fa-bb4a-bfc735915d1e.png)
+![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
 
 
 # Prerequisites
