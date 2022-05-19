@@ -11,7 +11,7 @@ Additionally the scripts are able to:
 
 - Step 1: Provide configuration
     - Queries that define initial data (the table rows with colors)
-    - (Optional) Color map that allow to configure forced colors for the tables
+    - (Optional) Color map that allow to configure forced colors for the tables and limits
 
 - Step 2: Execute `Find-Subset` function to find the subset you want
 - Step 3: Copy data to new db or just do your own processing of the subset
@@ -30,10 +30,11 @@ This process continues until there are no unprocessed rows of any color.
 
 Colors have following meaning:
 
-- Red: find all rows that are referenced by the row (recursively)
-- Green: find all dependent rows on the row
-- Yellow: find all referenced and dependent data on the row
-- Blue: find all rows that are required to remove that row (recursively)
+- Red: find rows that are referenced by the row (recursively)
+- Green: find minimum number of dependent rows on the row
+- Yellow: split into Red and Green
+- Blue: find rows that are required to remove that row (recursively)
+- Purple: find referenced (recursively) and dependent data on the row (no-recursively)
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
