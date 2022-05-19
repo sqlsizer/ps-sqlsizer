@@ -17,7 +17,7 @@
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     
     $structure = [Structure]::new($info)
-    $sql = "DELETE FROM SqlSizer.ProcessingStats"
+    $sql = "DELETE FROM SqlSizer.Operations"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     foreach ($table in $info.Tables)
@@ -30,20 +30,11 @@
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature)
 
-        $sql = "INSERT INTO SqlSizer.ProcessingStats([Schema], [TableName], [ToProcess], [Processed], [Type])
-        SELECT p.[Schema], p.TableName, COUNT(*), 0, p.[Type]
+        $sql = "INSERT INTO SqlSizer.Operations([Schema], [TableName], [ToProcess], [Processed], [Color], [Depth])
+        SELECT p.[Schema], p.TableName, COUNT(*), 0, p.[Color], 0
         FROM $($processing) p
         WHERE p.[Schema] = '$($table.SchemaName)' AND p.[TableName] = '$($table.TableName)'
-        GROUP BY [Schema], TableName, [Type]"
+        GROUP BY [Schema], [TableName], [Color]"
         $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        
-        if ($table.SchemaName -ne "SqlSizer")
-        {
-            for ($i = 1; $i -lt 5; $i++)
-            {
-                $sql = "IF NOT EXISTS(SELECT * FROM SqlSizer.ProcessingStats WHERE [Schema] = '" + $table.SchemaName + "' and TableName = '" + $table.TableName + "' and [Type] = $($i)) INSERT INTO SqlSizer.ProcessingStats VALUES('" +  $table.SchemaName + "', '" + $table.TableName + "', 0, 0, $($i))"
-                $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-        }
     }
 }

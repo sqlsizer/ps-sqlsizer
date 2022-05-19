@@ -15,8 +15,8 @@
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
-    $tmp = "IF OBJECT_ID('SqlSizer.ProcessingStats') IS NOT NULL  
-        Drop Table SqlSizer.ProcessingStats"
+    $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL  
+        Drop Table SqlSizer.Operations"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $structure = [Structure]::new($info)
@@ -42,10 +42,10 @@
     $tmp = "CREATE SCHEMA SqlSizer"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $tmp = "CREATE TABLE SqlSizer.ProcessingStats (Id int primary key identity(1,1), [Schema] varchar(64), TableName varchar(64), ToProcess int, Processed int, [Type] int)"
+    $tmp = "CREATE TABLE SqlSizer.Operations(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64), [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     
-    $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.ProcessingStats ([Schema] ASC, [TableName] ASC, [Type] ASC)"
+    $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Schema] ASC, [TableName] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     foreach ($signature in $structure.Signatures.Keys)
@@ -86,19 +86,16 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NULL)"
+            $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($slice) ($($keysIndex), [Source] ASC)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Type] tinyint NOT NULL, [Status] BIT NOT NULL, [Source] smallint NULL)"
+            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE UNIQUE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Type] ASC, [Status] ASC)"
-            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
-            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, TableName ASC, [Type] ASC, [Source] ASC) INCLUDE ($($keys))"
+            $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Color] ASC)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }

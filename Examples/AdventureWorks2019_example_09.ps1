@@ -32,7 +32,6 @@ $query.OrderBy = "[`$table].LastName ASC"
 
 # Define color map
 $colorMap = New-Object -Type ColorMap
-
 foreach ($table in $info.Tables)
 {
     $colorMapItem = New-Object -Type ColorItem
@@ -48,19 +47,19 @@ foreach ($table in $info.Tables)
 }
 
 
+
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
-
-# Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Measure-Command {
+    Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
+}
 
 # Create a new db with found subset of data
 
-$newDatabase = "AdventureWorks2019_subset_01"
+$newDatabase = "AdventureWorks2019_subset_02"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
