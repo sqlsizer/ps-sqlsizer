@@ -30,11 +30,11 @@ This process continues until there are no unprocessed rows of any color.
 
 Colors have following meaning:
 
-- Red: find all rows that are referenced by the row (recursively)
-- Green: find all dependent rows on the row
-- Yellow: find all referenced (recursively) and dependent data on the row (recursively)
-- Blue: find all rows that are required to remove that row (recursively)
-- Purple: find all referenced and dependent data on the row
+- Red: find rows that are referenced by the row (recursively)
+- Green: find minimum number of dependent rows on the row
+- Yellow: split into Red and Green
+- Blue: find rows that are required to remove that row (recursively)
+- Purple: find referenced (recursively) and dependent data on the row (no-recursively)
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
