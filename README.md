@@ -24,7 +24,7 @@ All processing is done on SQL Server side. No heavy operations are done in Power
 The initial set of table rows needs to be defined before the start of the scripts and added to processing tables 
 which consists of multiple tables with all possible primary key definitions from the database.
 
-At every iteration the algorithm finds the best set of data with a single color to process based on the number of unprocessed records. 
+At every iteration the algorithm finds the best set of data with a single color to process based on the number of unprocessed records and depth.
 Then data rows are fetched into the slices tables. Later based on the color of the slice the appropriate rows are added to processing tables.
 This process continues until there are no unprocessed rows of any color.
 
@@ -36,7 +36,7 @@ Colors have following meaning:
 - Blue: find all rows that are required to remove that row (recursively)
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
-![image](https://user-images.githubusercontent.com/115426/168351591-df226e88-8098-46fa-bb4a-bfc735915d1e.png)
+![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
 
 
 # Prerequisites
