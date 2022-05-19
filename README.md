@@ -32,8 +32,9 @@ Colors have following meaning:
 
 - Red: find all rows that are referenced by the row (recursively)
 - Green: find all dependent rows on the row
-- Yellow: find all referenced and dependent data on the row
+- Yellow: find all referenced (recursively) and dependent data on the row (recursively)
 - Blue: find all rows that are required to remove that row (recursively)
+- Purple: find all referenced and dependent data on the row
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
