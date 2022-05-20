@@ -198,7 +198,7 @@
 
                if ($results.Count -gt 0)
                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.Schema + "', '" + $fk.Table + "', $($newColor), $($results.Count),  0, $($i), $($depth + 1))"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.Schema + "', '" + $fk.Table + "', $($newColor), $($results.Count),  0, $($index), $($depth + 1))"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
                }
             }
@@ -323,7 +323,7 @@
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
                 if ($results.Count -gt 0)
                 {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($i), $($depth + 1))"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($index), $($depth + 1))"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
                 }
              }
