@@ -127,7 +127,8 @@
 
                if ($null -ne $ColorMap)
                {
-                    $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) -and (($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))))}
+                    $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+                    $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName)))}
                     if (($null -ne $items) -and ($null -ne $items.ForcedColor))
                     {
                         $newColor = [int]$items.ForcedColor.Color
@@ -239,7 +240,9 @@
                 # forced color from color map
                 if ($null -ne $ColorMap)
                 {
-                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) -and (($null -eq $_.Condition) -or (($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
+                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
+                     $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
+                     
                      if (($null -ne $items) -and ($null -ne $items.Condition))
                      {
                          $top = [int]$items.Condition.Top
