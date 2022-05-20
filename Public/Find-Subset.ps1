@@ -127,10 +127,10 @@
 
                if ($null -ne $ColorMap)
                {
-                    $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
-                    if (($null -ne $item) -and ($null -ne $item.ForcedColor))
+                    $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) -and (($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))))}
+                    if (($null -ne $items) -and ($null -ne $items.ForcedColor))
                     {
-                        $newColor = [int]$item.ForcedColor.Color
+                        $newColor = [int]$items.ForcedColor.Color
                     }
                }
 
@@ -239,15 +239,15 @@
                 # forced color from color map
                 if ($null -ne $ColorMap)
                 {
-                     $item = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
-                     if (($null -ne $item) -and ($null -ne $item.Condition))
+                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) -and (($null -eq $_.Condition) -or (($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
+                     if (($null -ne $items) -and ($null -ne $items.Condition))
                      {
-                         $top = [int]$item.Condition.Top
+                         $top = [int]$items.Condition.Top
                      }
 
-                     if (($null -ne $item) -and ($null -ne $item.ForcedColor))
+                     if (($null -ne $items) -and ($null -ne $items.ForcedColor))
                      {
-                         $newColor = [int]$item.ForcedColor.Color
+                         $newColor = [int]$items.ForcedColor.Color
                      }
                 }
 
@@ -302,7 +302,7 @@
 
                 $topPhrase = " "
 
-                if ($null -ne $top)
+                if (($null -ne $top) -and ($top -ne -1))
                 {
                     $topPhrase = " TOP $($top) "
                 }

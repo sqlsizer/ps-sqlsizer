@@ -18,5 +18,7 @@ class ForcedColor
 
 class Condition
 {
-    [int]$Top
+    [int]$Top = -1
+    [string]$SourceSchemaName = ""
+    [string]$SourceTableName = ""
 }

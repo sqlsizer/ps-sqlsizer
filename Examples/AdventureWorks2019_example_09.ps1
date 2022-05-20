@@ -34,19 +34,21 @@ $query.OrderBy = "[`$table].LastName ASC"
 $colorMap = New-Object -Type ColorMap
 foreach ($table in $info.Tables)
 {
-    $colorMapItem = New-Object -Type ColorItem
-    $colorMapItem.SchemaName = $table.SchemaName
-    $colorMapItem.TableName = $table.TableName
+    if ($table.TableName -eq "Password")
+    { 
+        $colorMapItem = New-Object -Type ColorItem
+        $colorMapItem.SchemaName = $table.SchemaName
+        $colorMapItem.TableName = $table.TableName
+        $colorMapItem.ForcedColor = New-Object -Type ForcedColor
+        $colorMapItem.ForcedColor.Color = [Color]::Purple
 
-    $colorMapItem.ForcedColor = New-Object -Type ForcedColor
-    $colorMapItem.ForcedColor.Color = [Color]::Purple
-    
-    #$colorMapItem.Condition = New-Object -Type Condition
-    #$colorMapItem.Condition.Top = 100 # limit all dependend data for each fk by 100 rows (it doesn't mean that there will be no more rows!)
-    $colorMap.Items += $colorMapItem
+        $colorMapItem.Condition = New-Object -Type Condition
+        $colorMapItem.Condition.SourceTableName = "Person"
+        $colorMapItem.Condition.SourceSchemaName = "Person"
+        $colorMap.Items += $colorMapItem
+
+    }
 }
-
-
 
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
@@ -56,32 +58,3 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 Measure-Command {
     Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 }
-
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
-
-# Create a new db with found subset of data
-
-$newDatabase = "AdventureWorks2019_subset_02"
-
-Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
-Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored)
-Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection
-Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Compress-Database -Database $newDatabase -ConnectionInfo $connection
-
-Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-
-$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
-
-Write-Host "Subset size: $($infoNew.DatabaseSize)"
-$sum = 0
-foreach ($table in $infoNew.Tables)
-{
-    $sum += $table.Statistics.Rows
-}
-
-Write-Host "Total rows: $($sum)"
-# end of script
