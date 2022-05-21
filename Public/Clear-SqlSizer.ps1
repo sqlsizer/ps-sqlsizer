@@ -15,8 +15,8 @@ function Clear-SqlSizer
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
-    $tmp = "IF OBJECT_ID('SqlSizer.ProcessingStats') IS NOT NULL  
-        TRUNCATE TABLE SqlSizer.ProcessingStats"
+    $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL  
+        TRUNCATE TABLE SqlSizer.Operations"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $structure = [Structure]::new($info)
