@@ -17,7 +17,7 @@ Additionally the scripts are able to:
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
-The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
+The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search algorithm applied to a relational database.
 
 All processing is done on SQL Server side. No heavy operations are done in Powershell.
 
@@ -31,7 +31,7 @@ This process continues until there are no unprocessed rows of any color.
 Colors have following meaning:
 
 - Red: find rows that are referenced by the row (recursively)
-- Green: find minimum number of dependent rows on the row
+- Green: find dependent rows on the row
 - Yellow: split into Red and Green
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
