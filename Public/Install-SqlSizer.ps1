@@ -95,7 +95,7 @@
             $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Color] ASC)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, [TableName] ASC, [Color] ASC) INCLUDE ([Depth], [Source], $($keys))"
+            $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Schema] ASC, [TableName] ASC, [Color] ASC) INCLUDE ($($keys))"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
