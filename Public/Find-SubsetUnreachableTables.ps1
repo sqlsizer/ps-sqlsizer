@@ -13,6 +13,9 @@ function Find-SubsetUnreachableTables
         [bool]$EdgeMode = $false,
 
         [Parameter(Mandatory=$false)]
+        [ColorMap]$ColorMap = $null,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
         [Parameter(Mandatory=$true)]
@@ -69,20 +72,33 @@ function Find-SubsetUnreachableTables
             $null = $processingQueue.Enqueue($newItem)
         }
 
-        if ($item.Color -eq [Color]::Red)
+        if (($item.Color -eq [Color]::Red) -or ($item.Color -eq [Color]::Purple))
         {
             foreach ($fk in $table.ForeignKeys)
             {
                 $newItem = New-Object TableInfo2WithColor
                 $newItem.SchemaName = $fk.Schema
                 $newItem.TableName = $fk.Table
-                $newItem.Color = [Color]::Red
+
+                $newColor = [Color]::Red
+                if ($null -ne $ColorMap)
+                {
+                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+                     $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName)))}
+                     if (($null -ne $items) -and ($null -ne $items.ForcedColor))
+                     {
+                         $newColor = [int]$items.ForcedColor.Color
+                     }
+                }
+
+                $newItem.Color = $newColor
+                
                 $null = $processingQueue.Enqueue($newItem)
                 $null = $reachableEdges.Add("$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)")
             }
         }
 
-        if (($item.Color -eq [Color]::Green) -or ($item.Color -eq [Color]::Blue))
+        if (($item.Color -eq [Color]::Green) -or ($item.Color -eq [Color]::Blue) -or ($item.Color -eq [Color]::Purple))
         {
             foreach ($referencedByTable in $table.IsReferencedBy)
             {
@@ -92,6 +108,7 @@ function Find-SubsetUnreachableTables
                     $newItem = New-Object TableInfo2WithColor
                     $newItem.SchemaName = $fk.FkSchema
                     $newItem.TableName = $fk.FkTable
+
                     if ($item.Color -eq [Color]::Green)
                     {
                         $newItem.Color = [Color]::Yellow
@@ -100,6 +117,24 @@ function Find-SubsetUnreachableTables
                     {
                         $newItem.Color = [Color]::Blue
                     }
+
+                    if ($item.Color -eq [int][Color]::Purple)
+                    {
+                        $newItem.Color = [int][Color]::Red
+                    }
+    
+                    # forced color from color map
+                    if ($null -ne $ColorMap)
+                    {
+                         $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
+                         $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
+                         
+                         if (($null -ne $items) -and ($null -ne $items.ForcedColor))
+                         {
+                             $newItem.Color = [int]$items.ForcedColor.Color
+                         }
+                    }
+
                     $null = $processingQueue.Enqueue($newItem)
                     $null = $reachableEdges.Add("$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)")
                 }
@@ -111,21 +146,27 @@ function Find-SubsetUnreachableTables
     }
 
     $toReturn = @()
-
     if ($EdgeMode)
     {
         foreach ($table in $info.Tables)
         {
+            $tableKey = $table.SchemaName + "." + $table.TableName
+            $item = New-Object TableInfo2WithFks
+            $item.SchemaName = $table.SchemaName
+            $item.TableName = $table.TableName
+            $item.FkKeys = @()
             foreach ($fk in $table.ForeignKeys)
             {
                 $key = "$($fk.FkSchema).$($fk.FkTable) -> $($fk.Schema).$($fk.Table)"
                 if ($reachableEdges.Contains($key) -eq $false)
-                {   
-                    if ($toReturn.Contains($key) -eq $false)
-                    {
-                        $toReturn += $key
-                    }
+                {  
+                    $item.FkKeys += $key 
                 }
+            }
+            if (($item.FkKeys.Length -gt 0) -or ($reachableTables.Contains($tableKey) -eq $false))
+            {
+                $item.Totally = $reachableTables.Contains($tableKey) -eq $false
+                $toReturn += $item
             }
         }
     }
@@ -145,7 +186,6 @@ function Find-SubsetUnreachableTables
                 $toReturn += $item
             }
         }
-
     }
     return $toReturn
 }

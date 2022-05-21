@@ -13,13 +13,16 @@ function Test-Queries
         [bool]$EdgeMode = $false,
 
         [Parameter(Mandatory=$false)]
+        [ColorMap]$ColorMap = $null,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $unreachable = Find-SubsetUnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -EdgeMode $EdgeMode
+    $unreachable = Find-SubsetUnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -EdgeMode $EdgeMode -ColorMap $ColorMap
 
     if ($unreachable.Count -gt 0)
     {

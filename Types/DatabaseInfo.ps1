@@ -45,6 +45,32 @@ class TableInfo2WithRows
     [TableInfo2Row[]]$Rows
 }
 
+class TableInfo2WithFks
+{
+    [string]$SchemaName
+    [string]$TableName
+    [string[]]$FkKeys
+    [bool]$Totally
+
+    [string] ToString() {
+        if ($this.Totally -eq $false)
+        {
+            $fks = ""
+            foreach ($fk in $this.FkKeys)
+            {
+                if ($fks -ne "")
+                {
+                    $fks += ", "
+                }
+                $fks += $fk
+            }
+
+            return "[$($this.SchemaName).$($this.TableName)] => $($this.FkKeys.Length) fks are not reachable: " + $fks
+        }
+        return "[$($this.SchemaName).$($this.TableName)] => totally not reachable"
+     }
+}
+
 class TableInfo2Row
 {
     [TableInfo2Column[]]$Columns

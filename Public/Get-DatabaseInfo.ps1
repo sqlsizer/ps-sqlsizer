@@ -131,20 +131,23 @@
             $table.ForeignKeys += $fk
         }
 
-        $indexesForTable = $indexesRowsGrouped[$key]
-        $indexesForTableGrouped = $indexesForTable | Group-Object -Property index
-
-        foreach ($item in $indexesForTableGrouped)
+        if ($null -ne $indexesRowsGrouped)
         {
-            $index = New-Object -TypeName Index
-            $index.Name = $item.Name
-            
-            foreach ($column in $item.Group)
-            {
-                $index.Columns += $column["column"]
-            }
+            $indexesForTable = $indexesRowsGrouped[$key]
+            $indexesForTableGrouped = $indexesForTable | Group-Object -Property index
 
-            $table.Indexes += $index
+            foreach ($item in $indexesForTableGrouped)
+            {
+                $index = New-Object -TypeName Index
+                $index.Name = $item.Name
+            
+                foreach ($column in $item.Group)
+                {   
+                    $index.Columns += $column["column"]
+                }
+
+                $table.Indexes += $index
+            }
         }
 
         $result.Tables += $table
