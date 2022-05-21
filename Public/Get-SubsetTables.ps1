@@ -9,9 +9,21 @@ function Get-SubsetTables
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
+        [Parameter(Mandatory=$false)]
+        [boolean]$Negation = $false,
+
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    Get-SubsetTableStatistics -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo | Where-Object {$_.RowCount -gt 0}
+    $tables = Get-SubsetTableStatistics -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+
+    if ($Negation -eq $false)
+    {
+        return $tables | Where-Object {$_.RowCount -gt 0}
+    }
+    else
+    {
+        return $tables | Where-Object {$_.RowCount -eq 0}
+    }
 }
