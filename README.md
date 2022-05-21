@@ -17,7 +17,7 @@ Additionally the scripts are able to:
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
-The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search search algorithm applied to a relational database.
+The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search algorithm applied to a relational database.
 
 All processing is done on SQL Server side. No heavy operations are done in Powershell.
 
