@@ -63,7 +63,7 @@ function Get-SubsetXml
 
     $tableXml = ConvertTo-Xml -InputObject $result -Depth 32
     
-    Write-Progress -Activity "Exploring to XML" -PercentComplete 100
+    Write-Progress -Activity "Exploring to XML" -Completed
 
     return $tableXml.OuterXml
 }
