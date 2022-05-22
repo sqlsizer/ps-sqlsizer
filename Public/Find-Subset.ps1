@@ -32,15 +32,6 @@
     $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
     $percent = 0
     
-    $tablesIndex = New-Object System.Collections.Generic.Dictionary"[String, Object]"
-
-    $i = 1
-    foreach ($table in $info.Tables)
-    {
-        $tablesIndex["$($table.SchemaName).$($table.TableName)"] = $i
-        $i += 1
-    }
-
     while ($true)
     { 
         # Progress handling
@@ -87,8 +78,8 @@
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
-        $index = $tablesIndex[$schema + "." + $tableName]
-
+        
+        $index = $table.Id
        
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
@@ -273,6 +264,10 @@
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
+                
+                # prevent go-back
+                $where += " AND s.Source <> $($fkTable.Id)"
+                
                 # from
                 $join = " INNER JOIN $($slice) s ON "
                 $i = 0    
@@ -348,7 +343,7 @@
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Red), $($results.Count), 0, $($i), $($depth))"
+            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth))"
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
             
             # insert 
@@ -357,7 +352,7 @@
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Green), $($results.Count), 0, $($i), $($depth))"
+            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Green), $($results.Count), 0, $($table.Id), $($depth))"
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
         }
 

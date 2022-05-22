@@ -110,6 +110,7 @@ class TableStatistics
 
 class TableInfo
 {
+    [int]$Id
     [string]$SchemaName
     [string]$TableName
     
@@ -153,6 +154,7 @@ class ColumnInfo
 
 class TableFk
 {
+    [int]$Id
     [string]$Name
     [string]$FkSchema
     [string]$FkTable

@@ -19,6 +19,14 @@
         Drop Table SqlSizer.Operations"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
+    $tmp = "IF OBJECT_ID('SqlSizer.Tables') IS NOT NULL  
+        Drop Table SqlSizer.Tables"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    
+    $tmp = "IF OBJECT_ID('SqlSizer.ForeignKeys') IS NOT NULL  
+        Drop Table SqlSizer.ForeignKeys"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
     $structure = [Structure]::new($info)
     foreach ($signature in $structure.Signatures.Keys)
     {
@@ -41,6 +49,37 @@
     
     $tmp = "CREATE SCHEMA SqlSizer"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "CREATE TABLE SqlSizer.Tables(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64))"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "CREATE TABLE SqlSizer.ForeignKeys(Id int primary key identity(1,1), [FkTableId] int, [TableId] int, [Name] varchar(256))"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    foreach ($table in $info.Tables)
+    {
+        $tmp = "INSERT INTO SqlSizer.Tables VALUES('$($table.SchemaName)', '$($table.TableName)')"
+        $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo     
+    }
+
+    foreach ($table in $info.Tables)
+    {
+        foreach ($fk in $table.ForeignKeys)
+        {
+            $tmp = "SELECT [Id] FROM SqlSizer.Tables WHERE [Schema] = '$($fk.FkSchema)' AND TableName = '$($fk.FkTable)'"
+            $result = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+            $table.Id = $result.Id
+
+            $tmp = "SELECT [Id] FROM SqlSizer.Tables WHERE [Schema] = '$($fk.Schema)' AND TableName = '$($fk.Table)'"
+            $result2 = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $tmp = "INSERT INTO SqlSizer.ForeignKeys VALUES($($result.Id), $($result2.Id), '$($fk.Name)') SELECT SCOPE_IDENTITY()"
+            $result3 = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $fk.Id = $result3.Id
+        }
+    }
+
 
     $tmp = "CREATE TABLE SqlSizer.Operations(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64), [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo

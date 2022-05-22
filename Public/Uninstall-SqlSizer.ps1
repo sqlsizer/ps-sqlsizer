@@ -19,6 +19,14 @@
         Drop Table SqlSizer.Operations"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
+    $tmp = "IF OBJECT_ID('SqlSizer.Tables') IS NOT NULL  
+        Drop Table SqlSizer.Tables"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "IF OBJECT_ID('SqlSizer.ForeignKeys') IS NOT NULL  
+        Drop Table SqlSizer.ForeignKeys"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
     $structure = [Structure]::new($info)
 
     foreach ($signature in $structure.Signatures.Keys)
