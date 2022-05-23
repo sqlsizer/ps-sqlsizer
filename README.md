@@ -2,6 +2,7 @@
 # mssql-sqlsizer
 
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
+
 The subsets are highly configurable based on the color map and the colors of initial data.
 
 Additionally the scripts are able to:
