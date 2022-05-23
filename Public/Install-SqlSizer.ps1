@@ -73,7 +73,7 @@
             $tmp = "SELECT [Id] FROM SqlSizer.Tables WHERE [Schema] = '$($fk.Schema)' AND TableName = '$($fk.Table)'"
             $result2 = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $tmp = "INSERT INTO SqlSizer.ForeignKeys VALUES($($result.Id), $($result2.Id), '$($fk.Name)') SELECT SCOPE_IDENTITY()"
+            $tmp = "INSERT INTO SqlSizer.ForeignKeys VALUES($($result.Id), $($result2.Id), '$($fk.Name)') SELECT SCOPE_IDENTITY() as Id"
             $result3 = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
             $fk.Id = $result3.Id
@@ -125,10 +125,10 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL)"
+            $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL)"
+            $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Schema] varchar(64) NOT NULL, [TableName] varchar(64) NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
             Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Schema] ASC, TableName ASC, $($keysIndex), [Color] ASC)"

@@ -13,6 +13,12 @@ class Structure
         $this.Tables = New-Object System.Collections.Generic.Dictionary"[TableInfo, String]"
 
         foreach ($table in $this.DatabaseInfo.Tables) {
+
+            if ($table.PrimaryKey.Count -eq 0) 
+            {
+                continue
+            }
+
             $signature = $this.GetTablePrimaryKeySignature($table)
             $this.Tables[$table] = $signature
 

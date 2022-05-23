@@ -90,7 +90,7 @@
         $q = "TRUNCATE TABLE $($slice)"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
-        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [TableName] = '" + $tableName + "' and [Schema] = '" + $schema + "'"
+        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [TableName] = '" + $tableName + "' and [Schema] = '" + $schema + "'"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
     
         $cond = ""
@@ -183,7 +183,7 @@
                     $columns = $columns + "x.val" + $i + ","
                }
              
-               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", $($index), x.Depth + 1 FROM (" + $sql + ") x"
+               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", $($index), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
@@ -314,7 +314,7 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + $newColor +  ", $($index), x.Depth + 1 FROM (" + $sql + ") x"
+                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + $newColor +  ", $($index), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
@@ -339,7 +339,7 @@
             
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Color] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth FROM $($slice) s" + $where
+            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update opeations
@@ -348,7 +348,7 @@
             
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Color] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth FROM $($slice) s" + $where
+            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update opeations
