@@ -32,4 +32,4 @@ $colorMapItem.ForcedColor.Color = [Color]::Purple
 $colorMap.Items += $colorMapItem
 
 
-$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -EdgeMode $true -ColorMap $colorMap
+$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -ColorMap $colorMap
