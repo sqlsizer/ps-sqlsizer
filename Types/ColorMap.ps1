@@ -21,4 +21,6 @@ class Condition
     [int]$Top = -1
     [string]$SourceSchemaName = ""
     [string]$SourceTableName = ""
+    [int]$MaxDepth = -1
+    [string]$FkName = ""
 }

@@ -210,6 +210,7 @@
                 }
 
                 $top = $null
+                $maxDepth = $null
                 $newColor = $null
 
                 # default new color
@@ -232,11 +233,21 @@
                 if ($null -ne $ColorMap)
                 {
                      $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
-                     $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
+                     $items = $items | Where-Object {($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
                      
                      if (($null -ne $items) -and ($null -ne $items.Condition))
                      {
                          $top = [int]$items.Condition.Top
+                     }
+
+                     if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.Top -ne -1))
+                     {
+                         $top = [int]$items.Condition.Top
+                     }
+
+                     if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.MaxDepth -ne -1))
+                     {
+                         $maxDepth = [int]$items.Condition.MaxDepth
                      }
 
                      if (($null -ne $items) -and ($null -ne $items.ForcedColor))
@@ -267,6 +278,11 @@
                 
                 # prevent go-back
                 $where += " AND s.Source <> $($fkTable.Id)"
+
+                if ($null -ne $maxDepth)
+                {
+                    $where += " AND s.Depth <= $($maxDepth)"
+                }
                 
                 # from
                 $join = " INNER JOIN $($slice) s ON "
