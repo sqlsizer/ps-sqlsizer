@@ -28,10 +28,10 @@ At every iteration the algorithm finds the best set of data with a single color 
 Then data rows are fetched into the slices tables. Later based on the color of the slice the appropriate rows are added to processing tables.
 This process continues until there are no unprocessed rows of any color.
 
-Colors have following meaning:
+Colors rules:
 
 - Red: find rows that are referenced by the row (recursively)
-- Green: find dependent rows on the row
+- Green: find rows that are referenced by the row (recursively) and all dependent rows on the row (recursively)
 - Yellow: split into Red and Green
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
