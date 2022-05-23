@@ -36,6 +36,9 @@ Colors have following meaning:
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
 
+![Diagram1](https://user-images.githubusercontent.com/115426/169890592-6801da29-7280-41e1-8ec9-81b4e7bc555b.png)
+
+
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
 
