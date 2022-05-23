@@ -40,8 +40,6 @@ function Get-SubsetUnreachableEdges
     }
 
     $allEdges.ExceptWith($reachedEdges)
-    $result = @()
-
     if ($allEdges.Count -gt 0)
     {
         $ids = ""
@@ -63,5 +61,6 @@ function Get-SubsetUnreachableEdges
 
         return $results
     }
-  
+    
+    return $null
 }
