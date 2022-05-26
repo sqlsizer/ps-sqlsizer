@@ -81,7 +81,7 @@
     }
 
 
-    $tmp = "CREATE TABLE SqlSizer.Operations(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64), [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int)"
+    $tmp = "CREATE TABLE SqlSizer.Operations(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64), [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL)"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     
     $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Schema] ASC, [TableName] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
