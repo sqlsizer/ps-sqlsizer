@@ -190,7 +190,7 @@
 
                if ($results.Count -gt 0)
                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.Schema + "', '" + $fk.Table + "', $($newColor), $($results.Count),  0, $($index), $($depth + 1))"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.Schema + "', '" + $fk.Table + "', $($newColor), $($results.Count),  0, $($index), $($depth + 1), GETDATE())"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
                }
             }
@@ -337,7 +337,7 @@
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
                 if ($results.Count -gt 0)
                 {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($index), $($depth + 1))"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($index), $($depth + 1), GETDATE())"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
                 }
              }
@@ -359,7 +359,7 @@
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth))"
+            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
             
             # insert 
@@ -368,7 +368,7 @@
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Green), $($results.Count), 0, $($table.Id), $($depth))"
+            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Green), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
         }
 
