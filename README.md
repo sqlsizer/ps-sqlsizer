@@ -3,6 +3,8 @@
 
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
+The subsets are highly configurable. The final result is outcome of the color map and the colors of initial data.
+
 Additionally the scripts are able to:
 - Delete selected data from the database quickly (respecting all foreign keys)
 - Extract a subset of the data from the database (currently only to XML)
@@ -11,7 +13,7 @@ Additionally the scripts are able to:
 
 - Step 1: Provide configuration
     - Queries that define initial data (the table rows with colors)
-    - (Optional) Color map that allow to configure forced colors for the tables and limits
+    - (Optional) Color map that allow to configure colors for the data and limits
 
 - Step 2: Execute `Find-Subset` function to find the subset you want
 - Step 3: Copy data to new db or just do your own processing of the subset
@@ -25,16 +27,18 @@ The initial set of table rows needs to be defined before the start of the script
 which consists of multiple tables with all possible primary key definitions from the database.
 
 At every iteration the algorithm finds the best set of data with a single color to process based on the number of unprocessed records and depth.
-Then data rows are fetched into the slices tables. Later based on the color of the slice the appropriate rows are added to processing tables.
+Then data rows are fetched into the appropriate slice table. Later based on the color of the slice and color map the new data rows are added to processing tables.
 This process continues until there are no unprocessed rows of any color.
 
-Colors have following meaning:
+Colors rules:
 
 - Red: find rows that are referenced by the row (recursively)
-- Green: find dependent rows on the row
+- Green: find rows that are referenced by the row (recursively) and all dependent rows on the row (recursively)
 - Yellow: split into Red and Green
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
+
+![Diagram1](https://user-images.githubusercontent.com/115426/170085145-387fd6c6-9176-4bc4-8ba3-cac2579a1ed3.png)
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
