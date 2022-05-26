@@ -30,8 +30,8 @@
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature)
 
-        $sql = "INSERT INTO SqlSizer.Operations([Schema], [TableName], [ToProcess], [Processed], [Color], [Depth])
-        SELECT p.[Schema], p.TableName, COUNT(*), 0, p.[Color], 0
+        $sql = "INSERT INTO SqlSizer.Operations([Schema], [TableName], [ToProcess], [Processed], [Color], [Depth], [Created])
+        SELECT p.[Schema], p.TableName, COUNT(*), 0, p.[Color], 0, GETDATE()
         FROM $($processing) p
         WHERE p.[Schema] = '$($table.SchemaName)' AND p.[TableName] = '$($table.TableName)'
         GROUP BY [Schema], [TableName], [Color]"
