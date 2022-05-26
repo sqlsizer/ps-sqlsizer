@@ -3,7 +3,7 @@
 
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
-The subsets are highly configurable. The final result is outcome of the color map and the colors of initial data.
+The subsets are highly configurable. The final result is outcome of the original database, the color map and the colors of initial data.
 
 Additionally the scripts are able to:
 - Delete selected data from the database quickly (respecting all foreign keys)
