@@ -5,7 +5,6 @@
     (
         [Parameter(Mandatory=$true)]
         [string]$Server,
-
         [string]$Login,
         [string]$Password
     )
@@ -14,5 +13,6 @@
         Server = $Server
         Login =  $Login
         Password = $Password
+        Statistics = New-Object -Type SqlConnectionStatistics
     }
 }

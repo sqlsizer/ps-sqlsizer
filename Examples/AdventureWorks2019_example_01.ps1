@@ -47,6 +47,8 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
+Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+
 # Create a new db with found subset of data
 
 $newDatabase = "AdventureWorks2019_subset_01"

@@ -59,7 +59,7 @@
                 [Schema], [TableName], [ToProcess], [Depth], [Color]
             ORDER BY 
                 [Depth] ASC, [ToProcess] DESC"
-        $first = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $first = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
     
         if ($null -eq $first)
         {
@@ -91,7 +91,7 @@
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
         $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [TableName] = '" + $tableName + "' and [Schema] = '" + $schema + "'"
-        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
     
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
@@ -186,12 +186,12 @@
                $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", $($index), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-               $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
+               $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
                if ($results.Count -gt 0)
                {
                     $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.Schema + "', '" + $fk.Table + "', $($newColor), $($results.Count),  0, $($index), $($depth + 1), GETDATE())"
-                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                }
             }
         }
@@ -334,11 +334,11 @@
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
-                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo
+                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 if ($results.Count -gt 0)
                 {
                     $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($index), $($depth + 1), GETDATE())"
-                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 }
              }
            }
@@ -356,24 +356,24 @@
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Color] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
             $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
-            $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
             $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
-            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
             
             # insert 
             $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Color] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
             $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
-            $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
             $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Green), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
-            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
 
         # update operations
         $q = "UPDATE SqlSizer.Operations SET Processed = 1 WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "' and [Color] = $($color) and [Depth] = $($depth)"
-        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 }
