@@ -15,9 +15,11 @@
 
     Write-Progress -Activity "Disabling integrity checks on database" -PercentComplete 0 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $sql = "sp_msforeachtable 'ALTER TABLE ? DISABLE TRIGGER all'"
-    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    foreach ($table in $info.Tables)
+    {
+        $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " DISABLE TRIGGER all"
+        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    }
 
     $i = 0
     foreach ($table in $info.Tables)

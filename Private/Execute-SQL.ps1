@@ -21,13 +21,31 @@
     
     try
     {
+        $params = @{
+            Query = $Sql
+            ServerInstance = $ConnectionInfo.Server
+            Database = $Database
+            QueryTimeout = 6000
+            Verbose = $true
+        }
+
+        if (($ConnectionInfo.AccessToken -ne $null) -and ($ConnectionInfo.AccessToken -ne ""))
+        {
+            $params.AccessToken = $ConnectionInfo.AccessToken
+        }
+
+        if ($ConnectionInfo.Credential -ne $null)
+        {
+            $params.Credential = $ConnectionInfo.Credential
+        }
+
         if ($true -eq $Statistics)
         {
-            $Sql = 'SET STATISTICS IO ON 
+            $params.Query = 'SET STATISTICS IO ON 
             ' + $Sql + '
             SET STATISTICS IO OFF'
 
-            $verbose = %{ $result = Invoke-Sqlcmd -Query $Sql -ServerInstance $ConnectionInfo.Server -Verbose -Database $Database -Username $ConnectionInfo.Login -Password $ConnectionInfo.Password -QueryTimeout 6000 -ErrorAction Stop } 4>&1
+            $verbose = %{ $result = Invoke-Sqlcmd @params -ErrorAction Stop } 4>&1
             $message = $verbose.Message
             $logicalReads = Parse-IOStatistics -Message $message
             $ConnectionInfo.Statistics.LogicalReads += $logicalReads
@@ -35,7 +53,7 @@
         }
         else
         {
-            Invoke-Sqlcmd -Query $Sql -ServerInstance $ConnectionInfo.Server -Database $Database -Username $ConnectionInfo.Login -Password $ConnectionInfo.Password -QueryTimeout 6000 -ErrorAction Stop 
+            Invoke-Sqlcmd @params -ErrorAction Stop
         }
         
         Write-Verbose $Sql

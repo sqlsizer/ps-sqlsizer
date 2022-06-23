@@ -1,7 +1,7 @@
 ﻿class SqlConnectionInfo
 {
     [string]$Server
-    [string]$Login
-    [string]$Password
+    [System.Management.Automation.PSCredential]$Credential
+    [string]$AccessToken = $null
     [SqlConnectionStatistics]$Statistics
 }

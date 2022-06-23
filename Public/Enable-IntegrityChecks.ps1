@@ -24,7 +24,13 @@
         $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    $sql = "sp_msforeachtable 'ALTER TABLE ? ENABLE TRIGGER all'"
+    foreach ($table in $info.Tables)
+    {
+        $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " ENABLE TRIGGER all"
+        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     Write-Progress -Activity "Enabling integrity checks on database" -Completed
 }

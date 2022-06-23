@@ -6,11 +6,11 @@ Import-Module ..\MSSQL-SqlSizer
 # Connection settings
 $server = "localhost"
 $database = "AdventureWorks2019"
-$login = "someuser"
-$password = "pass"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 
 # Create connection
-$connection = New-SqlConnectionInfo -Server $server -Login $login -Password $password
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
