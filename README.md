@@ -38,7 +38,7 @@ This process continues until there are no unprocessed rows of any color.
 Colors rules:
 
 - Red: find rows that are referenced by the row (recursively)
-- Green: find rows that are referenced by the row (recursively) and all dependent rows on the row (recursively)
+- Green: find dependent rows on the row (recursively)
 - Yellow: split into Red and Green
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
