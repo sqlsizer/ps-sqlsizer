@@ -138,7 +138,7 @@ foreach ($table in $infoNew.Tables)
 Write-Host "Total rows: $($sum)"
 # end of script
 ```
-## Sample 2 (Azure SQL databases)
+## Sample 2 (Azure SQL database)
 
 ```powershell
 
