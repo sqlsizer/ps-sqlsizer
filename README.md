@@ -52,6 +52,9 @@ Colors rules:
 
 ```powershell
 Install-Module sqlserver -Scope CurrentUser
+Install-Module dbatools -Scope CurrentUser
+Install-Module Az -Scope CurrentUser
+
 ```
 
 # Examples
