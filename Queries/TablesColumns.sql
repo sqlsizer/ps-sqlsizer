@@ -1,7 +1,8 @@
 SELECT
     c.TABLE_SCHEMA [schema], 
     c.TABLE_NAME [table],
-    c.COLUMN_NAME [column], 
+    c.COLUMN_NAME [column],
+	row_number() over(PARTITION BY c.TABLE_SCHEMA, c.TABLE_NAME order by c.ORDINAL_POSITION) as [position],
     c.DATA_TYPE [dataType],
 	c.IS_NULLABLE [isNullable],
 	CASE 
@@ -29,4 +30,4 @@ FROM
 		INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed2 
 		ON c.TABLE_SCHEMA = computed2.[schema] and c.TABLE_NAME = computed2.[table] and c.COLUMN_NAME = computed2.[column]
 ORDER BY 
-	c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME
+	c.TABLE_SCHEMA, c.TABLE_NAME, [position]

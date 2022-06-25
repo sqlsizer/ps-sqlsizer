@@ -47,7 +47,7 @@ function Get-SubsetTableRows
                     }
                 }
 
-                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE [Schema] = '$($table.SchemaName)' AND TableName = '$($table.TableName)'"
+                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE [Table] = $($table.Id)"
                 $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
                 return $rows
             }
@@ -100,7 +100,8 @@ function Get-SubsetTableRows
                 $sql = "SELECT '$($table.SchemaName)' as SchemaName, '$($table.TableName)' as TableName, $($columns)
                         FROM $($processing) p 
                         INNER JOIN $($table.SchemaName).$($table.TableName) t ON $($cond)
-                        WHERE p.[Schema] = '$($table.SchemaName)' AND p.TableName = '$($table.TableName)'"
+                        INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '$($table.SchemaName)' AND tt.[TableName] = '$($table.TableName)'
+                        WHERE p.[Table] = tt.Id"
                 $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
                 return $rows
             }

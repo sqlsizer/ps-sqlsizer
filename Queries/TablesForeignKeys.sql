@@ -7,7 +7,8 @@ SELECT
 	[columnsT].name AS [fk_column_data_type],
 	[schemas2].name as [schema],
     [tables2].name AS [table],
-    [columns2].name AS [column]
+    [columns2].name AS [column],
+	ROW_NUMBER() OVER(PARTITION BY [objects].name ORDER BY [columns2].column_id) as [column_position]
 FROM 
     sys.foreign_key_columns [fk]
 INNER JOIN sys.objects [objects]
@@ -27,4 +28,4 @@ INNER JOIN sys.schemas [schemas2]
 INNER JOIN sys.columns [columns2]
     ON [columns2].column_id = [fk].referenced_column_id AND [columns2].object_id = [tables2].object_id
 ORDER BY 
- fk_name, fk_column
+ [fk_schema], [fk_table], [column_position]

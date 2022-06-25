@@ -29,7 +29,9 @@
     Test-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
 
     $interval = 5
-    $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+    $tablesGrouped = $info.Tables | Group-Object -Property Id -AsHashTable -AsString
+    $tablesGroupedByName = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+
     $percent = 0
     
     while ($true)
@@ -46,17 +48,16 @@
 
         # Logic
         $q = "SELECT TOP 1
-                [Schema]
-               ,[TableName]
-               ,[ToProcess]
-               ,[Color]
-               ,[Depth]
+               [Table],
+               [ToProcess],
+               [Color],
+               [Depth]
             FROM 
                 [SqlSizer].[Operations]
             WHERE 
                 [Processed] = 0
             GROUP BY 
-                [Schema], [TableName], [ToProcess], [Depth], [Color]
+                [Table], [ToProcess], [Depth], [Color]
             ORDER BY 
                 [Depth] ASC, [ToProcess] DESC"
         $first = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
@@ -67,20 +68,19 @@
             break
         }
 
-        $schema = $first.Schema
-        $tableName = $first.TableName
+        $tableId = $first.Table
         $color = $first.Color
         $depth = $first.Depth
+        $table = $tablesGrouped["$tableId"]
+        $schema = $table.SchemaName
+        $tableName = $table.TableName
 
-        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($schema).$($tableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
-        $table = $tablesGrouped[$schema + ", " + $tableName]
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
         
-        $index = $table.Id
-       
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -90,7 +90,7 @@
         $q = "TRUNCATE TABLE $($slice)"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
-        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [TableName] = '" + $tableName + "' and [Schema] = '" + $schema + "'"
+        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
     
         $cond = ""
@@ -126,7 +126,8 @@
                     }
                }
 
-               $baseTable = $tablesGrouped[$fk.Schema + ", " + $fk.Table]
+               $baseTable = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table]
+               $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
                $baseSignature = $structure.Tables[$baseTable]
                $baseProcessing = $structure.GetProcessingName($baseSignature)
 
@@ -144,7 +145,7 @@
                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                     $i += 1
                }
-               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Schema] = '" + $fk.Schema + "' and p.TableName = '" + $fk.Table + "' and " + $columns +  ")"
+               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Table] = $($baseTable.Id) and " + $columns +  ")"
 
                # from
                $join = " INNER JOIN $($slice) s ON "
@@ -170,7 +171,7 @@
                    {
                      $columns += ","
                    }
-                   $columns = $columns + (Get-ColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType) + " as val" + $i 
+                   $columns = $columns + (Get-ColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType -newName "val$i") 
                    $i += 1
                }
 
@@ -183,14 +184,14 @@
                     $columns = $columns + "x.val" + $i + ","
                }
              
-               $insert = "INSERT INTO $($baseProcessing) SELECT '" + $fk.Schema + "', '" + $fk.Table + "', " + $columns + " " + $newColor + ", $($index), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
+               $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTable.Id), " + $columns + " " + $newColor + ", $($table.Id), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
               
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
                if ($results.Count -gt 0)
                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.Schema + "', '" + $fk.Table + "', $($newColor), $($results.Count),  0, $($index), $($depth + 1), GETDATE())"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTable.Id), $($newColor), $($results.Count),  0, $($table.Id), $($depth + 1), GETDATE())"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                }
             }
@@ -256,7 +257,7 @@
                      }
                 }
 
-                $fkTable = $tablesGrouped[$fk.FkSchema + ", " + $fk.FkTable]
+                $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
                 $fkSignature = $structure.Tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
  
@@ -274,7 +275,7 @@
                      $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Schema] = '" + $fk.FkSchema + "' and p.TableName = '" + $fk.FkTable + "' and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Table] = $($fkTable.Id) and " + $columns +  ")"
                 
                 # prevent go-back
                 $where += " AND s.Source <> $($fkTable.Id)"
@@ -310,7 +311,7 @@
                     {
                         $columns += ", "
                     }
-                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType) + " as val" + $i 
+                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType -newName "val$i")
                     $i += 1
                 }
 
@@ -330,14 +331,14 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
                 
-                $insert = "INSERT INTO $($fkProcessing) SELECT '" + $fk.FkSchema + "', '" + $fk.FkTable + "', " + $columns  + " " + $newColor +  ", $($index), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
+                $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTable.Id), " + $columns  + " " + $newColor +  ", $($table.Id), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
                 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
                 $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 if ($results.Count -gt 0)
                 {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $fk.FkSchema + "', '" + $fk.FkTable + "', $newColor, $($results.Count), 0, $($index), $($depth + 1), GETDATE())"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTable.Id), $newColor, $($results.Count), 0, $($table.Id), $($depth + 1), GETDATE())"
                     $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 }
              }
@@ -354,26 +355,26 @@
             }
             
             # insert 
-            $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Color] = " + [int][Color]::Red  + "  and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red  + "  and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO $processing " +  "SELECT $tableId, " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
+            $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
             
             # insert 
-            $where = " WHERE NOT EXISTS(SELECT * FROM $($processing) p WHERE p.[Color] = " + [int][Color]::Green  + " and p.[Schema] = '" + $schema + "' and p.[TableName] = '" + $tableName + "' and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $($processing) " +  "SELECT '" + $schema + "', '" +  $tableName +  "', " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green  + " and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO $processing " +  "SELECT $tableId, " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $slice s" + $where
             $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES('" +  $schema + "', '" + $tableName + "', $([int][Color]::Green), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
+            $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Green), $($results.Count), 0, $($table.Id), $depth, GETDATE())"
             $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
 
         # update operations
-        $q = "UPDATE SqlSizer.Operations SET Processed = 1 WHERE [Schema] = '" +  $schema + "' and [TableName] = '" +  $tableName + "' and [Color] = $($color) and [Depth] = $($depth)"
+        $q = "UPDATE SqlSizer.Operations SET Processed = 1 WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth"
         $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 }

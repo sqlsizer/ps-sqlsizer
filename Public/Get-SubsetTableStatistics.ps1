@@ -38,7 +38,7 @@ function Get-SubsetTableStatistics
             }
         }
 
-        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Schema] = '$($table.SchemaName)' AND TableName = '$($table.TableName)') x"
+        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($table.Id)) x"
         $count = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
 
         $obj = New-Object -TypeName SubsettingTableResult

@@ -45,6 +45,16 @@
         Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
+    foreach ($table in $info.Tables)
+    {
+        $tmp = "IF OBJECT_ID('SqlSizerResult.$($table.SchemaName)_$($table.TableName)', 'V') IS NOT NULL  
+        DROP VIEW SqlSizerResult.$($table.SchemaName)_$($table.TableName)"
+        Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
     $tmp = "DROP SCHEMA IF EXISTS SqlSizer"
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "DROP SCHEMA IF EXISTS SqlSizerResult"
+    $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 }

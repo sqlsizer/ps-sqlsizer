@@ -43,5 +43,15 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
 
-Write-Host "Extract subset"
-$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
+
+# Ensure that empty database with the database schema exists 
+#$emptyDb = "test03_empty"
+
+#if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
+#{
+#    New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
+#}
+
+# Create a copy of empty db for new subset db
+#$newDatabase = "test03_$((New-Guid).ToString().Replace('-', '_'))"
+#Copy-AzDatabase -Database $emptyDb -NewDatabase $newDatabase -ConnectionInfo $connection

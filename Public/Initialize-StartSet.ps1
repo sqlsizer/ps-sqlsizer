@@ -30,7 +30,7 @@
         }
         $table = $info.Tables | Where-Object {($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table)}
         $procesing = $Structure.GetProcessingName($structure.Tables[$table])
-        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + "'" + $query.Schema + "', '" + $query.Table + "', "
+        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + " $($table.Id), "
 
         $i = 0
         foreach ($column in $query.KeyColumns)
