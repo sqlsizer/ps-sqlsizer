@@ -5,9 +5,13 @@ A set of PowerShell scripts to make a copy of a Microsoft SQL database with a su
 
 The subsets are highly configurable. The final result is outcome of the original database, the color map and the colors of initial data.
 
-Additionally the scripts are able to:
-- Delete selected data from the database quickly (respecting all foreign keys)
-- Extract a subset of the data from the database (currently only to XML)
+# Use cases (some)
+- Removing unwanted data from database 
+- Creating smaller database from production database for development/testing purposes
+- GDRP Data Masking 
+- Finding all related data to some rows in database
+- Tracking changes to data (new/deleted data in other tables)
+- Data integrity verification (e.g. using SHA2_512)
 
 # Flow (simplified)
 
@@ -33,7 +37,7 @@ This process continues until there are no unprocessed rows of any color.
 Colors rules:
 
 - Red: find rows that are referenced by the row (recursively)
-- Green: find rows that are referenced by the row (recursively) and all dependent rows on the row (recursively)
+- Green: find dependent rows on the row (recursively)
 - Yellow: split into Red and Green
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
@@ -47,66 +51,145 @@ Colors rules:
 # Prerequisites
 
 ```powershell
-Install-Module sqlserver -Scope CurrentUser # if not present
-Install-Module dbatools -Scope CurrentUser
+Install-Module sqlserver -Scope CurrentUser
 ```
 
 # Examples
 Please take a look at examples in *Examples* folder.
 
-## Sample
+## Sample 1 (on-premises SQL server)
 ```powershell
-# Import of module
-Import-Module ..\MSSQL-SqlSizer -Verbose
+## Example that shows how to create a new database with the subset of data based on queries which define initial data
 
+# Import of module
+Import-Module ..\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"
 $database = "AdventureWorks2019"
-$login = "someuser"
-$password = "pass"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 
-# New connection info
-$connection = New-SqlConnectionInfo -Server $server -Login $login -Password $password
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Init SqlSizer
+# Install SqlSizer
 Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
-# Query 1: All persons with first name = 'Mary'
+# Query 1: 10 persons with first name = 'John'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "[`$table].FirstName = 'Mary'"
+$query.Where = "[`$table].FirstName = 'John'"
+$query.Top = 10
+$query.OrderBy = "[`$table].LastName ASC"
 
-# Query 2: All employees with SickLeaveHours > 30
-$query2 = New-Object -TypeName Query
-$query2.Color = [Color]::Yellow
-$query2.Schema = "HumanResources"
-$query2.Table = "Employee"
-$query2.KeyColumns = @('BusinessEntityID')
-$query2.Where = "[`$table].SickLeaveHours > 30"
+# Define ignored tables
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2)
+$ignored = New-Object -Type TableInfo2
+$ignored.SchemaName = "dbo"
+$ignored.TableName = "ErrorLog"
+
+
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+
+# Get subset info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+
+Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
 
 # Create a new db with found subset of data
 
 $newDatabase = "AdventureWorks2019_subset_01"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
-Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
-Clear-Database -Database $newDatabase -ConnectionInfo $connection
-Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection
-Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection
+Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection
+Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Compress-Database -Database $newDatabase -ConnectionInfo $connection
 
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+
+$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+
+Write-Host "Subset size: $($infoNew.DatabaseSize)"
+$sum = 0
+foreach ($table in $infoNew.Tables)
+{
+    $sum += $table.Statistics.Rows
+}
+
+Write-Host "Total rows: $($sum)"
 # end of script
 ```
+## Sample 2 (Azure SQL database)
+
+```powershell
+
+## Example that shows how to a subset database in Azure
+
+# Import of module
+Import-Module ..\MSSQL-SqlSizer
+
+# Connection settings
+$server = "sqlsizer.database.windows.net"
+$database = "test01"
+
+Connect-AzAccount
+$accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken
+
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Define start set
+
+# Query 1: 10 persons with first name = 'John'
+$query = New-Object -TypeName Query
+$query.Color = [Color]::Yellow
+$query.Schema = "SalesLT"
+$query.Table = "Customer"
+$query.KeyColumns = @('CustomerID')
+$query.Top = 10
+
+# Define ignored tables
+
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+
+# Find subset
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Get subset info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+
+Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+
+Write-Host "Extract subset"
+$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
+
+
+
+```
+
