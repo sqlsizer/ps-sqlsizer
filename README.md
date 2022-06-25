@@ -7,7 +7,6 @@ The subsets are highly configurable. The final result is outcome of the original
 
 # Use cases (some)
 - Removing unwanted data from database 
-- Finding intersections between data in multi-tenants SQL databases
 - Creating smaller database from production database for development/testing purposes
 - GDRP Data Masking 
 - Finding all related data to some rows in database
