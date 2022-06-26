@@ -12,6 +12,13 @@ $accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Tok
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken
+ 
+# Check if database is available
+if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
+{
+    Write-Host "Database is not available" -ForegroundColor Red
+    return
+}
 
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
@@ -43,6 +50,7 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
 
+$tableJson = Get-AzSubsetTableJson -Database $database -Connection $connection -DatabaseInfo $info -SchemaName "SalesLT"  -TableName "Customer"
 
 # Ensure that empty database with the database schema exists 
 #$emptyDb = "test03_empty"
