@@ -5,13 +5,13 @@ Import-Module ..\MSSQL-SqlSizer
 
 # Connection settings
 $server = "sqlsizer.database.windows.net"
-$database = "test01"
+$database = "test03"
 
 Connect-AzAccount
 $accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
 
 # Create connection
-$connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken
+$connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken -EncryptConnection $true
  
 # Check if database is available
 if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
@@ -50,16 +50,35 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
 
-$tableJson = Get-AzSubsetTableJson -Database $database -Connection $connection -DatabaseInfo $info -SchemaName "SalesLT"  -TableName "Customer"
 
 # Ensure that empty database with the database schema exists 
-#$emptyDb = "test03_empty"
+$emptyDb = "test03_empty"
 
-#if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
-#{
-#    New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
-#}
+if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
+{
+   New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
+}
 
 # Create a copy of empty db for new subset db
-#$newDatabase = "test03_$((New-Guid).ToString().Replace('-', '_'))"
-#Copy-AzDatabase -Database $emptyDb -NewDatabase $newDatabase -ConnectionInfo $connection
+$newDatabase = "test03_$((New-Guid).ToString().Replace('-', '_'))"
+Copy-AzDatabase -Database $emptyDb -NewDatabase $newDatabase -ConnectionInfo $connection
+
+while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) -eq $false)
+{
+    Write-Host "Waiting for database"
+    Start-Sleep -Seconds 5
+}
+
+# Connect to storage
+$storageAccount = "<storage-account>"
+$keys = Get-AzStorageAccountKey -Name $storageAccount -ResourceGroupName "SqlSizer" 
+$ctx = New-AzStorageContext -StorageAccountName "$storageAccount" -StorageAccountKey "$($keys[0].Value)"
+
+# Copy subset to storage account
+$container = "subset_for_$newDatabase".Replace('_', '').Substring(0, 30)
+Copy-SubsetToAzStorageContainer -ContainerName $container -StorageContext $ctx -Database $database -DatabaseInfo $info -ConnectionInfo $connection
+
+$masterPassword = "$((New-Guid).ToString().Replace('-', '_'))"
+# Copy data from Azure Blob storage
+Import-DataFromAzStorageContainer -MasterPassword $masterPassword -Database $newDatabase -OriginalDatabase $database -ConnectionInfo $connection -DatabaseInfo $info `
+                                  -ContainerName $container -StorageAccountName $storageAccount -StorageContext $ctx

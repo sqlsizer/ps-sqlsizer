@@ -1,0 +1,66 @@
+function Import-DataFromAzStorageContainer
+{
+    [cmdletbinding()]
+    param
+    (   
+        [Parameter(Mandatory=$true)]
+        [string]$StorageAccountName,
+
+        [Parameter(Mandatory=$true)]
+        [string]$ContainerName,
+
+        [Parameter(Mandatory=$true)]
+        [string]$MasterPassword,
+
+        [Parameter(Mandatory=$true)]
+        [Object]$StorageContext,
+
+        [Parameter(Mandatory=$true)]
+        [string]$Database,
+
+        [Parameter(Mandatory=$true)]
+        [string]$OriginalDatabase,
+
+        [Parameter(Mandatory=$false)]
+        [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory=$true)]
+        [SqlConnectionInfo]$ConnectionInfo
+    )
+
+    $token = New-AzStorageAccountSASToken -Service Blob -ResourceType Container, Object -Permission "racwdlup" -Context $StorageContext
+    $token = $token.Substring(1)
+
+    $sql = "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '$MasterPassword'"
+    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+
+    $sql = "CREATE DATABASE SCOPED CREDENTIAL $($ContainerName)_credential
+            WITH IDENTITY = 'SHARED ACCESS SIGNATURE',
+            SECRET = '$token'"
+    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+
+
+    $sql = "CREATE EXTERNAL DATA SOURCE [SqlSizer] WITH
+    (  
+        TYPE = BLOB_STORAGE,
+        LOCATION = 'https://$StorageAccountName.blob.core.windows.net/$ContainerName',
+        CREDENTIAL = $($ContainerName)_credential
+    )"
+    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+
+    $subsetTables = Get-SubsetTables -Database $OriginalDatabase -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo 
+    
+    foreach ($table in $subsetTables)
+    {
+        $sql = "BULK INSERT $($table.SchemaName).$($table.TableName)
+                FROM '$($table.SchemaName).$($table.TableName).csv'
+                WITH (DATA_SOURCE = 'SqlSizer', FORMAT = 'CSV', FIELDTERMINATOR = ';', FIELDQUOTE = '""')"
+        
+        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+
+        $sql = "SELECT COUNT(*) as Count FROM $($table.SchemaName).$($table.TableName)"
+        $result = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+
+        Write-Host "$($result.Count) added"
+    }
+}
