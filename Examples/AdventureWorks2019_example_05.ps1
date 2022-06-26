@@ -21,13 +21,14 @@ Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $
 
 # Find subset1
 
-# Query 1: All persons with first name = 'Michael'
+# Query 1: top 100 persons with peron types EM
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "[`$table].FirstName = 'Michael'"
+$query.Where = "[`$table].PersonType = 'EM'"
+$query.Top = 100
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -41,14 +42,6 @@ $query2.Table = "Person"
 $query2.KeyColumns = @('BusinessEntityID')
 $query2.Where = "[`$table].FirstName = 'Wanida'"
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query2) -DatabaseInfo $info
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 $subset2 = Get-SubsetTables -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Write-Host "First subset:"
-$subset1
-Write-Host "====="
-
-Write-Host "Second subset:"
-$subset2
-Write-Host "====="
