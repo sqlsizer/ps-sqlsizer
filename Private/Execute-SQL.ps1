@@ -27,6 +27,7 @@
             Database = $Database
             QueryTimeout = 6000
             Verbose = $true
+            EncryptConnection = $ConnectionInfo.EncryptConnection
         }
 
         if (($ConnectionInfo.AccessToken -ne $null) -and ($ConnectionInfo.AccessToken -ne ""))
@@ -53,7 +54,7 @@
         }
         else
         {
-            Invoke-Sqlcmd @params -ErrorAction Stop
+            Invoke-Sqlcmd @params -ErrorAction Stop 
         }
         
         Write-Verbose $Sql

@@ -7,11 +7,13 @@
         [string]$Server,
         [string]$Username,
         [SecureString]$Password,
-        [string]$AccessToken
+        [string]$AccessToken,
+        [bool]$EncryptConnection = $false
     )
 
     $connection = New-Object -TypeName SqlConnectionInfo
     $connection.Server = $Server
+    $connection.EncryptConnection = $EncryptConnection
     $connection.Statistics = New-Object -Type SqlConnectionStatistics
 
     if (($Username -ne $null) -and ($Password -ne $null))
