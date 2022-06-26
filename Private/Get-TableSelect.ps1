@@ -4,7 +4,8 @@ function Get-TableSelect
         [bool]$Raw,
         [string]$Prefix,
         [TableInfo]$TableInfo,
-        [TableInfo2[]]$IgnoredTables
+        [TableInfo2[]]$IgnoredTables,
+        [bool]$ConvertBits = $false
     )
     
     $select = ""
@@ -43,7 +44,20 @@ function Get-TableSelect
             }
 
             if ($Raw)
-            {
+            {  
+                if (($column.DataType -eq 'bit') -and ($ConvertBits -eq $true))
+                {
+                    if (($Prefix -ne $null) -and ($Prefix -ne ""))
+                    {
+                        $select +=  " CONVERT(char(1), $Prefix[" + $columnName + "]) as $columnName"
+                    }
+                    else
+                    {
+                        $select +=  " CONVERT(char(1), [" + $columnName + "]) as $columnName"
+                    }
+                    continue
+                }
+            
                 if (($Prefix -ne $null) -and ($Prefix -ne ""))
                 {
                     $select +=  " $Prefix[" + $columnName + "]"
