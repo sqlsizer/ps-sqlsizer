@@ -19,7 +19,7 @@ function Test-Queries
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $unreachable = Find-TablesUnreachableByQueries -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -ColorMap $ColorMap
+    $unreachable = Find-UnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -ColorMap $ColorMap
 
     if ($unreachable.Count -gt 0)
     {

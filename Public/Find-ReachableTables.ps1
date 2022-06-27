@@ -1,4 +1,4 @@
-function Find-TablesReachableByQueries
+function Find-ReachableTables
 {
     [cmdletbinding()]
     param
@@ -17,7 +17,7 @@ function Find-TablesReachableByQueries
     )
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $unreachable = Find-TablesUnreachableByQueries -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo -Queries $Queries
+    $unreachable = Find-UnreachableTables -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo -Queries $Queries
 
     $toReturn = @()
     foreach ($table in $info.Tables)

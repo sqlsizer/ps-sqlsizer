@@ -1,4 +1,4 @@
-function Find-TablesUnreachableByQueries
+function Find-UnreachableTables
 {
     [cmdletbinding()]
     param
