@@ -126,6 +126,8 @@ class TableInfo
     [Tablefk[]]$ForeignKeys
     [TableInfo[]]$IsReferencedBy
 
+    [string[]]$Views
+
     [TableStatistics]$Statistics
 
     [Index[]]$Indexes

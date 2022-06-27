@@ -32,6 +32,9 @@
     $indexesRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $indexesRowsGrouped = $indexesRows | Group-Object -Property schema, table -AsHashTable -AsString
 
+    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\ViewsInfo.sql")
+    $viewsRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $viewsRowsGrouped = $viewsRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
 
     if ($true -eq $MeasureSize)
     {
@@ -147,6 +150,19 @@
                 }
 
                 $table.Indexes += $index
+            }
+        }
+
+        if ($null -ne $viewsRowsGrouped)
+        {
+            $viewsForTable = $viewsRowsGrouped[$key]
+
+            $table.Views = @()
+
+            foreach ($item in $viewsForTable)
+            {
+                $view = "[" + $item.view_schema_name + "]." + "[" + $item.view_name + "]"
+                $table.Views += $view
             }
         }
 
