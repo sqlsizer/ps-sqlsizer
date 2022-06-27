@@ -82,3 +82,6 @@ $masterPassword = "$((New-Guid).ToString().Replace('-', '_'))"
 # Copy data from Azure Blob storage
 Import-DataFromAzStorageContainer -MasterPassword $masterPassword -Database $newDatabase -OriginalDatabase $database -ConnectionInfo $connection -DatabaseInfo $info `
                                   -ContainerName $container -StorageAccountName $storageAccount -StorageContext $ctx
+
+
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info

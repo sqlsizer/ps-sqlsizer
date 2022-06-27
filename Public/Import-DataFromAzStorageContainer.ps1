@@ -47,15 +47,26 @@ function Import-DataFromAzStorageContainer
         CREDENTIAL = $($ContainerName)_credential
     )"
     $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
-
-    $subsetTables = Get-SubsetTables -Database $OriginalDatabase -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo 
+    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $subsetTables = Get-SubsetTables -Database $OriginalDatabase -DatabaseInfo $info -ConnectionInfo $ConnectionInfo 
     
     foreach ($table in $subsetTables)
     {
-        $sql = "BULK INSERT $($table.SchemaName).$($table.TableName)
-                FROM '$($table.SchemaName).$($table.TableName).csv'
-                WITH (DATA_SOURCE = 'SqlSizer', FORMAT = 'CSV', FIELDTERMINATOR = ';', FIELDQUOTE = '""')"
+        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
         
+        if ($tableInfo.IsIdentity)
+        {
+            $identity = ", KEEPIDENTITY"
+        }
+        else
+        {
+            $identity = ""
+        }
+        
+        $sql = "BULK INSERT $($table.SchemaName).$($table.TableName)
+        FROM '$($table.SchemaName).$($table.TableName).csv'
+        WITH (DATA_SOURCE = 'SqlSizer', FORMAT = 'CSV', FIELDTERMINATOR = ';', FIELDQUOTE = '""' $identity)"
+
         $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
 
         $sql = "SELECT COUNT(*) as Count FROM $($table.SchemaName).$($table.TableName)"
