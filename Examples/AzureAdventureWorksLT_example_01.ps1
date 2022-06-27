@@ -83,5 +83,7 @@ $masterPassword = "$((New-Guid).ToString().Replace('-', '_'))"
 Import-DataFromAzStorageContainer -MasterPassword $masterPassword -Database $newDatabase -OriginalDatabase $database -ConnectionInfo $connection -DatabaseInfo $info `
                                   -ContainerName $container -StorageAccountName $storageAccount -StorageContext $ctx
 
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection
+Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection
 
-Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Write-Host "Azure SQL database created"
