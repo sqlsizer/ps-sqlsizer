@@ -167,15 +167,13 @@ Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $
 
 # Define start set
 
-# Query 1: 10 persons with first name = 'John'
+# Query 1: 10 top customers
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
 $query.Schema = "SalesLT"
 $query.Table = "Customer"
 $query.KeyColumns = @('CustomerID')
 $query.Top = 10
-
-# Define ignored tables
 
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
@@ -192,7 +190,4 @@ Write-Host "Logical reads from db during subsetting: $($connection.Statistics.Lo
 Write-Host "Extract subset"
 $xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
 
-
-
 ```
-
