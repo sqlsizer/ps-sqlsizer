@@ -20,7 +20,7 @@ function Install-ForeignKeyIndexes
     )
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $reachableTables = Find-SubsetReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo 
+    $reachableTables = Find-ReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo 
 
     $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
