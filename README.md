@@ -187,7 +187,4 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
 
-Write-Host "Extract subset"
-$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
-
 ```
