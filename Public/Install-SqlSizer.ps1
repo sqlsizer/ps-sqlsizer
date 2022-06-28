@@ -16,5 +16,6 @@
     Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 
     Install-SqlSizerTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    Install-SqlSizerResultViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    Install-SqlSizerSecureViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 }

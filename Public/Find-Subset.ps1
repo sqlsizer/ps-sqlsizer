@@ -171,7 +171,7 @@
                    {
                      $columns += ","
                    }
-                   $columns = $columns + (Get-ColumnValue -columnName $fkColumn.Name -prefix "f." -dataType $fkColumn.dataType -newName "val$i") 
+                   $columns = $columns + (Get-ColumnValue -ColumnName $fkColumn.Name -Prefix "f." -DataType $fkColumn.dataType) + " as val$i "
                    $i += 1
                }
 
@@ -311,7 +311,7 @@
                     {
                         $columns += ", "
                     }
-                    $columns = $columns + (Get-ColumnValue -columnName $primaryKeyColumn.Name -prefix "f." -dataType $primaryKeyColumn.dataType -newName "val$i")
+                    $columns = $columns + (Get-ColumnValue -ColumnName $primaryKeyColumn.Name -Prefix "f." -dataType $primaryKeyColumn.dataType) + " as val$i "
                     $i += 1
                 }
 

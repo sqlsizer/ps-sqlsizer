@@ -31,5 +31,6 @@ $colorMapItem.ForcedColor = New-Object -Type ForcedColor
 $colorMapItem.ForcedColor.Color = [Color]::Purple
 $colorMap.Items += $colorMapItem
 
-
 $testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -ColorMap $colorMap
+
+# end of script

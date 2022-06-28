@@ -52,9 +52,23 @@
         Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
+    foreach ($table in $info.Tables)
+    {
+        $tmp = "IF OBJECT_ID('SqlSizerSecure.$($table.SchemaName)_$($table.TableName)', 'V') IS NOT NULL  
+        DROP VIEW SqlSizerSecure.$($table.SchemaName)_$($table.TableName)"
+        Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    $tmp = "IF OBJECT_ID('SqlSizerSecure.Summary', 'V') IS NOT NULL  
+        DROP VIEW SqlSizerSecure.Summary"
+    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
     $tmp = "DROP SCHEMA IF EXISTS SqlSizer"
     $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "DROP SCHEMA IF EXISTS SqlSizerResult"
+    $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "DROP SCHEMA IF EXISTS SqlSizerSecure"
     $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 }

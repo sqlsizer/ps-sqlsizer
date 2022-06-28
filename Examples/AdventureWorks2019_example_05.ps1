@@ -45,3 +45,5 @@ $query2.Where = "[`$table].FirstName = 'Wanida'"
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query2) -DatabaseInfo $info
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 $subset2 = Get-SubsetTables -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# end of script

@@ -76,7 +76,7 @@ $ctx = New-AzStorageContext -StorageAccountName "$storageAccount" -StorageAccoun
 
 # Copy subset to storage account
 $container = "subset_for_$newDatabase".Replace('_', '').Substring(0, 30)
-Copy-SubsetToAzStorageContainer -ContainerName $container -StorageContext $ctx -Database $database -DatabaseInfo $info -ConnectionInfo $connection
+Copy-SubsetToAzStorageContainer -ContainerName $container -StorageContext $ctx -Database $database -DatabaseInfo $info -ConnectionInfo $connection -Secure $false
 
 $masterPassword = "$((New-Guid).ToString().Replace('-', '_'))"
 # Copy data from Azure Blob storage
@@ -87,3 +87,5 @@ Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection
 Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection
 
 Write-Host "Azure SQL database created"
+
+# end of script

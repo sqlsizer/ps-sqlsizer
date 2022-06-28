@@ -74,4 +74,16 @@ foreach ($table in $infoNew.Tables)
 }
 
 Write-Host "Total rows: $($sum)"
+Write-Host "==================="
+
+Write-Host "Secure CSV for Person.Person:" -ForegroundColor Red
+Write-Host $(Get-SubsetTableCsv -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true -SkipHeader $false)
+
+Write-Host "Secure Json for Person.Person:" -ForegroundColor Red
+Write-Host $(Get-SubsetTableJson -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true)
+
+Write-Host "Secure Xml for Person.Person:" -ForegroundColor Red
+$xml = Get-SubsetTableXml -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true
+Write-Host $xml.OuterXml
+
 # end of script

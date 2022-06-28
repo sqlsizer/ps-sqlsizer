@@ -2,27 +2,31 @@
 {
     param 
     (
-        [string]$columnName,
-        [string]$newName,
-        [string]$dataType,
-        [string]$prefix
+        [string]$ColumnName,
+        [string]$DataType,
+        [string]$Prefix,
+        [bool]$ConvertBit,
+        [bool]$Conversion
     )
 
-    $toConvert = @('hierarchyid', 'geography', 'xml')
-
-    if ($dataType -in $toConvert)
+    if ($Conversion -eq $false)
     {
-        "CONVERT(nvarchar(max), " + $prefix + $columnName + ") as [$newName]"
+        return "$($Prefix)[" + $ColumnName + "]"    
+    }
+
+    if ($DataType -in @('hierarchyid', 'geography', 'xml'))
+    {
+        return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"        
     }
     else 
     {
-        if (($newName -ne $null) -and ($newName -ne ""))
+        if ($ConvertBit -and ($DataType -eq 'bit'))
         {
-            "$($prefix)[" + $columnName + "] as [$newName]"
+            return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"           
         }
         else
         {
-            "$($prefix)[" + $columnName + "]"
+            return "$($Prefix)[" + $ColumnName + "]"    
         }
     }
 }

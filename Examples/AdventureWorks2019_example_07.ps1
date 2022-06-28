@@ -93,4 +93,5 @@ foreach ($table in $infoNew.Tables)
 }
 
 Write-Host "Total rows: $($sum)"
+
 # end of script

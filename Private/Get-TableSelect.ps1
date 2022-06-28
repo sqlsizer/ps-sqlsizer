@@ -5,13 +5,17 @@ function Get-TableSelect
         [string]$Prefix,
         [TableInfo]$TableInfo,
         [TableInfo2[]]$IgnoredTables,
-        [bool]$ConvertBits = $false
+        [bool]$ConvertBit,
+        [bool]$AddAs,
+        [bool]$Array = $false
     )
     
-    $select = ""
+    $result = @()
+
     $j = 0
     for ($i = 0; $i -lt $TableInfo.Columns.Count; $i++)
     {
+        $select = ""
         $column = $TableInfo.Columns[$i]
         $columnName = $column.Name
 
@@ -21,11 +25,6 @@ function Get-TableSelect
         }
         else
         {
-            if ($j -gt 0)
-            {
-                $select += ","
-            }
-
             $include = $true
 
             foreach ($fk in $TableInfo.ForeignKeys)
@@ -43,45 +42,31 @@ function Get-TableSelect
                 }
             }
 
-            if ($Raw)
-            {  
-                if (($column.DataType -eq 'bit') -and ($ConvertBits -eq $true))
-                {
-                    if (($Prefix -ne $null) -and ($Prefix -ne ""))
-                    {
-                        $select +=  " CONVERT(char(1), $Prefix[" + $columnName + "]) as $columnName"
-                    }
-                    else
-                    {
-                        $select +=  " CONVERT(char(1), [" + $columnName + "]) as $columnName"
-                    }
-                    continue
-                }
-            
-                if (($Prefix -ne $null) -and ($Prefix -ne ""))
-                {
-                    $select +=  " $Prefix[" + $columnName + "]"
-                }
-                else
-                {
-                    $select +=  " [" + $columnName + "]"
-                }
+            if ($include)
+            {
+                $select += Get-ColumnValue -ColumnName $columnName -DataType $column.DataType -Prefix "$Prefix" -ConvertBit $ConvertBit -Conversion $(!$Raw)
             }
             else
             {
-                if ($include)
-                {
-                    $select += Get-ColumnValue -columnName $columnName -dataType $column.DataType -prefix "$Prefix" -newName $columnName
-                }
-                else
-                {
-                    $select += " NULL "
-                }
+                $select += " NULL "
             }
 
+            if ($AddAs)
+            {
+                $select +=  " as [$columnName]"
+            }
+            
             $j += 1
+            $result += $select
         }
     }
 
-    $select
+    if ($Array)
+    {
+        return $result
+    }
+    else
+    {
+        return [string]::join(', ', $result)
+    }
 }

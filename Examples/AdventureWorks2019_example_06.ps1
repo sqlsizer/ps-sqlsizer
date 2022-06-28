@@ -29,3 +29,6 @@ $query.KeyColumns = @('BusinessEntityID')
 $query.Where = "[`$table].FirstName = 'Michael'"
 
 Install-ForeignKeyIndexes -Database $database -ConnectionInfo $connection -Queries @($query) -Verbose
+
+
+# end of script

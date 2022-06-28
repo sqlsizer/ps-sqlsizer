@@ -33,8 +33,4 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 # Find smallest subset that allows to remove start set from the database
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $false -DatabaseInfo $info
-$xml | Out-File -FilePath "subset.xml"
-
-$xml = Get-SubsetXml -Database $database -ConnectionInfo $connection -AllColumns $true -DatabaseInfo $info
-$xml | Out-File -FilePath "subset_full.xml"
+# end of script

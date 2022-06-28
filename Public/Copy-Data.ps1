@@ -34,8 +34,8 @@
         $isIdentity = $table.IsIdentity
         $schema = $table.SchemaName
         $tableName = $table.TableName
-        $tableColumns = Get-TableSelect -TableInfo $table -Raw $true -IgnoredTables $IgnoredTables -Prefix $null
-        $tableSelect = Get-TableSelect -TableInfo $table -Raw $false -IgnoredTables $IgnoredTables -Prefix $null
+        $tableColumns = Get-TableSelect -TableInfo $table -Raw $true -IgnoredTables $IgnoredTables -Prefix $null -AddAs $false -ConvertBit $false
+        $tableSelect = Get-TableSelect -TableInfo $table -Raw $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $true -ConvertBit $true
 
         $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] ($tableColumns) SELECT $tableSelect FROM " + $Source + ".SqlSizerResult." + $schema + "_" + $tableName
         if ($isIdentity)

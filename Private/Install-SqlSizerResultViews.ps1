@@ -1,4 +1,4 @@
-function Install-SqlSizerViews
+function Install-SqlSizerResultViews
 {
     [cmdletbinding()]
     param
@@ -29,7 +29,7 @@ function Install-SqlSizerViews
         {
             continue
         }
-        $tableSelect = Get-TableSelect -TableInfo $table -Raw $false -IgnoredTables $IgnoredTables -Prefix "t."
+        $tableSelect = Get-TableSelect -TableInfo $table -Raw $false -IgnoredTables $IgnoredTables -Prefix "t." -ConvertBit $true -AddAs $true
         $join = GetTableJoin -TableInfo $table -Structure $structure
 
         if ($null -eq $join)

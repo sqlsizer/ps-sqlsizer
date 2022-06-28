@@ -1,4 +1,4 @@
-function Get-AzSubsetTableJson
+function Get-SubsetTableXml
 {
     [cmdletbinding()]
     param
@@ -12,6 +12,9 @@ function Get-AzSubsetTableJson
         [Parameter(Mandatory=$true)]
         [string]$TableName,
 
+        [Parameter(Mandatory=$true)]
+        [bool]$Secure,
+
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
@@ -22,17 +25,24 @@ function Get-AzSubsetTableJson
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    $schema = "SqlSizerResult"
+    if ($Secure -eq $true)
+    {
+        $schema = 'SqlSizerSecure'
+    }
+
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     foreach ($table in $info.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $select = Get-TableSelect -TableInfo $table -Raw $true -IgnoredTables $IgnoredTables -Prefix $null
-            $sql = "SELECT $select FROM SqlSizerResult.$($SchemaName)_$($TableName) FOR JSON PATH"
+            $sql = "SELECT * FROM $schema.$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
             $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
-            $json = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join ""
-            return $json
-        }
+            $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
+            $xml = $obj | ConvertTo-Xml -NoTypeInformation
+
+            return $xml
+        } 
     }
 
     return $null

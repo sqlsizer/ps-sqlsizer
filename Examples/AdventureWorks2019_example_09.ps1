@@ -58,3 +58,5 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 Measure-Command {
     Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 }
+
+# end of script
