@@ -7,7 +7,7 @@ function New-SchemaFromSubset
         [string]$Database,
 
         [Parameter(Mandatory=$true)]
-        [string]$NewSchemaSuffix,
+        [string]$NewSchemaPrefix,
 
         [Parameter(Mandatory=$true)]
         [bool]$CopyData,
@@ -24,7 +24,7 @@ function New-SchemaFromSubset
     # create tables
     foreach ($subsetTable in $subsetTables)
     {
-        New-DataTableFromSubsetTable -Database $Database -NewSchemaName "$($subsetTable.SchemaName)_$NewSchemaSuffix" -NewTableName "$($subsetTable.TableName)" `
+        New-DataTableFromSubsetTable -Database $Database -NewSchemaName "$($NewSchemaPrefix)_$($subsetTable.SchemaName)" -NewTableName "$($subsetTable.TableName)" `
                      -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -CopyData $CopyData -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
@@ -37,7 +37,7 @@ function New-SchemaFromSubset
          {
              foreach ($fk in $table.ForeignKeys)
              {
-                 $sql = "ALTER TABLE $($table.SchemaName)_$NewSchemaSuffix.$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($fk.Schema)_$NewSchemaSuffix.$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
+                 $sql = "ALTER TABLE $($NewSchemaPrefix)_$($table.SchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($NewSchemaPrefix)_$($fk.Schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
                  Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
              }
          }

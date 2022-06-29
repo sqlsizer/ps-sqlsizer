@@ -1,6 +1,7 @@
 ﻿class DatabaseInfo
 {
     [TableInfo[]]$Tables
+    [string[]]$AllSchemas
     [int]$PrimaryKeyMaxSize
     [string]$DatabaseSize
 }
@@ -36,50 +37,6 @@ class TableInfo2WithColor
     [string]$SchemaName
     [string]$TableName
     [Color]$Color
-}
-
-class TableInfo2WithRows
-{
-    [string]$SchemaName
-    [string]$TableName
-    [TableInfo2Row[]]$Rows
-}
-
-class TableInfo2WithFks
-{
-    [string]$SchemaName
-    [string]$TableName
-    [string[]]$FkKeys
-    [bool]$Totally
-
-    [string] ToString() {
-        if ($this.Totally -eq $false)
-        {
-            $fks = ""
-            foreach ($fk in $this.FkKeys)
-            {
-                if ($fks -ne "")
-                {
-                    $fks += ", "
-                }
-                $fks += $fk
-            }
-
-            return "[$($this.SchemaName).$($this.TableName)] => $($this.FkKeys.Length) fks are not reachable: " + $fks
-        }
-        return "[$($this.SchemaName).$($this.TableName)] => totally not reachable"
-     }
-}
-
-class TableInfo2Row
-{
-    [TableInfo2Column[]]$Columns
-}
-
-class TableInfo2Column
-{
-    [string]$Name
-    [Object]$Value
 }
 
 class SubsettingTableResult

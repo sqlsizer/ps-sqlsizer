@@ -52,7 +52,8 @@ Write-Host "Logical reads from db during subsetting: $($connection.Statistics.Lo
 $subsetId = (New-Guid).ToString().Replace('-', '_')
 
 New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
-                     -NewSchemaSuffix "subset_$subsetId"
+                     -NewSchemaPrefix "SqlSizer_subset_$subsetId"
 
-                     
+Write-Host "New subset id: $subsetId"
+
 # end of script

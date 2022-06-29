@@ -18,14 +18,13 @@
     # remove fks from schema
     foreach ($table in $info.Tables)
     {
-        if ($table.SchemaName -ne $SchemaName)
-        {
-            continue
-        }
         foreach ($fk in $table.ForeignKeys)
         {
-            $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            if ($fk.Schema -eq $SchemaName)
+            {
+                $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
+                $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            }
         }
     }
     

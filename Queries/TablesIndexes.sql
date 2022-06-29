@@ -15,6 +15,6 @@ INNER JOIN sys.index_columns ic
 INNER JOIN sys.columns c 
 	ON c.object_id = ic.object_id and c.column_id = ic.column_id
 WHERE
-	i.is_primary_key = 0 and [schemas].[name] <> 'SqlSizer'
+	i.is_primary_key = 0 and [schemas].[name] not like 'SqlSizer%'
 ORDER BY 
 	[schemas].[name], t.[name]

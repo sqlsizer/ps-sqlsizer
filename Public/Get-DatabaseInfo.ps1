@@ -36,6 +36,9 @@
     $viewsRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $viewsRowsGrouped = $viewsRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
 
+    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\SchemasInfo.sql")
+    $schemasRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
     if ($true -eq $MeasureSize)
     {
         $statsRows = Execute-SQL -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
@@ -44,11 +47,6 @@
 
     foreach ($row in $rows)
     {
-        if ($row["schema"] -eq "SqlSizer")
-        {
-            continue
-        }
-        
         $table = New-Object -TypeName TableInfo
         $table.SchemaName = $row["schema"]
         $table.TableName = $row["table"]
@@ -208,6 +206,11 @@
     }
     
     $result.PrimaryKeyMaxSize = $primaryKeyMaxSize    
+
+    foreach ($row in $schemasRows)
+    {
+        $result.AllSchemas += $row.Name
+    }
 
     return $result
 }
