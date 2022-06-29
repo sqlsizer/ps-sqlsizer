@@ -5,7 +5,7 @@ A set of PowerShell scripts to make a copy of a Microsoft SQL database with a su
 
 The subsets are highly configurable. The final result is outcome of the original database, the color map and the colors of initial data.
 
-# Use cases (some)
+# Use cases 
 - Removing unwanted data from database 
 - Creating smaller database from production database for development/testing purposes
 - GDRP Data Masking 
