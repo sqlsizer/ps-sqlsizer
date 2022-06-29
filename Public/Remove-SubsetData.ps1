@@ -1,4 +1,4 @@
-﻿function Remove-Data
+﻿function Remove-SubsetData
 {
     [cmdletbinding()]
     param
