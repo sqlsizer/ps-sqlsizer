@@ -16,15 +16,15 @@
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL  
-        Drop Table SqlSizer.Operations"
+    DROP TABLE SqlSizer.Operations"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "IF OBJECT_ID('SqlSizer.Tables') IS NOT NULL  
-        Drop Table SqlSizer.Tables"
+    DROP TABLE SqlSizer.Tables"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "IF OBJECT_ID('SqlSizer.ForeignKeys') IS NOT NULL  
-        Drop Table SqlSizer.ForeignKeys"
+    DROP TABLE SqlSizer.ForeignKeys"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $structure = [Structure]::new($info)
@@ -33,7 +33,7 @@
     {
         $slice = $structure.GetSliceName($signature)
         $tmp = "IF OBJECT_ID('$($slice)') IS NOT NULL  
-            Drop Table $($slice)"
+        DROP TABLE $($slice)"
         Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
@@ -41,7 +41,7 @@
     {
         $processing = $structure.GetProcessingName($signature)
         $tmp = "IF OBJECT_ID('$($processing)') IS NOT NULL  
-            Drop Table $($processing)"
+        DROP TABLE $($processing)"
         Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
@@ -59,6 +59,13 @@
         Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
+    foreach ($table in $info.Tables)
+    {
+        $tmp = "IF OBJECT_ID('SqlSizerExport.$($table.SchemaName)_$($table.TableName)', 'V') IS NOT NULL  
+        DROP VIEW SqlSizerExport.$($table.SchemaName)_$($table.TableName)"
+        Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
     $tmp = "IF OBJECT_ID('SqlSizerSecure.Summary', 'V') IS NOT NULL  
         DROP VIEW SqlSizerSecure.Summary"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
@@ -70,5 +77,8 @@
     $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "DROP SCHEMA IF EXISTS SqlSizerSecure"
+    $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "DROP SCHEMA IF EXISTS SqlSizerExport"
     $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 }

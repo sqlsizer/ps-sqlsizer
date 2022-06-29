@@ -28,7 +28,7 @@ function Get-SubsetTableCsv
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $schema = "SqlSizerResult"
+    $schema = "SqlSizerExport"
     if ($Secure -eq $true)
     {
         $schema = 'SqlSizerSecure'

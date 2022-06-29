@@ -1,4 +1,4 @@
-function Install-SqlSizerResultViews
+function Install-SqlSizerExportViews
 {
     [cmdletbinding()]
     param
@@ -17,7 +17,7 @@ function Install-SqlSizerResultViews
     )
 
      
-    $tmp = "CREATE SCHEMA SqlSizerResult"
+    $tmp = "CREATE SCHEMA SqlSizerExport"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
@@ -29,7 +29,7 @@ function Install-SqlSizerResultViews
         {
             continue
         }
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false
+        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $true
         $join = GetTableJoin -TableInfo $table -Structure $structure
 
         if ($null -eq $join)
@@ -37,7 +37,7 @@ function Install-SqlSizerResultViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizerResult.$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE VIEW SqlSizerExport.$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
     }
 }

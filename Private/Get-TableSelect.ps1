@@ -1,11 +1,11 @@
 function Get-TableSelect
 {
     param (
-        [bool]$Raw,
+        [bool]$Conversion,
+        [bool]$SkipGenerated = $true,
         [string]$Prefix,
         [TableInfo]$TableInfo,
         [TableInfo2[]]$IgnoredTables,
-        [bool]$ConvertBit,
         [bool]$AddAs,
         [bool]$Array = $false
     )
@@ -19,7 +19,7 @@ function Get-TableSelect
         $column = $TableInfo.Columns[$i]
         $columnName = $column.Name
 
-        if (($column.IsComputed -eq $true) -or ($column.IsGenerated -eq $true) -or ($column.DataType -eq "timestamp"))
+        if ($SkipGenerated -and (($column.IsComputed -eq $true) -or ($column.IsGenerated -eq $true) -or ($column.DataType -eq "timestamp")))
         {
             continue
         }
@@ -44,7 +44,7 @@ function Get-TableSelect
 
             if ($include)
             {
-                $select += Get-ColumnValue -ColumnName $columnName -DataType $column.DataType -Prefix "$Prefix" -ConvertBit $ConvertBit -Conversion $(!$Raw)
+                $select += Get-ColumnValue -ColumnName $columnName -DataType $column.DataType -Prefix "$Prefix" -Conversion $Conversion
             }
             else
             {

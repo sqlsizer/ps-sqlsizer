@@ -25,7 +25,7 @@ function Get-SubsetTableJson
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $schema = "SqlSizerResult"
+    $schema = "SqlSizerExport"
     if ($Secure -eq $true)
     {
         $schema = "SqlSizerSecure"

@@ -51,6 +51,9 @@
     $tmp = "CREATE TABLE SqlSizer.Tables(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64))"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
+    $sql = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Tables ([Schema] ASC, [TableName] ASC)"
+    Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
     $tmp = "CREATE TABLE SqlSizer.ForeignKeys(Id int primary key identity(1,1), [FkTableId] int, [TableId] int, [Name] varchar(256))"
     Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 

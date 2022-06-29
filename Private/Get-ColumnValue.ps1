@@ -5,7 +5,6 @@
         [string]$ColumnName,
         [string]$DataType,
         [string]$Prefix,
-        [bool]$ConvertBit,
         [bool]$Conversion
     )
 
@@ -18,15 +17,11 @@
     {
         return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"        
     }
-    else 
+   
+    if ($DataType -eq 'bit')
     {
-        if ($ConvertBit -and ($DataType -eq 'bit'))
-        {
-            return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"           
-        }
-        else
-        {
-            return "$($Prefix)[" + $ColumnName + "]"    
-        }
+        return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"           
     }
+    
+    return "$($Prefix)[" + $ColumnName + "]"    
 }
