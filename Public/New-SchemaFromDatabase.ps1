@@ -1,4 +1,4 @@
-function New-SchemaClone
+function New-SchemaFromDatabase
 {
     [cmdletbinding()]
     param
@@ -61,7 +61,7 @@ function New-SchemaClone
                     $schema = $NewSchemaName
                 }
 
-                $sql = "ALTER TABLE $NewSchemaName.$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
+                $sql = "ALTER TABLE $($NewSchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
                 Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
             }
         }

@@ -1,4 +1,4 @@
-﻿## Example that shows how copy schema
+﻿## Example that shows how copy schema 
 
 # Import of module
 Import-Module ..\MSSQL-SqlSizer
@@ -16,6 +16,6 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
 Remove-Schema -Database $database -ConnectionInfo $connection -SchemaName "Person6"
-New-SchemaClone -Database $database -ConnectionInfo $connection -SchemaName "Person" -NewSchemaName "Person6" -CopyData $false -DatabaseInfo $info
+New-SchemaFromDatabase -Database $database -ConnectionInfo $connection -SchemaName "Person" -NewSchemaName "Person6" -CopyData $false -DatabaseInfo $info
 
 # end of script

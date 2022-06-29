@@ -29,7 +29,7 @@ function Install-SqlSizerResultViews
         {
             continue
         }
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false
+        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $false -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false
         $join = GetTableJoin -TableInfo $table -Structure $structure
 
         if ($null -eq $join)
