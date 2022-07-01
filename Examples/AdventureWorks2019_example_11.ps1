@@ -47,7 +47,7 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 
 New-DataTableFromSubsetTable -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `

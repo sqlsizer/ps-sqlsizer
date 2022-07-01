@@ -2,7 +2,7 @@ function Find-ReachableTables
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -24,14 +24,12 @@ function Find-ReachableTables
     {
         $unreachableTable = $unreachable | Where-Object {($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName)}
         $isUnreachable = $null -ne $unreachableTable
-        
+
         if ($isUnreachable -eq $false)
-        {   
+        {
             $item = New-Object TableInfo2
-            
             $item.SchemaName = $table.SchemaName
             $item.TableName = $table.TableName
-
             $toReturn += $item
         }
     }

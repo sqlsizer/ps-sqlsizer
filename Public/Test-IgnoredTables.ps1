@@ -2,7 +2,7 @@ function Test-IgnoredTables
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 

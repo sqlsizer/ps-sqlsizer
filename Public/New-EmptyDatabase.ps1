@@ -2,7 +2,7 @@ function New-EmptyDatabase
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 

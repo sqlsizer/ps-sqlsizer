@@ -2,7 +2,7 @@ function New-EmptyAzDatabase
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 

@@ -2,7 +2,7 @@ function Get-SubsetTableCsv
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -17,9 +17,6 @@ function Get-SubsetTableCsv
 
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
-
-        [Parameter(Mandatory=$false)]
-        [TableInfo2[]]$IgnoredTables,
 
         [Parameter(Mandatory=$false)]
         [bool]$SkipHeader = $true,
@@ -40,7 +37,7 @@ function Get-SubsetTableCsv
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
             $sql = "SELECT * FROM $schema.$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
-            $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+            $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
             $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
 
@@ -48,9 +45,9 @@ function Get-SubsetTableCsv
             {
                 $csv = $csv | select-object -skip 1
             }
-            
+
             return [string]::Join("`r`n", $csv)
-        } 
+        }
     }
 
     return $null

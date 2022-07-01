@@ -1,6 +1,6 @@
 function Get-DatabaseInfoIfNull
 {
-    param 
+    param
     (
         [Parameter(Mandatory=$true)]
         [string]$Database,

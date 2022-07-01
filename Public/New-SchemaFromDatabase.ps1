@@ -2,7 +2,7 @@ function New-SchemaFromDatabase
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -21,20 +21,20 @@ function New-SchemaFromDatabase
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    
+
     Write-Progress -Activity "Copy schema $SchemaName" -PercentComplete 0
 
     $schemaAlreadyExists = Test-SchemaExists -SchemaName $NewSchemaName -Database $Database -ConnectionInfo $ConnectionInfo
 
     if ($schemaAlreadyExists)
-    { 
+    {
         Write-Progress -Activity "Copy schema $SchemaName" -Completed
-        Write-Host "Schema $NewSchemaName already exists. Provide different name"
+        Write-Output "Schema $NewSchemaName already exists. Provide different name"
         return
     }
     $sql = "CREATE SCHEMA $NewSchemaName"
-    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
     # copy tables
     $i = 0
     foreach ($table in $DatabaseInfo.Tables)
@@ -62,7 +62,7 @@ function New-SchemaFromDatabase
                 }
 
                 $sql = "ALTER TABLE $($NewSchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
-                Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
+                Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
             }
         }
     }

@@ -2,7 +2,7 @@ function Remove-EmptyTables
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -29,28 +29,28 @@ function Remove-EmptyTables
                 $shouldRemove = $false
                 continue
             }
-            
+
             foreach ($fk in $fkTable.ForeignKeys)
             {
                 if (($fk.Schema -eq $table.SchemaName) -and ($fk.Table -eq $table.TableName))
                 {
-                    $sql = "IF OBJECT_ID('$($fkTable.SchemaName).$($fkTable.TableName)', 'U') IS NOT NULL 
+                    $sql = "IF OBJECT_ID('$($fkTable.SchemaName).$($fkTable.TableName)', 'U') IS NOT NULL
                             ALTER TABLE [" + $fkTable.SchemaName + "].[" + $fkTable.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
-                    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 }
             }
         }
-        
+
         if ($shouldRemove)
         {
             foreach ($view in $table.Views)
             {
                 $sql = "DROP VIEW IF EXISTS $view"
-                Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
 
             $sql = "DROP TABLE [$($table.SchemaName)].[$($table.TableName)]"
-            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
         $i += 1
     }

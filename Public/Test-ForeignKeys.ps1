@@ -2,7 +2,7 @@ function Test-ForeignKeys
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -25,11 +25,11 @@ function Test-ForeignKeys
         foreach ($fk in $table.ForeignKeys)
         {
             $sql = "ALTER TABLE $($table.SchemaName).$($table.TableName) WITH CHECK CHECK CONSTRAINT $($fk.Name)"
-            $ok = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
+            $ok = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
 
-            if ($ok -eq $false) 
+            if ($ok -eq $false)
             {
-                Write-Host "Problem with FK $($fk.Name)" -ForegroundColor Red
+                Write-Output "Problem with FK $($fk.Name)"
             }
         }
         $i += 1

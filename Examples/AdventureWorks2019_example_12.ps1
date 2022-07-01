@@ -47,13 +47,13 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 $subsetId = (New-Guid).ToString().Replace('-', '_')
 
 New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
                      -NewSchemaPrefix "SqlSizer_subset_$subsetId"
 
-Write-Host "New subset id: $subsetId"
+Write-Output "New subset id: $subsetId"
 
 # end of script

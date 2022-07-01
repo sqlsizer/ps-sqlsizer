@@ -2,7 +2,7 @@ function Get-SubsetTableJson
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -17,9 +17,6 @@ function Get-SubsetTableJson
 
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
-
-        [Parameter(Mandatory=$false)]
-        [TableInfo2[]]$IgnoredTables,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -38,7 +35,7 @@ function Get-SubsetTableJson
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
             $sql = "SELECT * FROM $schema.$($SchemaName)_$($TableName) FOR JSON PATH"
-            $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+            $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $json = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join ""
             return $json
         }

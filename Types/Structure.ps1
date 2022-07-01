@@ -8,13 +8,13 @@ class Structure
         [DatabaseInfo]$DatabaseInfo
     )
     {
-        $this.DatabaseInfo = $DatabaseInfo    
+        $this.DatabaseInfo = $DatabaseInfo
         $this.Signatures = New-Object System.Collections.Generic.Dictionary"[String, ColumnInfo[]]"
         $this.Tables = New-Object System.Collections.Generic.Dictionary"[TableInfo, String]"
 
         foreach ($table in $this.DatabaseInfo.Tables) {
 
-            if ($table.PrimaryKey.Count -eq 0) 
+            if ($table.PrimaryKey.Count -eq 0)
             {
                 continue
             }
@@ -41,7 +41,7 @@ class Structure
         $result = ""
         foreach ($pkColumn in $Table.PrimaryKey)
         {
-            $result += "__" + $pkColumn.DataType 
+            $result += "__" + $pkColumn.DataType
             if (($null -ne $pkColumn.Length) -and ("" -ne $pkColumn.Length))
             {
                 $result += "_" + $pkColumn.Length

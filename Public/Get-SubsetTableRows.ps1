@@ -2,7 +2,7 @@ function Get-SubsetTableRows
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -27,7 +27,7 @@ function Get-SubsetTableRows
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
-    
+
     foreach ($table in $info.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
@@ -48,7 +48,7 @@ function Get-SubsetTableRows
                 }
 
                 $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE [Table] = $($table.Id)"
-                $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+                $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }
             else
@@ -81,7 +81,7 @@ function Get-SubsetTableRows
                     {
                         $columns += "NULL as $($table.Columns[$i].Name)"
                     }
-                    
+
                     if ($i -lt ($table.Columns.Count - 1))
                     {
                         $columns += ", "
@@ -98,11 +98,11 @@ function Get-SubsetTableRows
                     }
                 }
                 $sql = "SELECT '$($table.SchemaName)' as SchemaName, '$($table.TableName)' as TableName, $($columns)
-                        FROM $($processing) p 
+                        FROM $($processing) p
                         INNER JOIN $($table.SchemaName).$($table.TableName) t ON $($cond)
                         INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '$($table.SchemaName)' AND tt.[TableName] = '$($table.TableName)'
                         WHERE p.[Table] = tt.Id"
-                $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+                $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }
         }

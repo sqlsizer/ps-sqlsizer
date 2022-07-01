@@ -47,7 +47,7 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 # Create a new db with found subset of data
 
@@ -66,24 +66,24 @@ Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInf
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Host "Subset size: $($infoNew.DatabaseSize)"
+Write-Output "Subset size: $($infoNew.DatabaseSize)"
 $sum = 0
 foreach ($table in $infoNew.Tables)
 {
     $sum += $table.Statistics.Rows
 }
 
-Write-Host "Total rows: $($sum)"
-Write-Host "==================="
+Write-Output "Total rows: $($sum)"
+Write-Output "==================="
 
-Write-Host "Secure CSV for Person.Person:" -ForegroundColor Red
-Write-Host $(Get-SubsetTableCsv -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true -SkipHeader $false)
+Write-Output "Secure CSV for Person.Person:"
+Write-Output $(Get-SubsetTableCsv -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true -SkipHeader $false)
 
-Write-Host "Secure Json for Person.Person:" -ForegroundColor Red
-Write-Host $(Get-SubsetTableJson -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true)
+Write-Output "Secure Json for Person.Person:"
+Write-Output $(Get-SubsetTableJson -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true)
 
-Write-Host "Secure Xml for Person.Person:" -ForegroundColor Red
+Write-Output "Secure Xml for Person.Person:"
 $xml = Get-SubsetTableXml -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true
-Write-Host $xml.OuterXml
+Write-Output $xml.OuterXml
 
 # end of script

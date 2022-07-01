@@ -2,7 +2,7 @@
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -25,7 +25,7 @@
     {
         $top = "";
         if ($query.Top -ne 0)
-        {   
+        {
             $top = " TOP " + $query.Top;
         }
         $table = $info.Tables | Where-Object {($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table)}
@@ -41,18 +41,18 @@
 
         $order = "";
         if ($null -ne $query.OrderBy)
-        {   
+        {
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL FROM " + $query.Schema + "." + $query.Table + " as [`$table] " 
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
 
         if ($null -ne $query.Where)
         {
-            $tmp += " WHERE " + $query.Where 
+            $tmp += " WHERE " + $query.Where
         }
 
         $tmp += " " + $order
 
-        $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }

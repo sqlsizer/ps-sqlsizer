@@ -12,36 +12,36 @@
     )
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesInfo.sql")
-    $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $result = New-Object -TypeName DatabaseInfo
-  
+
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesPrimaryKeys.sql")
-    $primaryKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $primaryKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $primaryKeyRowsGrouped = $primaryKeyRows | Group-Object -Property schema, table -AsHashTable -AsString
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesColumns.sql")
-    $columnsRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $columnsRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $columnsRowsGrouped = $columnsRows | Group-Object -Property schema, table -AsHashTable -AsString
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesForeignKeys.sql")
-    $foreignKeyRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $foreignKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $foreignKeyRowsGrouped = $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
 
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesIndexes.sql")
-    $indexesRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $indexesRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $indexesRowsGrouped = $indexesRows | Group-Object -Property schema, table -AsHashTable -AsString
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\ViewsInfo.sql")
-    $viewsRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $viewsRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $viewsRowsGrouped = $viewsRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\SchemasInfo.sql")
-    $schemasRows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $schemasRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     if ($true -eq $MeasureSize)
     {
-        $statsRows = Execute-SQL -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
+        $statsRows = Invoke-SqlcmdEx -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
         $result.DatabaseSize = $statsRows[0]["database_size"]
     }
 
@@ -55,12 +55,12 @@
         $table.HistoryOwner = $row["history_owner"]
         $table.HistoryOwnerSchema = $row["history_owner_schema"]
         $table.IsReferencedBy = @()
-        
+
         if ($true -eq $MeasureSize)
         {
-            $statsRow = Execute-SQL -Sql ("EXEC sp_spaceused [" + $table.SchemaName + "." + $table.TableName + "]") -Database $Database -ConnectionInfo $ConnectionInfo
+            $statsRow = Invoke-SqlcmdEx -Sql ("EXEC sp_spaceused [" + $table.SchemaName + "." + $table.TableName + "]") -Database $Database -ConnectionInfo $ConnectionInfo
             $stats = New-Object -TypeName TableStatistics
-            
+
             $stats.Rows = $statsRow["rows"]
             $stats.DataKB = $statsRow["data"].Trim(' KB')
             $stats.IndexSize = $statsRow["index_size"].Trim(' KB')
@@ -141,9 +141,9 @@
             {
                 $index = New-Object -TypeName Index
                 $index.Name = $item.Name
-            
+
                 foreach ($column in $item.Group)
-                {   
+                {
                     $index.Columns += $column["column"]
                 }
 
@@ -196,7 +196,7 @@
             $tableName = $fk.Table
 
             $primaryTable = $tablesGrouped[$schema + ", " + $tableName]
-            
+
             if ($primaryTable.IsReferencedBy.Contains($table) -eq $false)
             {
                 $primaryTable.IsReferencedBy += $table
@@ -204,8 +204,8 @@
 
         }
     }
-    
-    $result.PrimaryKeyMaxSize = $primaryKeyMaxSize    
+
+    $result.PrimaryKeyMaxSize = $primaryKeyMaxSize
 
     foreach ($row in $schemasRows)
     {

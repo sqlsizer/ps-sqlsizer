@@ -2,7 +2,7 @@ function New-DataTableFromSubsetTable
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -27,9 +27,9 @@ function New-DataTableFromSubsetTable
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    
+
     New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
-                     -ViewSchemaName "SqlSizerResult" -ViewName "$($SchemaName)_$($TableName)" -CopyData $CopyData -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+                     -ViewSchemaName "SqlSizerResult" -ViewName "$($SchemaName)_$($TableName)" -CopyData $CopyData -ConnectionInfo $ConnectionInfo
 
     # setup primary key
     foreach ($table in $DatabaseInfo.Tables)
@@ -37,7 +37,7 @@ function New-DataTableFromSubsetTable
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
             $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ADD PRIMARY KEY ($([string]::Join(',', $table.PrimaryKey)))"
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 }

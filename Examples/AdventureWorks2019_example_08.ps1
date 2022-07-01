@@ -41,7 +41,7 @@ foreach ($table in $info.Tables)
 
     $colorMapItem.ForcedColor = New-Object -Type ForcedColor
     $colorMapItem.ForcedColor.Color = [Color]::Yellow
-    
+
     $colorMapItem.Condition = New-Object -Type Condition
     $colorMapItem.Condition.Top = 10 # limit all dependend data for each fk by 10 rows (it doesn't mean that there will be no more rows!)
     $colorMap.Items += $colorMapItem
@@ -83,13 +83,13 @@ Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInf
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Host "Subset size: $($infoNew.DatabaseSize)"
+Write-Output "Subset size: $($infoNew.DatabaseSize)"
 $sum = 0
 foreach ($table in $infoNew.Tables)
 {
     $sum += $table.Statistics.Rows
 }
 
-Write-Host "Total rows: $($sum)"
+Write-Output "Total rows: $($sum)"
 
 # end of script

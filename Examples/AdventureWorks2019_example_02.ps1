@@ -45,10 +45,10 @@ foreach ($row in $rows)
     $i = 0
     foreach ($column in $row.ItemArray)
     {
-        "Column $($row.Table.Columns[$i]) = '$($column)'"
+        Write-Output "Column $($row.Table.Columns[$i]) = '$($column)'"
         $i += 1
     }
-    "==========="
+    Write-Output "==========="
 }
 
 # end of script

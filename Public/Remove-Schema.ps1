@@ -2,7 +2,7 @@
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -23,22 +23,22 @@
             if ($fk.Schema -eq $SchemaName)
             {
                 $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
-                $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
         }
     }
-    
+
     # drop tables
     foreach ($table in $info.Tables)
     {
         if ($table.SchemaName -eq $SchemaName)
         {
             $sql = "DROP TABLE [$($table.SchemaName)].[$($table.TableName)]"
-            Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 
     # drop schema
     $tmp = "DROP SCHEMA IF EXISTS $SchemaName"
-    $null = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 }

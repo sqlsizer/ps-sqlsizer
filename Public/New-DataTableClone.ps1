@@ -2,7 +2,7 @@ function New-DataTableClone
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -27,14 +27,14 @@ function New-DataTableClone
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    
+
     Write-Progress -Activity "Copy table $SchemaName.$TableName" -PercentComplete 0
 
     $tableAlreadyExists = Test-TableExists -SchemaName $NewSchemaName -TableName $NewTableName -Database $Database -ConnectionInfo $ConnectionInfo
 
     if ($tableAlreadyExists)
     {
-        Write-Host "Table [$NewSchemaName].[$NewTableName] already exists. Provide different name"
+        Write-Output "Table [$NewSchemaName].[$NewTableName] already exists. Provide different name"
         return
     }
 
@@ -44,22 +44,22 @@ function New-DataTableClone
     if ($schemaExists -eq $false)
     {
         $sql = "CREATE SCHEMA $NewSchemaName"
-        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     # copy schema
     IF ($CopyData)
     {
         $sql = "SELECT * INTO [$NewSchemaName].[$NewTableName] FROM [$SchemaName].[$TableName]"
-        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
     else
     {
         $sql = "SELECT TOP 1 * INTO [$NewSchemaName].[$NewTableName] FROM [$SchemaName].[$TableName]"
-        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $sql = "TRUNCATE TABLE [$NewSchemaName].[$NewTableName]"
-        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     # setup primary key
@@ -68,7 +68,7 @@ function New-DataTableClone
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
             $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ADD PRIMARY KEY ($([string]::Join(',', $table.PrimaryKey)))"
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 

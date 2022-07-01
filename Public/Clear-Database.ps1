@@ -24,29 +24,28 @@
         {
             continue
         }
-        
+
         if ($table.HasHistory -eq $true)
         {
             $historyTable = $info.Tables | Where-Object { ($_.IsHistoric -eq $true) -and ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName)}
 
             $sql = "ALTER TABLE " + $table.SchemaName + ".[" +  $table.TableName + "] SET ( SYSTEM_VERSIONING = OFF )"
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
 
-            $sql = "DELETE FROM " +  $table.SchemaName + "." + $table.TableName  
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+            $sql = "DELETE FROM " +  $table.SchemaName + "." + $table.TableName
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "DELETE FROM " +  $historyTable.SchemaName + "." + $historyTable.TableName  
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
-
+            $sql = "DELETE FROM " +  $historyTable.SchemaName + "." + $historyTable.TableName
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "ALTER TABLE " + $table.SchemaName + ".[" +  $table.TableName + "] SET ( SYSTEM_VERSIONING = ON  (HISTORY_TABLE = " + $historyTable.SchemaName + ".[" + $historyTable.TableName +  "] ))"
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
         else
         {
-            $sql = "DELETE FROM " +  $table.SchemaName + "." + $table.TableName  
-            $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $sql = "DELETE FROM " +  $table.SchemaName + "." + $table.TableName
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 

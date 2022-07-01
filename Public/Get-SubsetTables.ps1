@@ -2,7 +2,7 @@ function Get-SubsetTables
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 

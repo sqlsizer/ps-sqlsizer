@@ -70,13 +70,12 @@ class TableInfo
     [int]$Id
     [string]$SchemaName
     [string]$TableName
-    
     [bool]$IsIdentity
     [bool]$IsHistoric
     [bool]$HasHistory
     [string]$HistoryOwner
     [string]$HistoryOwnerSchema
-    
+
     [ColumnInfo[]]$PrimaryKey
     [ColumnInfo[]]$Columns
 

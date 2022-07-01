@@ -111,7 +111,7 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" 
 
 # Create a new db with found subset of data
 
@@ -130,14 +130,14 @@ Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInf
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Host "Subset size: $($infoNew.DatabaseSize)"
+Write-Output "Subset size: $($infoNew.DatabaseSize)"
 $sum = 0
 foreach ($table in $infoNew.Tables)
 {
     $sum += $table.Statistics.Rows
 }
 
-Write-Host "Total rows: $($sum)"
+Write-Output "Total rows: $($sum)"
 # end of script
 ```
 ## Sample 2 (Azure SQL database)
@@ -185,6 +185,6 @@ Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" 
 
 ```

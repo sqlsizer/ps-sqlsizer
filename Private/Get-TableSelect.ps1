@@ -9,7 +9,7 @@ function Get-TableSelect
         [bool]$AddAs,
         [bool]$Array = $false
     )
-    
+
     $result = @()
 
     $j = 0
@@ -55,7 +55,7 @@ function Get-TableSelect
             {
                 $select +=  " as [$columnName]"
             }
-            
+
             $j += 1
             $result += $select
         }

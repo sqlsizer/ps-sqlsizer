@@ -2,7 +2,7 @@ function Find-UnreachableTables
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -88,7 +88,6 @@ function Find-UnreachableTables
                 }
 
                 $newItem.Color = $newColor
-                
                 $null = $processingQueue.Enqueue($newItem)
             }
         }
@@ -117,13 +116,13 @@ function Find-UnreachableTables
                     {
                         $newItem.Color = [int][Color]::Red
                     }
-    
+
                     # forced color from color map
                     if ($null -ne $ColorMap)
                     {
                          $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
                          $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
-                         
+
                          if (($null -ne $items) -and ($null -ne $items.ForcedColor))
                          {
                              $newItem.Color = [int]$items.ForcedColor.Color
@@ -146,7 +145,7 @@ function Find-UnreachableTables
         $key = $table.SchemaName + "." + $table.TableName
 
         if ($reachableTables.Contains($key) -eq $false)
-        {   
+        {
             $item = New-Object TableInfo2
 
             $item.SchemaName = $table.SchemaName
@@ -155,6 +154,6 @@ function Find-UnreachableTables
             $toReturn += $item
        }
     }
-    
+
     return $toReturn
 }

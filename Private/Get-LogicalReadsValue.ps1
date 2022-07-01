@@ -1,8 +1,9 @@
-function Parse-IOStatistics
+function Get-LogicalReadsValue
 {
     [cmdletbinding()]
+    [outputtype([System.Int32])]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [AllowNull()]
         [AllowEmptyString()]

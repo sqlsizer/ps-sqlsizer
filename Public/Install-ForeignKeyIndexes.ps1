@@ -2,7 +2,7 @@ function Install-ForeignKeyIndexes
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -20,7 +20,7 @@ function Install-ForeignKeyIndexes
     )
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $reachableTables = Find-ReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo 
+    $reachableTables = Find-ReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo
 
     $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
@@ -34,7 +34,7 @@ function Install-ForeignKeyIndexes
             $signature = ""
 
             foreach ($fkColumn in $fk.FkColumns)
-            { 
+            {
                 $pk = $tableInfo.PrimaryKey | Where-Object {$_.Name -eq $fkColumn.Name}
 
                 if ($null -ne $pk)
@@ -51,14 +51,14 @@ function Install-ForeignKeyIndexes
                         Write-Verbose "Index $($index.Name) already exists that covers $($fkColumn.Name) column"
                         break
                     }
-                }   
+                }
 
                 if ($columns -ne "")
                 {
                     $columns += ","
                 }
                 $columns += $fkColumn.Name
-                $signature += "_" + $fkColumn.Name 
+                $signature += "_" + $fkColumn.Name
             }
 
             if ($columns -ne "")
@@ -66,7 +66,7 @@ function Install-ForeignKeyIndexes
                 $indexName = "SqlSizer_$($table.SchemaName)_$($table.TableName)_$($signature)"
                 $sql = "IF IndexProperty(OBJECT_ID('$($table.SchemaName).$($table.TableName)'), '$($indexName)', 'IndexId') IS NULL"
                 $sql += " CREATE INDEX [$($indexName)] ON [$($table.SchemaName)].[$($table.TableName)] ($($columns))"
-                $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
         }
     }

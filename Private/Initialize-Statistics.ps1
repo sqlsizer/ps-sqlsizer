@@ -2,7 +2,7 @@
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -15,14 +15,14 @@
 
     # init stats
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    
+
     $structure = [Structure]::new($info)
     $sql = "DELETE FROM SqlSizer.Operations"
-    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     foreach ($table in $info.Tables)
     {
-        if ($table.PrimaryKey.Length -eq 0) 
+        if ($table.PrimaryKey.Length -eq 0)
         {
             continue
         }
@@ -35,6 +35,6 @@
         FROM $($processing) p
         WHERE p.[Table] = $($table.Id)
         GROUP BY [Table], [Color]"
-        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }

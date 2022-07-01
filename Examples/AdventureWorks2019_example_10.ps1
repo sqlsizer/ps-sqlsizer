@@ -1,4 +1,4 @@
-﻿## Example that shows how copy schema 
+﻿## Example that shows how copy schema
 
 # Import of module
 Import-Module ..\MSSQL-SqlSizer

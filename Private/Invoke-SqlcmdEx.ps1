@@ -1,6 +1,8 @@
-﻿function Execute-SQL
+﻿function Invoke-SqlcmdEx
 {
     [cmdletbinding()]
+    [outputtype([System.Boolean])]
+    [outputtype([System.Object])]
     param
     (
         [Parameter(Mandatory=$true)]
@@ -18,7 +20,7 @@
         [Parameter(Mandatory=$false)]
         [bool]$Statistics = $false
     )
-    
+
     try
     {
         $params = @{
@@ -30,43 +32,43 @@
             EncryptConnection = $ConnectionInfo.EncryptConnection
         }
 
-        if (($ConnectionInfo.AccessToken -ne $null) -and ($ConnectionInfo.AccessToken -ne ""))
+        if (($null -ne $ConnectionInfo.AccessToken) -and ($ConnectionInfo.AccessToken -ne ""))
         {
             $params.AccessToken = $ConnectionInfo.AccessToken
         }
 
-        if ($ConnectionInfo.Credential -ne $null)
+        if ($null -ne $ConnectionInfo.Credential)
         {
             $params.Credential = $ConnectionInfo.Credential
         }
 
         if ($true -eq $Statistics)
         {
-            $params.Query = 'SET STATISTICS IO ON 
+            $params.Query = 'SET STATISTICS IO ON
             ' + $Sql + '
             SET STATISTICS IO OFF'
 
-            $verbose = %{ $result = Invoke-Sqlcmd @params -ErrorAction Stop } 4>&1
+            $verbose = ForEach-Object { $result = Invoke-Sqlcmd @params -ErrorAction Stop } 4>&1
             $message = $verbose.Message
-            $logicalReads = Parse-IOStatistics -Message $message
+            $logicalReads = Get-LogicalReadsValue -Message $message
             $ConnectionInfo.Statistics.LogicalReads += $logicalReads
             return $result
         }
         else
         {
-            Invoke-Sqlcmd @params -ErrorAction Stop 
+            Invoke-Sqlcmd @params -ErrorAction Stop
         }
-        
+
         Write-Verbose $Sql
     }
     catch
     {
         if ($Silent -eq $false)
         {
-            Write-Host "Exception message: $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "Error: " $_.Exception -ForegroundColor Red            
-            Write-Host $Sql
-            Write-Host "=="
+            Write-Output "Exception message: $($_.Exception.Message)"
+            Write-Output "Error: " $_.Exception
+            Write-Output $Sql
+            Write-Output "=="
         }
         return $false
     }

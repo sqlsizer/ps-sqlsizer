@@ -2,7 +2,7 @@
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Source,
 
@@ -18,12 +18,12 @@
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
-    
+
     foreach ($table in $info.Tables)
     {
         $schema = $table.SchemaName
         $tableName = $table.TableName
-        
+
         if ($table.IsHistoric -eq $true)
         {
             continue
@@ -31,8 +31,8 @@
 
         $where = GetTableWhere -Database $Source -TableInfo $table -Structure $structure
         $sql = "DELETE FROM " + $schema + ".[" +  $tableName + "] " + $where
-        
-        $null = Execute-SQL -Sql $sql -Database $Target -ConnectionInfo $ConnectionInfo 
+
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Target -ConnectionInfo $ConnectionInfo
     }
 }
 
@@ -52,7 +52,7 @@ function GetTableWhere
      $i = 0
      foreach ($column in $primaryKey)
      {
-        $where += " AND Key" + $i + " = " + $column.Name + " " 
+        $where += " AND Key" + $i + " = " + $column.Name + " "
         $i += 1
      }
 

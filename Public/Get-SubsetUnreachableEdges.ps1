@@ -2,7 +2,7 @@ function Get-SubsetUnreachableEdges
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -19,7 +19,7 @@ function Get-SubsetUnreachableEdges
     $allEdges = New-Object 'System.Collections.Generic.HashSet[int]'
 
     $tmp = "SELECT DISTINCT [Id] FROM SqlSizer.ForeignKeys"
-    $results = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $results = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     foreach ($row in $results)
     {
@@ -31,7 +31,7 @@ function Get-SubsetUnreachableEdges
         $processing = $structure.GetProcessingName($signature)
 
         $tmp = "SELECT DISTINCT [Fk] FROM $($processing) WHERE [FK] IS NOT NULL"
-        $results = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $results = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
         foreach ($row in $results)
         {
@@ -51,16 +51,16 @@ function Get-SubsetUnreachableEdges
             }
             $ids += (" " + $id)
         }
-       
-        $tmp = "SELECT f.[Name], t.[Schema] as FkSchema, t.[TableName] as FkTable, t2.[Schema], t2.[TableName] 
-                FROM SqlSizer.ForeignKeys f 
-                INNER JOIN SqlSizer.Tables t ON t.Id = f.FkTableId  
-                INNER JOIN SqlSizer.Tables t2 ON t2.Id = f.TableId  
+
+        $tmp = "SELECT f.[Name], t.[Schema] as FkSchema, t.[TableName] as FkTable, t2.[Schema], t2.[TableName]
+                FROM SqlSizer.ForeignKeys f
+                INNER JOIN SqlSizer.Tables t ON t.Id = f.FkTableId
+                INNER JOIN SqlSizer.Tables t2 ON t2.Id = f.TableId
                 WHERE f.[Id] IN ($($ids))"
-        $results = Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $results = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
         return $results
     }
-    
+
     return $null
 }

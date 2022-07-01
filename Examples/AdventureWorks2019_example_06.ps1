@@ -1,4 +1,4 @@
-﻿## Example that shows how to find two subsets 
+﻿## Example that shows how to find two subsets
 
 # Import of module
 Import-Module ..\MSSQL-SqlSizer

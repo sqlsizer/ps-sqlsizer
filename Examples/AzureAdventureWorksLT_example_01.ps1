@@ -12,11 +12,11 @@ $accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Tok
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken -EncryptConnection $true
- 
+
 # Check if database is available
 if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
 {
-    Write-Host "Database is not available" -ForegroundColor Red
+    Write-Output "Database is not available" 
     return
 }
 
@@ -48,10 +48,10 @@ Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Host "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" -ForegroundColor Red
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 
-# Ensure that empty database with the database schema exists 
+# Ensure that empty database with the database schema exists
 $emptyDb = "test03_empty"
 
 if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
@@ -65,13 +65,13 @@ Copy-AzDatabase -Database $emptyDb -NewDatabase $newDatabase -ConnectionInfo $co
 
 while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) -eq $false)
 {
-    Write-Host "Waiting for database"
+    Write-Output "Waiting for database"
     Start-Sleep -Seconds 5
 }
 
 # Connect to storage
 $storageAccount = "<storage-account>"
-$keys = Get-AzStorageAccountKey -Name $storageAccount -ResourceGroupName "SqlSizer" 
+$keys = Get-AzStorageAccountKey -Name $storageAccount -ResourceGroupName "SqlSizer"
 $ctx = New-AzStorageContext -StorageAccountName "$storageAccount" -StorageAccountKey "$($keys[0].Value)"
 
 # Copy subset to storage account
@@ -86,6 +86,6 @@ Import-DataFromAzStorageContainer -MasterPassword $masterPassword -Database $new
 Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection
 Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection
 
-Write-Host "Azure SQL database created"
+Write-Output "Azure SQL database created"
 
 # end of script

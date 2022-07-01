@@ -2,7 +2,7 @@ function Install-SqlSizerSecureViews
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -16,9 +16,8 @@ function Install-SqlSizerSecureViews
         [TableInfo2[]]$IgnoredTables
     )
 
-     
     $tmp = "CREATE SCHEMA SqlSizerSecure"
-    Execute-SQL -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
@@ -40,13 +39,13 @@ function Install-SqlSizerSecureViews
         }
 
         $sql = "CREATE VIEW SqlSizerSecure.$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
-        $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizerSecure.$($table.SchemaName)_$($table.TableName)"
     }
 
     $sql = "CREATE VIEW SqlSizerSecure.Summary AS $([string]::Join(' UNION ALL ', $total))"
-    $null = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }
 
 function GetTableJoin
@@ -65,10 +64,10 @@ function GetTableJoin
      }
 
      $processing = $Structure.GetProcessingName($signature)
-     
+
      $select = @()
      $join = @()
-     
+
      $i = 0
      foreach ($column in $primaryKey)
      {
@@ -76,11 +75,11 @@ function GetTableJoin
         $join += "t.$column = rr.Key$i"
         $i = $i + 1
      }
-    
+
      $sql = " (SELECT DISTINCT $([string]::Join(',', $select))
                FROM $($processing) p
                INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" +  $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
                WHERE p.[Table] = tt.[Id]) rr ON $([string]::Join(' and ', $join))"
-   
+
      return $sql
 }

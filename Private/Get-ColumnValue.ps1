@@ -1,6 +1,6 @@
 ﻿function Get-ColumnValue
 {
-    param 
+    param
     (
         [string]$ColumnName,
         [string]$DataType,
@@ -10,18 +10,18 @@
 
     if ($Conversion -eq $false)
     {
-        return "$($Prefix)[" + $ColumnName + "]"    
+        return "$($Prefix)[" + $ColumnName + "]"
     }
 
     if ($DataType -in @('hierarchyid', 'geography', 'xml'))
     {
-        return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"        
+        return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
     }
-   
+
     if ($DataType -eq 'bit')
     {
-        return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"           
+        return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"
     }
-    
-    return "$($Prefix)[" + $ColumnName + "]"    
+
+    return "$($Prefix)[" + $ColumnName + "]"
 }

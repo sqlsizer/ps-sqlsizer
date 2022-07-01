@@ -35,7 +35,7 @@ $colorMap = New-Object -Type ColorMap
 foreach ($table in $info.Tables)
 {
     if ($table.TableName -eq "Password")
-    { 
+    {
         $colorMapItem = New-Object -Type ColorItem
         $colorMapItem.SchemaName = $table.SchemaName
         $colorMapItem.TableName = $table.TableName

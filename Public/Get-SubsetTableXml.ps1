@@ -2,7 +2,7 @@ function Get-SubsetTableXml
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -17,9 +17,6 @@ function Get-SubsetTableXml
 
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
-
-        [Parameter(Mandatory=$false)]
-        [TableInfo2[]]$IgnoredTables,
 
         [Parameter(Mandatory=$true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -37,12 +34,12 @@ function Get-SubsetTableXml
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
             $sql = "SELECT * FROM $schema.$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
-            $rows = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+            $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
             $xml = $obj | ConvertTo-Xml -NoTypeInformation
 
             return $xml
-        } 
+        }
     }
 
     return $null

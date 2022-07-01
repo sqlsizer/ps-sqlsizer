@@ -2,7 +2,7 @@
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -22,7 +22,7 @@
     $start = Get-Date
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
-    
+
     $structure = [Structure]::new($info)
 
     # Test ignored tables
@@ -33,9 +33,9 @@
     $tablesGroupedByName = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
     $percent = 0
-    
+
     while ($true)
-    { 
+    {
         # Progress handling
         $totalSeconds = (New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds
         if ($totalSeconds -gt ($lastTotalSeconds + $interval))
@@ -52,16 +52,16 @@
                [ToProcess],
                [Color],
                [Depth]
-            FROM 
+            FROM
                 [SqlSizer].[Operations]
-            WHERE 
+            WHERE
                 [Processed] = 0
-            GROUP BY 
+            GROUP BY
                 [Table], [ToProcess], [Depth], [Color]
-            ORDER BY 
+            ORDER BY
                 [Depth] ASC, [ToProcess] DESC"
-        $first = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-    
+        $first = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+
         if ($null -eq $first)
         {
             Write-Progress -Activity "Finding subset" -Completed
@@ -80,7 +80,7 @@
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
-        
+
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -88,11 +88,11 @@
         }
 
         $q = "TRUNCATE TABLE $($slice)"
-        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
         $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
-        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-    
+        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -103,7 +103,7 @@
 
             $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
         }
-            
+
         # Red and Purple color
         if (($color -eq [int][Color]::Red) -or ($color -eq [int][Color]::Purple))
         {
@@ -137,7 +137,7 @@
                $columns = ""
                $i = 0
                foreach ($fkColumn in $fk.FkColumns)
-               { 
+               {
                     if ($i -gt 0)
                     {
                         $columns += " and "
@@ -149,7 +149,7 @@
 
                # from
                $join = " INNER JOIN $($slice) s ON "
-               $i = 0             
+               $i = 0
                foreach ($primaryKeyColumn in $primaryKey)
                {
                     if ($i -gt 0)
@@ -183,16 +183,15 @@
                {
                     $columns = $columns + "x.val" + $i + ","
                }
-             
+
                $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTable.Id), " + $columns + " " + $newColor + ", $($table.Id), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
-              
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-               $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+               $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
                if ($results.Count -gt 0)
                {
                     $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTable.Id), $($newColor), $($results.Count),  0, $($table.Id), $($depth + 1), GETDATE())"
-                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+                    $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                }
             }
         }
@@ -235,7 +234,7 @@
                 {
                      $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
                      $items = $items | Where-Object {($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
-                     
+
                      if (($null -ne $items) -and ($null -ne $items.Condition))
                      {
                          $top = [int]$items.Condition.Top
@@ -260,14 +259,14 @@
                 $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
                 $fkSignature = $structure.Tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
- 
+
                 $primaryKey = $referencedByTable.PrimaryKey
 
                 #where
                 $columns = ""
                 $i = 0
                 foreach ($pk in $primaryKey)
-                { 
+                {
                      if ($i -gt 0)
                      {
                          $columns += " and "
@@ -276,7 +275,7 @@
                      $i += 1
                 }
                 $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Table] = $($fkTable.Id) and " + $columns +  ")"
-                
+
                 # prevent go-back
                 $where += " AND s.Source <> $($fkTable.Id)"
 
@@ -284,10 +283,10 @@
                 {
                     $where += " AND s.Depth <= $($maxDepth)"
                 }
-                
+
                 # from
                 $join = " INNER JOIN $($slice) s ON "
-                $i = 0    
+                $i = 0
 
                 foreach ($fkColumn in $fk.FkColumns)
                 {
@@ -295,13 +294,13 @@
                     {
                          $join += " and "
                     }
-                
+
                     $join += " s.Key" + $i + " = f." + $fkColumn.Name
                     $i += 1
                 }
-         
+
                 $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName   + " f " + $join
-                
+
                 # select
                 $columns = ""
                 $i = 0
@@ -321,60 +320,60 @@
                 {
                     $topPhrase = " TOP $($top) "
                 }
-               
+
                 $select = "SELECT DISTINCT " + $topPhrase + $columns + ", s.Depth"
                 $sql = $select + $from + $where
-                
+
                 $columns = ""
                 for ($i = 0; $i -lt $primaryKey.Count; $i = $i + 1)
                 {
                      $columns = $columns + "x.val" + $i + ","
                 }
-                
+
                 $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTable.Id), " + $columns  + " " + $newColor +  ", $($table.Id), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
-                
+
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
-                $results = Execute-SQL -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+                $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 if ($results.Count -gt 0)
                 {
                     $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTable.Id), $newColor, $($results.Count), 0, $($table.Id), $($depth + 1), GETDATE())"
-                    $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+                    $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 }
              }
            }
         }
-        
+
         # Yellow -> Split into Red and Green
-        if ($color -eq [int][Color]::Yellow) 
+        if ($color -eq [int][Color]::Yellow)
         {
             $columns = ""
             for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
             {
                 $columns = $columns + "s.Key" + $i + ","
             }
-            
-            # insert 
+
+            # insert
             $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red  + "  and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
             $q = "INSERT INTO $processing " +  "SELECT $tableId, " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
-            $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+            $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
             $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
-            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-            
-            # insert 
+            $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+
+            # insert
             $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green  + " and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
             $q = "INSERT INTO $processing " +  "SELECT $tableId, " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $slice s" + $where
-            $results = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+            $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
             $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Green), $($results.Count), 0, $($table.Id), $depth, GETDATE())"
-            $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+            $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
 
         # update operations
         $q = "UPDATE SqlSizer.Operations SET Processed = 1 WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth"
-        $null = Execute-SQL -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 }

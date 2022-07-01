@@ -2,7 +2,7 @@ function Get-SubsetTableStatistics
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -17,14 +17,14 @@ function Get-SubsetTableStatistics
 
     $structure = [Structure]::new($info)
     $result = @()
-    
+
     foreach ($table in $info.Tables)
     {
         if ($table.PrimaryKey.Count -eq 0)
         {
             continue
         }
-        
+
         $tableName = $structure.GetProcessingName($structure.Tables[$table])
 
         $keys = ""
@@ -39,7 +39,7 @@ function Get-SubsetTableStatistics
         }
 
         $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($table.Id)) x"
-        $count = Execute-SQL -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo 
+        $count = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $obj = New-Object -TypeName SubsettingTableResult
         $obj.SchemaName = $table.SchemaName

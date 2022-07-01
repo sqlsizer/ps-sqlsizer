@@ -1,8 +1,9 @@
 function Test-Queries
 {
     [cmdletbinding()]
+    [outputtype([System.Boolean])]
     param
-    (   
+    (
         [Parameter(Mandatory=$true)]
         [string]$Database,
 
@@ -23,10 +24,10 @@ function Test-Queries
 
     if ($unreachable.Count -gt 0)
     {
-        Write-Host "$($unreachable.Length) are not reachable by queries:" -ForegroundColor Red
+        Write-Output "$($unreachable.Length) are not reachable by queries:"
         foreach ($item in $unreachable)
         {
-            Write-Host $item
+            Write-Output $item
         }
         return $false
     }

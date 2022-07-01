@@ -15,13 +15,13 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-Write-Host "SqlSizer subset schemas"
+Write-Output "SqlSizer subset schemas"
 
 foreach ($schema in $info.AllSchemas)
 {
     if ($schema.StartsWith("SqlSizer_subset_"))
     {
-        Write-Host "Schema: $schema"
+        Write-Output "Schema: $schema"
 
         Remove-Schema -Database $database -SchemaName $schema -ConnectionInfo $connection
     }
