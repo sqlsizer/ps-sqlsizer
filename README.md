@@ -57,6 +57,14 @@ Install-Module Az -Scope CurrentUser
 
 ```
 
+# Install
+Run the following to install MSSQL-SqlSizer from the PowerShell Gallery (to install on a server or for all users, remove the -Scope parameter and run in an elevated session):
+
+```powershell
+Install-Module MSSQL-SqlSizer -Scope CurrentUser
+```
+
+
 # Examples
 Please take a look at examples in *Examples* folder.
 
