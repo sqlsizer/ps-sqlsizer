@@ -17,4 +17,4 @@ jobs:
 
       - name: Publish to PowerShell Gallery
         run: |
-        .\Publish.ps1 -apiKey ${{ secrets.POWERSHELLGALLERY }}
+          .\Publish.ps1 -apiKey ${{ secrets.POWERSHELLGALLERY }}
