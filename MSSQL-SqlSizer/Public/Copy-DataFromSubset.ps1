@@ -1,4 +1,4 @@
-﻿function Copy-Data
+﻿function Copy-DataFromSubset
 {
     [cmdletbinding()]
     param
