@@ -25,7 +25,7 @@ The subsets are highly configurable. The final result is outcome of the original
 # Internals
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search algorithm applied to a relational database.
 
-All processing is done on SQL Server side. No heavy operations are done in Powershell.
+All processing is done on Microsoft SQL Server side. No heavy operations are done in Powershell.
 
 The initial set of table rows needs to be defined before the start of the scripts and added to processing tables 
 which consists of multiple tables with all possible primary key definitions from the database.
@@ -56,6 +56,16 @@ Install-Module dbatools -Scope CurrentUser
 Install-Module Az -Scope CurrentUser
 
 ```
+
+# Install
+Run the following to install MSSQL-SqlSizer from the  [PowerShell Gallery](https://www.powershellgallery.com/packages/MSSQL-SqlSizer).
+
+To install on a server or for all users, remove the -Scope parameter and run in an elevated session:
+
+```powershell
+Install-Module MSSQL-SqlSizer -Scope CurrentUser
+```
+
 
 # Examples
 Please take a look at examples in *Examples* folder.
