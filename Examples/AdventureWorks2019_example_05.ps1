@@ -1,7 +1,7 @@
 ﻿## Example that shows how to find two subsets
 
 # Import of module
-Import-Module ..\MSSQL-SqlSizer
+Import-Module ..\Module\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"

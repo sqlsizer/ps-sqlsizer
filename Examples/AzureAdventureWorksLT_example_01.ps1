@@ -1,7 +1,7 @@
 ## Example that shows how to a subset database in Azure
 
 # Import of module
-Import-Module ..\MSSQL-SqlSizer
+Import-Module ..\Module\MSSQL-SqlSizer
 
 # Connection settings
 $server = "sqlsizer.database.windows.net"
