@@ -1,7 +1,7 @@
 ﻿## Example that shows how to get info about all schemas from db
 
 # Import of module
-Import-Module ..\Module\MSSQL-SqlSizer
+Import-Module ..\MSSQL-SqlSizer\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"

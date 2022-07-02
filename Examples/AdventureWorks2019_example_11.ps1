@@ -1,7 +1,7 @@
 ﻿## Example that shows how to create a table from subset table
 
 # Import of module
-Import-Module ..\Module\MSSQL-SqlSizer
+Import-Module ..\MSSQL-SqlSizer\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"

@@ -1,7 +1,7 @@
 ﻿## Example that shows color maps feature
 
 # Import of module
-Import-Module ..\Module\MSSQL-SqlSizer
+Import-Module ..\MSSQL-SqlSizer\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"

@@ -1,6 +1,6 @@
 ﻿## Example that shows how to create a new database with the subset of data based on queries which define initial data with color map
 # Import of module
-Import-Module ..\Module\MSSQL-SqlSizer
+Import-Module ..\MSSQL-SqlSizer\MSSQL-SqlSizer
 
 # Connection settings
 $server = "localhost"
