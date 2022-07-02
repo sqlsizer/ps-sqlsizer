@@ -73,7 +73,7 @@ $newDatabase = "AdventureWorks2019_subset_01"
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Copy-Data -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Format-Indexes -Database $newDatabase -ConnectionInfo $connection
 Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
