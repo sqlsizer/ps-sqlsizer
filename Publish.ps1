@@ -2,4 +2,4 @@ param (
     [string] $apiKey
 )
 
-Publish-Module -Path ".\Module\" -NuGetApiKey $apiKey -Verbose -Force
+Publish-Module -Path ".\MSSQL-SqlSizer" -NuGetApiKey $apiKey -Verbose -Force
