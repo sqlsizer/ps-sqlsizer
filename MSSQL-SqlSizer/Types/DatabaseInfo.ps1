@@ -1,6 +1,7 @@
 ﻿class DatabaseInfo
 {
     [TableInfo[]]$Tables
+    [ViewInfo[]]$Views
     [string[]]$AllSchemas
     [int]$PrimaryKeyMaxSize
     [string]$DatabaseSize
@@ -65,6 +66,12 @@ class TableStatistics
      }
 }
 
+class ViewInfo
+{
+    [string]$SchemaName
+    [string]$ViewName
+}
+
 class TableInfo
 {
     [int]$Id
@@ -82,7 +89,7 @@ class TableInfo
     [Tablefk[]]$ForeignKeys
     [TableInfo[]]$IsReferencedBy
 
-    [string[]]$Views
+    [ViewInfo[]]$Views
 
     [TableStatistics]$Statistics
 

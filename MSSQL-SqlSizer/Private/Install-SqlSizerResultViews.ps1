@@ -16,15 +16,19 @@ function Install-SqlSizerResultViews
         [TableInfo2[]]$IgnoredTables
     )
 
-    $tmp = "CREATE SCHEMA SqlSizerResult"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizerResult" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizerResult"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
     foreach ($table in $info.Tables)
     {
-        if ($table.SchemaName -in @('SqlSizer'))
+        if ($table.SchemaName.StartsWith('SqlSizer'))
         {
             continue
         }

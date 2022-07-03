@@ -27,14 +27,16 @@
     $foreignKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $foreignKeyRowsGrouped = $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
 
-
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TablesIndexes.sql")
     $indexesRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $indexesRowsGrouped = $indexesRows | Group-Object -Property schema, table -AsHashTable -AsString
 
+    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TableViewDepenencies.sql")
+    $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $depRowsGrouped = $depRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
+
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\ViewsInfo.sql")
-    $viewsRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $viewsRowsGrouped = $viewsRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
+    $viewsInfoRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\SchemasInfo.sql")
     $schemasRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -43,6 +45,14 @@
     {
         $statsRows = Invoke-SqlcmdEx -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
         $result.DatabaseSize = $statsRows[0]["database_size"]
+    }
+
+    foreach ($row in $viewsInfoRows)
+    {
+        $view = New-Object -TypeName ViewInfo
+        $view.SchemaName = $row["schema"]
+        $view.ViewName = $row["view"]
+        $result.Views += $view
     }
 
     foreach ($row in $rows)
@@ -151,15 +161,16 @@
             }
         }
 
-        if ($null -ne $viewsRowsGrouped)
+        if ($null -ne $depRowsGrouped)
         {
-            $viewsForTable = $viewsRowsGrouped[$key]
-
+            $viewsForTable = $depRowsGrouped[$key]
             $table.Views = @()
 
             foreach ($item in $viewsForTable)
             {
-                $view = "[" + $item.view_schema_name + "]." + "[" + $item.view_name + "]"
+                $view = New-Object ViewInfo
+                $view.SchemaName = $item.view_schema_name
+                $view.ViewName = $item.view_name
                 $table.Views += $view
             }
         }

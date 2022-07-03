@@ -45,12 +45,12 @@ function Remove-EmptyTables
         {
             foreach ($view in $table.Views)
             {
-                $sql = "DROP VIEW IF EXISTS $view"
-                Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                $sql = "DROP VIEW IF EXISTS $($view.SchemaName).$($view.ViewName)"
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
 
             $sql = "DROP TABLE [$($table.SchemaName)].[$($table.TableName)]"
-            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
         $i += 1
     }

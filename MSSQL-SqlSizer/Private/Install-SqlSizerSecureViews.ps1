@@ -16,8 +16,12 @@ function Install-SqlSizerSecureViews
         [TableInfo2[]]$IgnoredTables
     )
 
-    $tmp = "CREATE SCHEMA SqlSizerSecure"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizerSecure" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizerSecure"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
@@ -25,7 +29,7 @@ function Install-SqlSizerSecureViews
     $total = @()
     foreach ($table in $info.Tables)
     {
-        if ($table.SchemaName -in @('SqlSizer'))
+        if ($table.SchemaName.StartsWith('SqlSizer'))
         {
             continue
         }

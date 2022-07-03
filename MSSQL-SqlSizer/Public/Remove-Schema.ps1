@@ -33,8 +33,24 @@
     {
         if ($table.SchemaName -eq $SchemaName)
         {
+            foreach ($view in $table.Views)
+            {
+                $sql = "DROP VIEW [$($view.SchemaName)].[$($view.ViewName)]"
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            }
+
             $sql = "DROP TABLE [$($table.SchemaName)].[$($table.TableName)]"
-            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+    }
+
+    # drop all other views
+    foreach ($view in $info.Views)
+    {
+        if ($view.SchemaName -eq $SchemaName)
+        {
+            $sql = "DROP VIEW if exists [$($view.SchemaName)].[$($view.ViewName)]"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 
