@@ -1,4 +1,4 @@
-function Import-DataFromAzStorageContainer
+function Import-SubsetFromAzStorageContainer
 {
     [cmdletbinding()]
     param
