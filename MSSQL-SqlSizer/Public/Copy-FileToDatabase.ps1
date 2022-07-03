@@ -25,6 +25,8 @@ function Copy-FileToDatabase
         Write-Progress -Activity "Copying file $FilePath to database" -PercentComplete (100 * ($i / ($chunks)))
 
         $chunk = $fileContent.Substring($i * $chunkSize, $chunkSize)
+        $chunk = $chunk.Replace("'", "''") # improve it 
+
         $sql = "INSERT INTO SqlSizer.Files([FileId], [Index], [Content]) VALUES('$id', $i, N'$chunk')"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
@@ -32,7 +34,6 @@ function Copy-FileToDatabase
     if ($chunks * $chunkSize -ne $fileContent.Length)
     {
         $chunk = $fileContent.Substring($chunks * $chunkSize)
-        
         $chunk = $chunk.Replace("'", "''") # improve it 
 
         $sql = "INSERT INTO SqlSizer.Files([FileId], [Index], [Content]) VALUES('$id', $i, N'$chunk')"
