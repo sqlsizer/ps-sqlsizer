@@ -35,7 +35,7 @@
         {
             foreach ($view in $table.Views)
             {
-                $sql = "DROP VIEW [$($view.SchemaName)].[$($view.ViewName)]"
+                $sql = "DROP VIEW if exists [$($view.SchemaName)].[$($view.ViewName)]"
                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
 
