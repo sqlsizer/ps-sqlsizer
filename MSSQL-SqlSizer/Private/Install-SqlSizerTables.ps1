@@ -47,7 +47,10 @@
         Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    $tmp = "CREATE TABLE SqlSizer.Tables(Id int primary key identity(1,1), [Schema] varchar(64), [TableName] varchar(64))"
+    $tmp = "CREATE TABLE SqlSizer.Files(Id int primary key identity(1,1), FileId uniqueidentifier, [Index] int, [Content] nvarchar(max))"
+    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "CREATE TABLE SqlSizer.Tables(Id int primary key identity(1,1), [Schema] varchar(128), [TableName] varchar(128))"
     Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $sql = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Tables ([Schema] ASC, [TableName] ASC)"
