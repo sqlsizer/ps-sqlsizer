@@ -90,7 +90,7 @@
         $q = "TRUNCATE TABLE $($slice)"
         $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
-        $q = "INSERT INTO  $($slice) " +  "SELECT DISTINCT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
+        $q = "INSERT INTO  $($slice) " +  "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
         $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
         $cond = ""
