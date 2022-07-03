@@ -21,21 +21,25 @@
 
     $info = Get-DatabaseInfoIfNull -Database $Source -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $i = 0
-    foreach ($table in $info.Tables)
+    $subsetTables = Get-SubsetTables -Database $Source -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+
+    foreach ($table in $subsetTables)
     {
         $i += 1
-        Write-Progress -Activity "Copying data" -PercentComplete (100 * ($i / ($info.Tables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
 
-        if ($table.IsHistoric -eq $true)
+        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
+        Write-Progress -Activity "Copying data" -PercentComplete (100 * ($i / ($subsetTables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
+
+        if ($tableInfo.IsHistoric -eq $true)
         {
             continue
         }
 
-        $isIdentity = $table.IsIdentity
-        $schema = $table.SchemaName
-        $tableName = $table.TableName
-        $tableColumns = Get-TableSelect -TableInfo $table -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $false -SkipGenerated $true
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $true -SkipGenerated $true
+        $isIdentity = $tableInfo.IsIdentity
+        $schema = $tableInfo.SchemaName
+        $tableName = $tableInfo.TableName
+        $tableColumns = Get-TableSelect -TableInfo $tableInfo -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $false -SkipGenerated $true
+        $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $true -SkipGenerated $true
 
         $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] ($tableColumns) SELECT $tableSelect FROM " + $Source + ".SqlSizerResult." + $schema + "_" + $tableName
         if ($isIdentity)
