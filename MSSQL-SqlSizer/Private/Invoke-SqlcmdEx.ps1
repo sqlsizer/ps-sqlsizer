@@ -65,10 +65,7 @@
     {
         if ($Silent -eq $false)
         {
-            Write-Output "Exception message: $($_.Exception.Message)"
-            Write-Output "Error: " $_.Exception
-            Write-Output $Sql
-            Write-Output "=="
+            throw $_.Exception
         }
         return $false
     }
