@@ -31,7 +31,7 @@
     $indexesRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $indexesRowsGrouped = $indexesRows | Group-Object -Property schema, table -AsHashTable -AsString
 
-    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TableViewDepenencies.sql")
+    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\TableViewDependencies.sql")
     $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $depRowsGrouped = $depRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
 
