@@ -14,10 +14,24 @@ function Copy-FileToDatabase
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizer"
+        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    $tableExists = Test-TableExists -SchemaName "SqlSizer" -TableName "Files" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($tableExists -eq $false)
+    {
+        $tmp = "CREATE TABLE SqlSizer.Files(Id int primary key identity(1,1), FileId uniqueidentifier, [Index] int, [Content] nvarchar(max))"
+        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
     $id = New-Guid
     $fileContent = [System.IO.File]::ReadAllText($FilePath)
 
-    $chunkSize = 2000
+    $chunkSize = 64000
     $chunks = [Math]::Floor($fileContent.Length / $chunkSize)
 
     for ($i = 0; $i -lt $chunks; $i = $i + 1)
