@@ -19,13 +19,13 @@ function Import-SubsetFromFileSet
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $info = Get-DatabaseInfoIfNull -Database $SourceDatabase -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     
     foreach ($file in $Files)
     {
         $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $file.TableContent.SchemaName) -and ($_.TableName -eq $file.TableContent.TableName) }
 
-        $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $false -SkipGenerated $true
+        $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $false -Prefix $null -AddAs $false -SkipGenerated $true
         $columns = @()
         foreach ($column in $tableInfo.Columns)
         {
@@ -60,14 +60,21 @@ function Import-SubsetFromFileSet
             $identity_off = "SET IDENTITY_INSERT " + $TargetDatabase + "." + $tableInfo.SchemaName + ".[" + $tableInfo.TableName + "] OFF "
         }
 
-        $sql = "DECLARE @json NVARCHAR(MAX); SELECT @json = STRING_AGG([Content], '') FROM $SourceDatabase.SqlSizer.Files WHERE [FileId] = '$($file.FileId)'
+
+        $prefix = ''
+        if ($TargetDatabase -ne $SourceDatabase)
+        {
+            $prefix = $SourceDatabase + "."
+        }
+
+        $sql = "DECLARE @json NVARCHAR(MAX); SELECT @json = STRING_AGG([Content], '') FROM $($prefix)SqlSizer.Files WHERE [FileId] = '$($file.FileId)'
                 $identity_on
 
-                INSERT INTO $TargetDatabase.[$($tableInfo.SchemaName)].[$($tableInfo.TableName)] ($tableSelect)
+                INSERT INTO [$($tableInfo.SchemaName)].[$($tableInfo.TableName)] ($tableSelect)
                 SELECT $tableSelect 
                 FROM OpenJson(@json) with ($([string]::join(', ', $columns)))
                 
                 $identity_off"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
     }
 }
