@@ -5,7 +5,8 @@
         [string]$ColumnName,
         [string]$DataType,
         [string]$Prefix,
-        [bool]$Conversion
+        [bool]$Conversion,
+        [bool]$OnlyXml
     )
 
     if ($Conversion -eq $false)
@@ -13,12 +14,17 @@
         return "$($Prefix)[" + $ColumnName + "]"
     }
 
-    if ($DataType -in @('hierarchyid', 'geography', 'xml'))
+    if (($OnlyXml -eq $false) -and ($DataType -in @('hierarchyid', 'geography')))
     {
         return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
     }
 
-    if ($DataType -eq 'bit')
+    if ($DataType -in @('xml'))
+    {
+        return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+    }
+
+    if (($OnlyXml -eq $false) -and ($DataType -eq 'bit'))
     {
         return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"
     }

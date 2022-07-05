@@ -29,7 +29,12 @@ function Import-SubsetFromFileSet
         $columns = @()
         foreach ($column in $tableInfo.Columns)
         {
-            if ($column.DataType -in @('geography', 'hierarchyid'))
+            if ($column.IsComputed)
+            {
+                continue
+            }
+
+            if ($column.DataType -in @('geography', 'hierarchyid', 'xml'))
             {
                 $type = 'varchar(max)'
             }

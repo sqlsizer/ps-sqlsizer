@@ -7,7 +7,8 @@ function Get-TableSelect
         [TableInfo]$TableInfo,
         [TableInfo2[]]$IgnoredTables,
         [bool]$AddAs,
-        [bool]$Array = $false
+        [bool]$Array = $false,
+        [bool]$OnlyXml = $false
     )
 
     $result = @()
@@ -44,7 +45,7 @@ function Get-TableSelect
 
             if ($include)
             {
-                $select += Get-ColumnValue -ColumnName $columnName -DataType $column.DataType -Prefix "$Prefix" -Conversion $Conversion
+                $select += Get-ColumnValue -ColumnName $columnName -DataType $column.DataType -Prefix "$Prefix" -Conversion $Conversion -OnlyXml $OnlyXml
             }
             else
             {

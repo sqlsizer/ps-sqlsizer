@@ -114,6 +114,7 @@ class ColumnInfo
     [bool]$IsNullable
     [bool]$IsComputed
     [bool]$IsGenerated
+    [string]$ComputedDefinition
 
     [string] ToString() {
         return $this.Name;

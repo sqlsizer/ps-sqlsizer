@@ -11,6 +11,11 @@ SELECT
 			ELSE 1
 	END as [isComputed],
 	CASE 
+		WHEN computed.[isComputed] IS NULL 
+			THEN NULL
+			ELSE computed.definition
+	END as [computedDefinition],
+	CASE 
 		WHEN computed2.generated_always_type <> 0
 			THEN 1
 			ELSE 0
@@ -18,7 +23,7 @@ SELECT
 FROM 
     INFORMATION_SCHEMA.COLUMNS c
 	LEFT JOIN 
-		(SELECT 1 as [isComputed], s.name as [schema], o.name as [table], c.[name] as [column]
+		(SELECT 1 as [isComputed], c.[definition], s.name as [schema], o.name as [table], c.[name] as [column]
 		FROM sys.computed_columns c
 		INNER JOIN sys.objects o ON o.object_id = c.object_id
 		INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed 

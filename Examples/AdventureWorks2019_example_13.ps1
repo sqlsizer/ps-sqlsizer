@@ -1,4 +1,4 @@
-﻿## Example that shows how to get info about all schemas from db
+﻿## Example that shows how to remove all SqlSizer schemas
 
 # Import of module
 Import-Module ..\MSSQL-SqlSizer\MSSQL-SqlSizer
@@ -15,14 +15,10 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-Write-Output "SqlSizer subset schemas"
-
 foreach ($schema in $info.AllSchemas)
 {
-    if ($schema.StartsWith("SqlSizer_subset_"))
+    if ($schema.StartsWith("SqlSizer"))
     {
-        Write-Output "Schema: $schema"
-
         Remove-Schema -Database $database -SchemaName $schema -ConnectionInfo $connection
     }
 }

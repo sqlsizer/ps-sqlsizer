@@ -4,7 +4,10 @@ function New-SchemaFromDatabase
     param
     (
         [Parameter(Mandatory=$true)]
-        [string]$Database,
+        [string]$SourceDatabase,
+
+        [Parameter(Mandatory=$true)]
+        [string]$TargetDatabase,
 
         [Parameter(Mandatory=$true)]
         [string]$SchemaName,
@@ -22,27 +25,27 @@ function New-SchemaFromDatabase
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    Write-Progress -Activity "Copy schema $SchemaName" -PercentComplete 0
+    Write-Progress -Activity "Copy schema $SchemaName to $NewSchemaName in $TargetDatabase database" -PercentComplete 0
 
-    $schemaAlreadyExists = Test-SchemaExists -SchemaName $NewSchemaName -Database $Database -ConnectionInfo $ConnectionInfo
+    $schemaAlreadyExists = Test-SchemaExists -SchemaName $NewSchemaName -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
 
     if ($schemaAlreadyExists)
     {
-        Write-Progress -Activity "Copy schema $SchemaName" -Completed
-        Write-Output "Schema $NewSchemaName already exists. Provide different name"
+        Write-Progress -Activity "Copy schema $SchemaName to $NewSchemaName in $TargetDatabase database" -Completed
+        Write-Output "Schema $NewSchemaName already exists in $TargetDatabase database. Provide different name"
         return
     }
     $sql = "CREATE SCHEMA $NewSchemaName"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
 
     # copy tables
     $i = 0
     foreach ($table in $DatabaseInfo.Tables)
     {
-        Write-Progress -Activity "Copy schema $SchemaName" -PercentComplete (100 * ($i / ($DatabaseInfo.Tables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
+        Write-Progress -Activity "Copy schema $SchemaName to $NewSchemaName in $TargetDatabase database" -PercentComplete (100 * ($i / ($DatabaseInfo.Tables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
         if ($table.SchemaName -eq $SchemaName)
         {
-            New-DataTableClone -Database $Database -DatabaseInfo $DatabaseInfo -SchemaName $SchemaName -TableName $table.TableName `
+            New-DataTableClone -SourceDatabase $SourceDatabase -TargetDatabase $TargetDatabase -DatabaseInfo $DatabaseInfo -SchemaName $SchemaName -TableName $table.TableName `
                                -CopyData $CopyData -NewSchemaName $NewSchemaName -NewTableName $table.TableName -ConnectionInfo $ConnectionInfo
         }
         $i = $i + 1
@@ -62,7 +65,7 @@ function New-SchemaFromDatabase
                 }
 
                 $sql = "ALTER TABLE $($NewSchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
-                Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
+                Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Silent $false
             }
         }
     }

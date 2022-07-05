@@ -104,6 +104,7 @@
             $column.IsComputed = $tableColumn["isComputed"]
             $column.IsGenerated = $tableColumn["isGenerated"]
             $column.IsNullable = $tableColumn["isNullable"] -eq "YES"
+            $column.ComputedDefinition = $tableColumn["computedDefinition"]
             $table.Columns += $column
         }
 
