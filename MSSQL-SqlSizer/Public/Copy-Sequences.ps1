@@ -15,7 +15,17 @@
 
     Write-Progress -Activity "Copying sequences" -PercentComplete 0
 
-    $sql = Get-Content -Raw -Path ($PSScriptRoot + "\..\Queries\Sequences.sql")
+    $sql = "SELECT 
+	seq.name,
+	seq.current_value,
+	seq.increment,
+	ISNULL(seq.maximum_value, 2147483647) as maximum_value, -- todo 
+	t.[name] as [type]
+FROM 
+    sys.sequences seq
+INNER JOIN 
+    sys.types t ON seq.system_type_id = t.system_type_id"
+    
     $sequencesRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
     foreach ($row in $sequencesRows)
