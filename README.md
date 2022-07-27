@@ -1,5 +1,5 @@
 ![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
-# mssql-sqlsizer
+# sqlsizer-mssql
 
 A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
 
@@ -57,17 +57,6 @@ Install-Module Az -Scope CurrentUser
 
 ```
 
-# Install
-Run the following to install MSSQL-SqlSizer from the  [PowerShell Gallery](https://www.powershellgallery.com/packages/MSSQL-SqlSizer).
-
-Please bare in mind that at the moment the MSSQL-SqlSizer is in alpha stage.
-
-To install for all users, remove the -Scope parameter and run in an elevated session:
-
-```powershell
-Install-Module MSSQL-SqlSizer -AllowPrerelease -Scope CurrentUser
-```
-
 
 # Examples
 Please take a look at examples in *Examples* folder.
@@ -77,7 +66,7 @@ Please take a look at examples in *Examples* folder.
 ## Example that shows how to create a new database with the subset of data based on queries which define initial data
 
 # Import of module
-Import-Module ..\MSSQL-SqlSizer
+Import-Module ..\SqlSizer-MSSQL
 
 # Connection settings
 $server = "localhost"
@@ -159,7 +148,7 @@ Write-Output "Total rows: $($sum)"
 ## Example that shows how to a subset database in Azure
 
 # Import of module
-Import-Module ..\MSSQL-SqlSizer
+Import-Module ..\SqlSizer-MSSQL
 
 # Connection settings
 $server = "sqlsizer.database.windows.net"
