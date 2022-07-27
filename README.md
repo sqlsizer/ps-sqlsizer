@@ -65,9 +65,6 @@ Please take a look at examples in *Examples* folder.
 ```powershell
 ## Example that shows how to create a new database with the subset of data based on queries which define initial data
 
-# Import of module
-Import-Module ..\SqlSizer-MSSQL
-
 # Connection settings
 $server = "localhost"
 $database = "AdventureWorks2019"
@@ -146,9 +143,6 @@ Write-Output "Total rows: $($sum)"
 ```powershell
 
 ## Example that shows how to a subset database in Azure
-
-# Import of module
-Import-Module ..\SqlSizer-MSSQL
 
 # Connection settings
 $server = "sqlsizer.database.windows.net"
