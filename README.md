@@ -65,13 +65,13 @@ Please bare in mind that at the moment the SqlSizer-MSSQL is in alpha stage.
 To install for all users, remove the -Scope parameter and run in an elevated session:
 
 ```powershell
-Install-Module MSSQL-SqlSizer -AllowPrerelease -Scope CurrentUser
+Install-Module SqlSizer-MSSQL -AllowPrerelease -Scope CurrentUser
 ```
 
 Before running scripts:
 
 ```powershell
-Import-Module MSSQL-SqlSizer
+Import-Module SqlSizer-MSSQL
 ```
 
 # Examples
