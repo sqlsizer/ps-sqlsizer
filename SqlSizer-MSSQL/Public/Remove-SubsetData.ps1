@@ -39,33 +39,33 @@
 # Function that creates a where part of query
 function GetTableWhere
 {
-     param (
+    param (
         [string]$Database,
         [TableInfo]$TableInfo,
         [Structure]$Structure
-     )
+    )
 
-     $primaryKey = $TableInfo.PrimaryKey
-     $processing = $Structure.GetProcessingName($Structure.Tables[$TableInfo])
-     $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
+    $primaryKey = $TableInfo.PrimaryKey
+    $processing = $Structure.GetProcessingName($Structure.Tables[$TableInfo])
+    $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
 
-     $i = 0
-     foreach ($column in $primaryKey)
-     {
+    $i = 0
+    foreach ($column in $primaryKey)
+    {
         $where += " AND Key" + $i + " = " + $column.Name + " "
         $i += 1
-     }
+    }
 
-     $where += ")"
+    $where += ")"
 
-     $where
+    $where
 }
 
 # SIG # Begin signature block
 # MIIojQYJKoZIhvcNAQcCoIIofjCCKHoCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCnogEeDvhvJV28
-# hzvpj5UMnzS98NV5eAs8oEt8EfuPgKCCIL8wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCB3yTlDYl7Goz4U
+# LO03wBIjCKGRKllBCaIoZlKUDhl0yqCCIL8wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -245,38 +245,38 @@ function GetTableWhere
 # aWduaW5nIDIwMjEgQ0ECEGKUqNjbtPSETu16moosTdUwDQYJYIZIAWUDBAIBBQCg
 # gYQwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYB
 # BAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0B
-# CQQxIgQgGX0MFrmxM9RLohzGGVg4gpyAQX3cpdJesI2OGLsImZowDQYJKoZIhvcN
-# AQEBBQAEggIAWq/iJCQuJmiSOktvm80Vn68ywKa0J2BE4KQX3yVp4ZtsN3pFbZlo
-# nkFe6f/eSsdhv6ml9wzhrWgSkSBz+dQVslaG5PN/zVy+BmlQq1SeGTFw7oR1kgpV
-# eCK2ak9iMUOwJ9WldMIX0s0BCEsAdgmBqzZ3DV2EgJpBxuQeprLr0ugYJD7/SV4R
-# VCBtqDodFpx0u9dUyC1E0TnZiqp0AAtt59U5CBfXe2ZqU5oAkdajDLCKvigIAqzq
-# T5f6A6tAptW23IYfV2mNpq52J4nPLz9oeD6KxqhMefFf+owKV5Llp80W8OEHrUAL
-# m7Li+9QL9K/phBTsy3VH/g+zoGlLZUx8j+js8g2LSbNAAVGMtFQcOvCP6NL1y9/z
-# sclCRFcO0+IDfRE20DF+d61Pol0/9oB/ySPlJUOvOQ5RX8R5ZmMQRB+LqjCumMft
-# jbzeq5+e7SGT1m/2SCGctkNhAOtUeyIjrCvN39+oAMiV/PAxmtGCkHGWFMwXRkT2
-# 6bArutf6xwBhMnCzNssatDOlQdN0Jth/7SHuUV+NTFEGBzBuvy8CLuNTIfDWClup
-# tJ8too7w2SCKGBZwBGdlXiDNVz+Cxly8ecG3DCh3K2h0o6+x+PjQyapCuzU8/ScM
-# rcquVkrUuQdjQYytxLetWAzGtbBZpc8Izba6UQCDonwvuz+P51VL6fKhggQEMIIE
+# CQQxIgQgmHZoZLQ1o5lnMWGGJ6vB3++Fvrp7/D76sikSE3BfGyYwDQYJKoZIhvcN
+# AQEBBQAEggIAGRJtKKjoV4FResj4n16MdfYtJYy5zkE6J47ufVuuyf6jTq1cvczp
+# xYKn+vQUNFutu7L0SxjkQGFBsRhNAeaOmKSwbXR/QyPb3iDoolPTdmyChcnd6Cr1
+# gGdd+87m5jEJRGPilAWBvSXQ6xTHqYIZI0tFvq3tZelG4BMjpBnG8Kl2GkiUmbtH
+# 2nAH3z6/6p9D++8inzFqCKibqjGXm1JwMR3IrcIfPAsNifmVKyFnfsAMfQcgPd7F
+# epym5Bcax3UnAN6BS0vkVg8hhZz7okKHNt+KJRREw7bp8OqRiD1/bkrf4Bcy4XRl
+# AnK2qJMDnwU6z/vjN/8sXaWNc5tpzoQ7sa6DiBbVJvDZMPoNjYunLdwk0ypvX3eX
+# 8wWQKfHMovcOPGN/vJnWQ4dPrWxFDgap6udXUZKtKTshjKAA9cSIRgz6dnTZy/Fu
+# O9VntKPrXUYEVAELdhVbl8w8xBYAPkB5RNi3/1I0Z6HTzdZiip7ryxMqKPd+3rAz
+# 9xMnVlfG08ilVj6EV3YKnl5RcV0+dQSoEhP4uc0r9Ni4PZgNFaulNfood8nVf1NZ
+# KUvvuuoGLWbL2nldmX41FHsPwcO1JyUAPFQfquNKcv2vi1ox7HvzxPyrJ59f7LHm
+# Z8XlgvwJlXH2ZBQKXTPTResS1a3YgCnPdMHY14CUNyroMBtZf8KDp2ShggQEMIIE
 # AAYJKoZIhvcNAQkGMYID8TCCA+0CAQEwazBWMQswCQYDVQQGEwJQTDEhMB8GA1UE
 # ChMYQXNzZWNvIERhdGEgU3lzdGVtcyBTLkEuMSQwIgYDVQQDExtDZXJ0dW0gVGlt
 # ZXN0YW1waW5nIDIwMjEgQ0ECEQDxZCWMCbbie+IOMmCOS/SoMA0GCWCGSAFlAwQC
 # AgUAoIIBVzAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkF
-# MQ8XDTIyMDcyNzIwMzIwMFowNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQgG1m/6OV3
-# K6z2Q7t5rLSOgVh4TyHFVK4TR206Gj4FxdMwPwYJKoZIhvcNAQkEMTIEMBDN1Wlx
-# 0ksYFXcpvwqiNYaPja/9zQbhHzniS1E6jEczM9m1ETex+mjYXQcmUlCC0jCBoAYL
+# MQ8XDTIyMDgyOTIwMDEyNVowNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQgG1m/6OV3
+# K6z2Q7t5rLSOgVh4TyHFVK4TR206Gj4FxdMwPwYJKoZIhvcNAQkEMTIEMLJm8sAi
+# yvTtxV3Yw9UfTEdEt5cGA9eWW030dgaHsZUFmVucwugNyr3rPA4aw1ezkTCBoAYL
 # KoZIhvcNAQkQAgwxgZAwgY0wgYowgYcEFNMRxpUxG4znP9W1Uxis31mK4ZsTMG8w
 # WqRYMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQKExhBc3NlY28gRGF0YSBTeXN0ZW1z
 # IFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1lc3RhbXBpbmcgMjAyMSBDQQIRAPFk
-# JYwJtuJ74g4yYI5L9KgwDQYJKoZIhvcNAQEBBQAEggIAUWBmWPk5LKzni9Sz/po4
-# N3URb986zUVKvIgyl4q+HQINaj7a9zHLJYh+Qfme0xc3G93iMQVT0QGHiovfz2jo
-# HOHsgTosqe+uiZTWm0XDugAWjQjIvy0KsHy09jiRlAytcYZylb1rnX+yapT4ATmt
-# N0T7eUsxa66h9R278feKsCc+CSnEjJwv7Wde5kOKIc7QdnFHI/brAOcbG55Szvpm
-# RsyfDcl87k/nrZkCQVMBEd9soW0iaTKz0xl3xLlXANF7JuRW7M0VYlG/eooOkYrO
-# e6vd1N2a2QwYrxhDScu7HwWL9ccymswrOhubs6yK19ZeY8lhaPgNA1kcnxtlU14a
-# sOvAuncSbZSq+zpyp+BcZtOCWW/elbO2AJrvW2obNFOqClxIQiNhNGxPgdgb5kdY
-# l+55ntN+q+Faf2KCZsWGwv4fJKUhuG5Me2lY5l1VcHyK8hMYUsFTgTLKmdLNInLN
-# GBMXGBDx6xTXecFgySMqaN0070IyB5HEV3yLfWxLQ4PZU8a0eTM1bkbUPNts3Et7
-# +nzZkVXlu1CY1HPybv68uS7agppoV4oarbZnONid1EPWeLgiPgwHoXOUvUyortpn
-# +NVeQK2gGbW88WqAgVME6VnBt6o5Ygij80K+Ioef+cxlWPxIphUvcjA+/+I/8/Hn
-# GY/3DxX/kp2edanzOlZhvm0=
+# JYwJtuJ74g4yYI5L9KgwDQYJKoZIhvcNAQEBBQAEggIArN+c0kQhn60Roqn2hPVY
+# Zc5btWpBhj1IDJaWkjSs57MiNJ+vH6ai7ZHbjebcesYA8fVfayzuukylDmtmpQna
+# I0M3YsWPkmRAAnTvWqHhgZUaP3lmnYCQsnxluc0pXF53+IkXHja6DZdUz54Qn2lc
+# WkOgfCdhHGjtk4jLs1aAQYs7e324pawl6vKJslhSrWcBKgVr57GwVDHYK6qeRrgw
+# vCYYH13Zihg8k1UkKfNWtQoSwCj390PWEiwOYaPcD8RKiYxo/3lbeSVyf0VIM66o
+# rTJKFYry+kLN1pLvjIFAOg4N/RzWS1rcbM3f9XlS8Up/TGHsAFUFW0G3jKatXL6S
+# lOUFivbbXB6JNo/2ZYoewb3zviZcn7MNVXw5BbjBRfQ/GFpaECyiJJe5Cwn8kpdC
+# MMEDCU01urHX0YmxH557BiNa2/x9mKuEPBW98V7/qeHiKqmpyi/02Die98w41hvP
+# wIpYxGa7ZgP54UGsDTv7743IZkzKYdfATfnihtLoBd+5zDtvYGXmaX+dHeq2y+xT
+# JUic0v4Izq9EFGEqhkb13Xr7MpqAFkFHh8q7Nv+NOrbgPJ6I9xKonM9xBKbKQAC5
+# r+hUR9C+7LJFCGKSDo2nBjGMOumn6PslvfpOFnYhw/7KaxwHRnMKo8U30Q6xnLYr
+# nZHAISZbV9RL2tUT0lxdyoQ=
 # SIG # End signature block

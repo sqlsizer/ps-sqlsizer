@@ -1,10 +1,10 @@
 enum Color
 {
-   Red = 1
-   Green = 2
-   Yellow = 3
-   Blue = 4
-   Purple = 5
+    Red = 1
+    Green = 2
+    Yellow = 3
+    Blue = 4
+    Purple = 5
 }
 
 class ColorMap
@@ -76,7 +76,7 @@ class TableInfo2
 
     [string] ToString() {
         return "$($this.SchemaName).$($this.TableName)"
-     }
+    }
 }
 
 class TableInfo2WithColor
@@ -109,7 +109,7 @@ class TableStatistics
 
     [string] ToString() {
         return "$($this.Rows) rows  => [$($this.DataKB) used of $($this.ReservedKB) reserved KB, $($this.IndexSize) index KB]"
-     }
+    }
 }
 
 class ViewInfo
@@ -137,12 +137,14 @@ class TableInfo
 
     [ViewInfo[]]$Views
 
+    [string[]]$Triggers
+
     [TableStatistics]$Statistics
 
     [Index[]]$Indexes
 
     [string] ToString() {
-      return "$($this.SchemaName).$($this.TableName)"
+        return "$($this.SchemaName).$($this.TableName)"
     }
 }
 
@@ -257,8 +259,8 @@ class Structure
 # SIG # Begin signature block
 # MIIojQYJKoZIhvcNAQcCoIIofjCCKHoCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCD/WkteytXtM67w
-# jB5588Cy85q0Hx0trQZ79jEetNbokKCCIL8wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCB9jL1yLrCpam98
+# IloXh+o5JCw6BLdx5l/JKc5n39kyFqCCIL8wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -438,38 +440,38 @@ class Structure
 # aWduaW5nIDIwMjEgQ0ECEGKUqNjbtPSETu16moosTdUwDQYJYIZIAWUDBAIBBQCg
 # gYQwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYB
 # BAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAvBgkqhkiG9w0B
-# CQQxIgQgjryX8EhAMMm0hMz7h0Z1uKvciboTJNCqAFTIq8JFvRUwDQYJKoZIhvcN
-# AQEBBQAEggIAWVw4U4kb+qOT/CjC+HMloCCCGaIqxzVE2G1xTFHnr41FUTfweGLx
-# rKq1TdNRaev8RUgxG8faTW3t9xg6RrPWLIVsYzg7t6EOj6t1dTtzQzGMXCKfHmQC
-# TZH9Gckf5GEqF+tZ8x+Z78a8nLZOjyvddNP0MA0LqEmPwndvEgGECktCA+H99Tbm
-# gUq3NgdYVUJjvWO9eDxJSwkbZaEAYxNDsC3iAdNHY03DhSNRUuS4iy+As+MCnSLa
-# lkH3zILvhcMoJEQUWLUnAfjuQ+6acWsM/74tlp5EpWH5LZ4yKpYV4xpoqpu+/xdl
-# 9iTDmiXOxOYDk7kTvZkQ6t7a1yhrrcJcBNqKwo/UkI4IJkfGjtjMRyVrR0rpFZVE
-# qP4z1kG51dNopOa2NEjBWIBsqc9BfAp5k27OiXGMbki1pSFFhAyQFEFpbry6lc6Q
-# /iGbBJ4qx3yrUl2/puEGvtqL1qVY83tVQ1tUlCnx2TPCwtOSg0w2ob60O4jTkMIA
-# PMbl2hpw2phT42VOTX4VtdCa/H+t1G+MqZjbOuj8b+Duxnj2Hkycwbm86oEVIYEM
-# lgS0+aFxnB5/scNOwmR8OgKJao+pFnwcRbzWB7fxAA10RZXqPPilCDKKn8gdpqBd
-# NKo9E+Jj41Vq1RB3sdLAeG7T2bAe/QsNcFfiHlN2/T3+p+djWh7yscShggQEMIIE
+# CQQxIgQg10d1b1ZIwiV3p/MBHQWIfIc3LPdXVdyeuyt58VgXg48wDQYJKoZIhvcN
+# AQEBBQAEggIAcRxV7B0W9k4PsGQVz6O3geHAfkqYonG2mQ3OqGHTUarLWfe2Hy2L
+# 5w4epe7Tdw7Qz2MbwE4zSkNcZW4U5tpnB1Mvrj3VbneKvA/3Ub1hrE823cZFo9jP
+# u6wqhlJ5y25jnmiuo+cS36Lg1pUP8xsA/O9Yu2FVVDdCkdYRvYdG7AqcDrIhRVZ8
+# g9pv0BOg0nOQy7nybNLWZHcYlitZAO9q5DalrT+7mZr6aeJxO6mb5U2unZu5MH9r
+# JWLRxzS/t5t5wWfNoF78OmXFG6LkSVAw5tTNAL1LrRi5TC4d/6icyY6NGbV9y6Z9
+# 50ij3jK+mxmKrKDPdgfIwWKUTLMuN+v2lCEkYbTVsFalhSOxG50phK++w+P1Nohl
+# Qgh6zmI17QPE82GQNK7veiE1a1HOCm/InryV8QVh/LYu4IBgEfFPHujKYZz52IoF
+# fHxQdjnqpEVMfEXG+4Kq7a8py2UGTnA5WlmhpEmaKLD+zFWItMziNvdV7PajG5BE
+# aBWzUaszFaghLnvlBgCENBuSWWOTqNokJksZ3trSupqtVzyGDIqPRJ59DZM5+phu
+# CImJLmjCt4z1XicXl3B6k7QAqx26bKPJW9TobZ6ae+fKELagVx5tcH5gP/gZw6xl
+# 3jxDkBXM+9E8X3iwONde3v779xBriahpdy5MqKCA9MJ8SqTkXhCvgk6hggQEMIIE
 # AAYJKoZIhvcNAQkGMYID8TCCA+0CAQEwazBWMQswCQYDVQQGEwJQTDEhMB8GA1UE
 # ChMYQXNzZWNvIERhdGEgU3lzdGVtcyBTLkEuMSQwIgYDVQQDExtDZXJ0dW0gVGlt
 # ZXN0YW1waW5nIDIwMjEgQ0ECEQDxZCWMCbbie+IOMmCOS/SoMA0GCWCGSAFlAwQC
 # AgUAoIIBVzAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkF
-# MQ8XDTIyMDcyNzIwMzIzOFowNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQgG1m/6OV3
-# K6z2Q7t5rLSOgVh4TyHFVK4TR206Gj4FxdMwPwYJKoZIhvcNAQkEMTIEMAUvwwCB
-# InLbnszaWa8vM+HVvpAyhS6j07xpkId2gwN1OieIPzqPNhAXh9JrzHt8VjCBoAYL
+# MQ8XDTIyMDgyOTIwMDIwMlowNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQgG1m/6OV3
+# K6z2Q7t5rLSOgVh4TyHFVK4TR206Gj4FxdMwPwYJKoZIhvcNAQkEMTIEMKN1c+rO
+# i2iuucVF+w0R7A64FGcd7/EjRxPfgty+KmYUFF+aLvrGnvXgAlKCecIhjzCBoAYL
 # KoZIhvcNAQkQAgwxgZAwgY0wgYowgYcEFNMRxpUxG4znP9W1Uxis31mK4ZsTMG8w
 # WqRYMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQKExhBc3NlY28gRGF0YSBTeXN0ZW1z
 # IFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1lc3RhbXBpbmcgMjAyMSBDQQIRAPFk
-# JYwJtuJ74g4yYI5L9KgwDQYJKoZIhvcNAQEBBQAEggIAilsNwvidePIZYrXqcenQ
-# kERzcR/EVq655U7c0B+it2H8FlScnQXZ6XMeTafzE1QecTEFvtdCiV62dzl/hUSY
-# c8y4g59gekuyVcXBdxdVPDLuVSOX5DxFVyiHSFb5fdlGI2H0xPvHmx7cNn9AVp5l
-# tqjb/rmLzxTc/P4SbfoRQ1c/RGS7Y7zSjn7LZPUz+lIlQzWEOybWan9mGpjhuKsz
-# aTGjcBBfGmWoB+fW0i8fzKe4REkUzmmKCF7qRZoSvrxAWwCSkr2ytNk9dzdcnLDL
-# jHksuekaPQDCH7mQyucEBA42H4uCowP1cPdDnwpAzFHDo+QsVmeiyPhPeDr31HgZ
-# 0gtz8WFQeeMbjAQtAHzd1SFFHwxTcJoC8y7zpI3wezUL6TctO3Wc3lDZOH2laz55
-# xyMAabV8IcMbmrbAP4Tiwbhj60kX5ZQCXo13fj1pajWw4+oR+pTr5OPnRk4Bp48Y
-# a4aSOR+EYTcz+Rv3oNscasBeLBrPQxoVosAKkvm/wIQPFW8X9onBSh2pPADyZhni
-# oNSnXQdsUUkyp6prEJ9OgW/TBtgtpxwDilkSF4p9WGhF0G+42GWiNwk9TPbvvD9Z
-# l/YPbrSpJtu7KbL51/8cipDY/V62TPCCCulWJpyoQ3JAh1hwNTkq+o1ZnxWPd8WF
-# ajvR8C/b7CLZtddG/2fQsFQ=
+# JYwJtuJ74g4yYI5L9KgwDQYJKoZIhvcNAQEBBQAEggIAZKx5j2n7ELe4JBgTfjms
+# G23N9kRHwCHAlps+t1ECaZHwkwn9wUWt0vXrq3sdNAqKtG233aaLiu7PzyMO1X3r
+# kDxVhdb/xhzaQB6oci6QxJnpTeXMGhxztUjgvqgfn7jf659I6UlGdP+jPk7yXy5F
+# Awzts5fWTkFPmy/iZPK7FUsWoMEC0ZBvPcgz47Jke9u9w/6XezrchqU1tHtelWcv
+# ScU9dmiosaZBcBl+j2d4kTXAej1uAQT/247XILqlVDVL9/fDjbTCrvQgiQA141Fr
+# dUPlREbQB1iryvJzO43J5p29Zvt9aobuLL312zXC9LRJ/fhdTAYo4cNSPMFOth0q
+# TlBAF2W3wMeuz+d/0iOZ5ZkA8NP20OA2QeiNdHSYFxSdaD2ajvy6wGMJ8257wLjl
+# kQoy+I1nnZ6FN+W3qAKLLXrUTNuyvdkon3DnPTbf9jDZDsnAcgHwuhHNzfSI1rPb
+# Wb9RRvlydg4AtZpMWluazddjXhdhJt0rhjFOa89rz3rMNHUAknnhUr0XKLQnkB1q
+# Omup3BI2yPLyZ8inil/oWHjz4yNuLsU55Q2/v8uV2TlC3N5DQ6Al16bBky1fhih+
+# +aQMhPu6w/GYHgd1/IWiUAIhCryBTRkzduzdTI2p0yLZPzLMLd5nH7N86FsFXTpA
+# HIXx0b8N4VZsIsK9Ano5NkA=
 # SIG # End signature block
