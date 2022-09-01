@@ -46,6 +46,7 @@ Colors rules:
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql?ref=badge_shield)
 
 
 # Prerequisites
@@ -199,3 +200,7 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" 
 
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql?ref=badge_large)
