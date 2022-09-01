@@ -199,3 +199,7 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" 
 
 ```
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql?ref=badge_large)
+
