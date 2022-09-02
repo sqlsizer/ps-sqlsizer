@@ -1,49 +1,34 @@
-﻿function Initialize-Statistics
+﻿## Example that shows how to work with integrity checks
+
+# Connection settings
+$server = "localhost"
+$database = "AdventureWorks2019"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
+
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+# change all fk to delte and update cascade
+foreach ($table in $info.Tables)
 {
-    [cmdletbinding()]
-    param
-    (
-        [Parameter(Mandatory=$true)]
-        [string]$Database,
-
-        [Parameter(Mandatory=$false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
-
-        [Parameter(Mandatory=$true)]
-        [SqlConnectionInfo]$ConnectionInfo
-    )
-
-    # init stats
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $structure = [Structure]::new($info)
-    $sql = "DELETE FROM SqlSizer.Operations"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
-    foreach ($table in $info.Tables)
+    foreach ($fk in $table.ForeignKeys)
     {
-        if ($table.PrimaryKey.Length -eq 0)
-        {
-            continue
-        }
-
-        $signature = $structure.Tables[$table]
-        $processing = $structure.GetProcessingName($signature)
-
-        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created])
-        SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE()
-        FROM $($processing) p
-        WHERE p.[Table] = $($table.Id)
-        GROUP BY [Table], [Color]"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            Edit-IntegrityCheck -Database $database -ConnectionInfo $connection -DatabaseInfo $info `
+                            -SchemaName $table.SchemaName -TableName $table.TableName -FkName $fk.Name `
+                            -DeleteRule ([ForeignKeyRule]::Cascade) `
+                            -UpdateRule ([ForeignKeyRule]::Cascade)
     }
 }
+
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBPH1kiV/EYINiZ
-# +FWRA7o79SgryvzLaaQfz5f6PUqAiaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAtcUJJ3U5VBLYj
+# JrV2WuKAIrzpBAmASVqzKRfAmZE4gaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -223,38 +208,38 @@
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCA7gh2c0wF5nkEgURqgTNlM6S2fWjTOlGsDT3QT45nw8DANBgkqhkiG9w0B
-# AQEFAASCAgAvMyOlZFZ+po+yl1jLVP25aZBrzC7aRxFFOrX2rTvKj+qMG8qoUBEa
-# O+qFcrekT4punmFknkoUYe+X7r/qWhRthIMPJJ2dWHq+uGDWcAXD+E8e3ySkejpx
-# 879nB/kig/YaQu4YS8sHMOGRFuoDYGYWUX9doHgChCLUNXdx/+BjI5CuLTSgdBB0
-# kwd/oQ9QW2RvqIgdkApb7MH0Lw288vGnmA8CE1MpGsVZOxHbRagTKrmZ5fgyf8oj
-# fwtWm3Kms/FxS5hYN6o4jETb2s8WpTQ/cAk9a9zQhKvANOfVeo+jaWcMqQ1NldTq
-# y4ko8aJP4hx1gckNFZlTXAGkjZ4VWcZOiXmkSKFsIbB9j8OYvnV5F3A93Uf8K1qM
-# zkThADhL+JUJx1MKhdIakrykG9PFwOLxamVVF0JutT0T0LY+jhTZlssyt/64SqkH
-# zay+lebIHIrxWKHP3Z/kzPwjeOscachFSDt8A08xoZR8Ag80KoyTtOrY3SuegPbe
-# YOburMDod9FPmM00xb2hIE61ut6KmKZqzWKXi38V0qzVQ250yGpGISot2oklKwrP
-# tF2tFzw6Mf2pt/13PzoV8egyRgKt8ct7PaP99y8Gw4ibNUrSDbFnpsR1ddgfYZYr
-# JAsCC2L/26Bh+RVLv6szCUETT/HnSOsjCDSD8GZfNVrnJi8N/pUBVKGCBAIwggP+
+# BDEiBCAudLqVC7spSQI1GJ2tao8AbqsxOb51Qh2TCe6IeNqO+DANBgkqhkiG9w0B
+# AQEFAASCAgAvI/X2+F8MJe6sr0sBLikhIm5sqFAsxLMOIRiPss/z3fP+1b1uqE4+
+# eB+68heZ04CIsfckJyxXZVolUyn6mkTWYOGRpR6XDyWmjtV6gp+TZSDdp5a2fWfl
+# AfBqv5gOLwY3wve3S+rockYcQVGNVmEDeDvd+l16ug9+OShGy2OZraFPUYq3qBUZ
+# r0yeSi5afRYHnuIuJtzrOwDZxo+dmQ6vJAO7uQZ+uVo9mCDpuV9DsDCTafPO3Q45
+# 0+oGybv76Q2VydwJklE/WFwEkZ9ZKUraOsftEBPORAk+77vyAMFQkLNES0qFf1Pu
+# STBne6ugCPzBzoZra8IbOO5Cw6VJVcVt0z6oS9DI9gf2t7CDJrExc5p75mqzKV4m
+# K70isO6gcD3M9jVCFnf1vT8RfYCu29cVE8GMgxYDPkRS3BHB9ii4YonOQYygJ71e
+# sIDlIfrXq8LZMJHqlEzVFIwnKtg9L0Q1veXu0irytlMhVg18EA8TsBDLhs/IqSg8
+# d1O1SDQl1l0wS6y/WoxIzYNHKW1KqOzD12oMqDoKFvhSVByKPsUbdlPASDOz8tsJ
+# 5hjL1UwZUMD8iaVi5keh0M5k9GDiR03+wCbJlbTmGM82uvmkzu6KhAOGSd222iRA
+# MhBLsbN+yvyeertXaixcDb1Dbr4LLl9wtgFeIH5BvRDdHiHyv5Zo6KGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MDIyMDExMzZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDAwOCvmfmo3
-# nTGAH3jbueOj+3DgQ1/dhi1jFSYIw4oxEXBLdVjQl/EBBo6w4p3nCUowgZ8GCyqG
+# Fw0yMjA5MDIyMDEwNDRaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDAOQpievyOq
+# VDH/Y77XDDgmYNoxuv0js9PiY8uW6uz+M0PplvX1z+3PUfMBRyryhp4wgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAQTl7yJXuxYspj1X1PIB2oJDX
-# QLw+WvQDlDU3oI9gXkoBQMJdrU3uqhXlpuiG7dZqTLA5yY3la5hVI2wUJh5HPoNI
-# X+VYJ+FNoAz0d27y8Rp5+lZFkkG0TxHfXZ4l2OdVrfxxoZ/zKon87DmpvDCP+cyR
-# 9Bm+haC0CecEre1QGOFXtKbeTIENAuGVtHM7pELfNrMzmrACMsBF4zLC7h31VtRS
-# FHSBGY2KAZq6HXsRJMxy0aAOclpVs7cbj9+vdRatiUgjxn/OpxQqT0LClQ85fzhl
-# Aed3u+xLq/7LkrrdXGilocqjSnOUDz+cUT+Grb9W6mNxd/Y+zTGLOulsy5XKzurn
-# sbnI6d21uOXFZTPr7ufdREAHfQHPrgNeHnGlOlBkwAZSAA+oe/k6Ab2IJzbvnBSO
-# yYsf/ZpDnjtLL92LiOT2DuvbSd+duB1z4lDn1SaNorpi+4Ps1eM2WC3T7YteZI9U
-# 9Fv9SpIzoBmPM75hpmsTfEle+7y4PlfIk58pBspco5WrYDjz80Bm5c6Vx0n9iT8q
-# BF8MzHA9V5/AHZvxnC7pqGFgAA9OrCQ9r+luzdo4ko7lj71iDajNPWTslDyUjOli
-# MhVOqhzzLNFUFzk5dF+sAd1Sq8gxpi/4ks8+PS38odGd79bCki1OwEFl704MEijF
-# gZt/f9h1HI6paEY5hAw=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAXoGIUYRKvZgM9CRcFTaEMChH
+# qurIq4Q5orZ1f/r2LyMLDO3WEot2r+aWcAaMU5e21ocFHAX0/YFWjhmFMN2y0X32
+# cJQf1D3MP6RuESIpCQpluOTZIcCYQuWW54P9KvL8lZvtQMzRDTxNWY77pbU3onrP
+# 4qbrJ1qr8p48zNxRy73yiqOAH09pYB5qxXX/g5Qy1I7ZXfBpWY/90+Z9i8FsRNmm
+# R5Oywhog2fsMBaauYiAzXn3P2K9zJmByOmqW8Zo2vxzqpfhmXnCYfsoYyUaHTLRD
+# aKnNbY5DlkmlCoboW5+kExT01YOB1IDrZ5Qe6SB0MAPG6rr8SH66SpAhv1ytVc1B
+# CjqYUmLF9Yp5B9D6NbJRTPFnx3OMZD51Ygv5V9zS9VdnPP62VorWyC2IAnXmJuAh
+# eWHeMnjiSPr3KxdDHWedhV4pcUBjM59LZiJFqsJM76F6NsuWeq68+cy1+HUdbfdb
+# lkVftduZHcrtG3SCUE/c7BHUdPDszUJkLnxJtl2mjlfLTwjuNK05WICzNfufOoW5
+# U6fViZlpbw1zvAxqVEy461g+GWPzVhnmoh4afs/AWEhuySgpH9eKBKoEqOrboSta
+# +id6gYCRq5LKg0/qYRXwZ32L9aC5p6cAGBGtJymI7IMxil8nw4ZXv1CWgpB6D9Af
+# QXlZ3t6aaSxsmFI4cIg=
 # SIG # End signature block
