@@ -1,23 +1,24 @@
-﻿$Public  = @( Get-ChildItem -Path ($PSScriptRoot + ".\Public\*.ps1") -ErrorAction SilentlyContinue )
-$Private = @( Get-ChildItem -Path ($PSScriptRoot + ".\Private\*.ps1") -ErrorAction SilentlyContinue )
+﻿## Example that shows how to work generate JSON with database schema
 
-foreach ($import in @($Enums + $Types + $Public + $Private))
-{
-    try
-    {
-        . $import.fullname
-    }
-    catch
-    {
-        Write-Error -Message "Failed to import function $($import.fullname): $_"
-    }
-}
-Export-ModuleMember -Function $Public.Basename
+# Connection settings
+$server = "localhost"
+$database = "AdventureWorks2019"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
+
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+$json = New-DatabaseSchemaJson -Database $database -DatabaseInfo $info -ConnectionInfo $connection
+
+$json
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDvRULWQegP2lT5
-# w2ZrcTX6rc4xJyd9kDxx6OgN0xMGrqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCvZ46tEgOgck9t
+# X/gkkH1dTpfoJWCKFYx/emmlgSh/GaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -197,38 +198,38 @@ Export-ModuleMember -Function $Public.Basename
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDHM6B9IPY/F0B72l9H4qOHpFehwZcRWVpR7DovBuywiTANBgkqhkiG9w0B
-# AQEFAASCAgCUu8NhbYfTZ3ZYRVB+Gib5ccYuRAlWKbLEDeckxIUafpKKua1abI/H
-# YEUS8BeXOzV4iFesiml3HowZqaTWzcj9N8lmfOOEsftefAorlTVkz8Cg+0c5es75
-# BJxlpia/EftxEEp922tTOqv3Id+fKEIaCBtd37xObVcyKLxF5W01knVYD7SoNPIp
-# PNrYU4LXiLXryhFC59L+vXjrMIl3iYx9kyv/bv/NXVqJNRwbJq0I4cSxTcwTQKFb
-# IppfOnzyprimjHIgM7tiIBQ60678n3NOBa3r+82eUZq7cDaEWSS9w+mpwE4F7boC
-# u1OFg6UuBvx1dx1ebvCL64WsSJWhdiZNbjmXvjxq5Su6xbdhlvNeZazdBhz1NpLm
-# l1D5dDsMBI/ajqNcAZVVoD174QWefb5ML2giTauGpzoJvgC/bGO5/IH8WLL1BXd4
-# AeSEAAi4m/7gFauCbgUAWiKH7nqOnu07yDQ6cPnW2y1OEjhuGY1P2G/STYA5iCrp
-# pf4qfTP4nJv0RDmYjxquJRcHa/ay8FoYfHnEvMuRYnDNGJoxumSfaR2vPX1E6v5g
-# sFg1hPxwwSCfkme+OFasTKPG80JHpaceeCvKa9guW0nP/yjBXeXZxt+/R6lm4AxC
-# vu/qnlKBjOEQMTxWCjYmjGz7ac4YczXfUG/Bz+N0qaBaQ2HjYpvpt6GCBAIwggP+
+# BDEiBCD5CsTe1MjGjUTqzsljirUzqbCp/3a+DR2PBiVKS+gFDzANBgkqhkiG9w0B
+# AQEFAASCAgB/2OQ29LsR84V0lnBYIAUvIMwqM+8V1yT0e2AS6ERY3SJ8dWmAoPZD
+# +d+zpX32yDM5n535YQtU7sWEjw6OvOfjergwlC7ggOoYUq7/gYs4TbmXw+OdhDAm
+# nZ5TCioWdA8IV2Yg45rcpe4pZ08iNmM2CRzzz7KGxgljZPtDE1X1fQeWQqovc/Vc
+# 6BdTHaq36ymHJCTXhhdNz3KSzf+W+LPfe60sy1COHIQ8CmM/otPaQB9E7l/i5JBq
+# KaFX3yOMRaVWSY3TM0yINO30wNdioNq4MdFEUvLB5pgMrZt5Icw//JwuYFK6plMB
+# MRxUXzzFUPMcLwgt4ggUQDLRJCw2npqfbz3yWCkLOZlsvQ6RFY4kOMw7fmAa5en2
+# CqWq61vtiUGfSAug8TubUn1wqohbwRMx4SccQWkyg94g5Y+vblPp56N18YTgF2t2
+# do9uAFQoXMNXgOw84/OxeDvT8uVBRyaJc6DOi5nd+Ndcefm/YK5dlcjOF9cV3ciL
+# BQx4aJTfg7XkpzNs/FftYHeOeGWgsf1p+g4qPU0sAMXmOcVlsfUNaeN+MsYC26DH
+# eOrzf/c+bNN7mf7YaxFLGB9E/8Ewlv62VycmZy4WXgmlF2Mw4x0I+/2BiFI+ePfR
+# VXFy24UKaGXSNt/9GUjd5pXMlcZq+Vty3gcQgBSbWtKa0agMD9Azn6GCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MDMxMzA4MzFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDA7EYzb2Q6p
-# +Wm5L9DdyHgHWetT7IapN9gxUB3umYTyU7CvhwMf0mfRF3GZCTaK8pQwgZ8GCyqG
+# Fw0yMjA5MDMxMzA4MjJaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDherbC9K0R
+# 74Cf37bhCOYnsiUbwfiCsH3l8ahC8otZRa/TStM7Z97xCQo+0Y+a7fUwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIADl+m+IWH8+2uP7NCjGcoKOAo
-# NBC/0pqLVDrZyuQFUWVB7bliFmv3oU8BiRvMhyHPBr/lbowG2HV6ioWss8zXxR50
-# 0pFkDBO2At/Jmbgvfy54m+oZ4mZdMSR2NROOE34chJ0T4MqlafaheXdzk2RIRf9l
-# wYHxsRiu/Azd8f1b3jvVTmon30iVOnb2gSgvjo5wWo/8TVLKtun1YDhJLzR/Vh4o
-# AjMg8vpL0R6W4rkqlPfUX8s5jVmBvNz703UKmOEAtYQeDfIPGRYuTET4xY0kBWo/
-# zrCYr9B4+EshIQZgNjxVzmEhbhynq1s7KyobKfAZL117JNg/Bb2EYSn28fGwS2aM
-# qhtADMiCaa0moHVa4cd4VuwJbpT/Q26It0DV/rAaS+wYFVCpZX337yYPO2MGK8WP
-# 9eBnvz278gdlaRh10+DtNPTJWquohNouDQt4cMPgBPB2+V+pVpOCu1T3QWt+kkmJ
-# VpHzi/HM/zFXgRCg78AAcrrxiyvXofC9XTYsdC3TkndGgMiO/BFQgef7BT76D3/d
-# VZP69/qaq4HuCHG9ERcPHwYM/nXmwVaoEb1MZ6srcovtx9PFnqqULc/iDJ2plyVo
-# 5p9hz1go77KDIO64g8n1CpRzn9uTWAUgw4OCoupQi6MN2zWd7DcdKq/kB+/8u4hE
-# rJWfGcIJatqEmwuYa9Q=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAK/xKMMI96cLB8qqHtByiMEEA
+# PxXwPBf/trHbuK981h8rIbRdIl5B3+jNFjlBkELBR4tHVWip3pbIWrkYdvLvLjnn
+# PSNI4zrTP1aZ+2LvQhPFdm4RWh+LZo3i9AhvwLGrr9mEQldjR92r5u/2tRrewxcO
+# KU1v5HsIw0ozTOigNA52UsLH8xc0m+vJg5G3TXXIQjO4niSSjCOLRot8VcIMiWYA
+# 4U5tcnnJ1IGJGCG9XN+WAuSyieXtoYr8kOTlJIe+vT/zSjSBXL9cqWiA//fkL89x
+# J1J0Lyi3+c/N3BYaIxLNkJFWbg8k7i7UcBDJprlMVo24+XRPlRNoxb/1fGZNK3DL
+# qjgdQJCwNBmpMcUecW19wlsHl7NH+vyeOzEHXCXBL+NPXnseMM65ScdyyMER/0uS
+# hR/CjbJV2UAqPbplxMjs1O2zvJ/SjTyLhZb5RrchWOZuSryE74rEuJzL609b57P5
+# Z0jqhARtmbi7BbjwHp8ql8WhddB+ZJkkRTz5G4Vp9OAuBqf8rGOVDu0cPsZS7eEw
+# U6XwDkZno5i2RfKft1G2IvAod2e22qBR2JTftIqY5ZRYGXX/upSedaE6H9pLRtbb
+# S3ldua2N+5QpxtsS0EnskPgqdlVhOJo4I0ZdcfRh9BehZSFixQ4SIOskSIAGoMxV
+# QhBUsEm3g79fCA/mhZg=
 # SIG # End signature block

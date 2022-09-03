@@ -1,23 +1,101 @@
-﻿$Public  = @( Get-ChildItem -Path ($PSScriptRoot + ".\Public\*.ps1") -ErrorAction SilentlyContinue )
-$Private = @( Get-ChildItem -Path ($PSScriptRoot + ".\Private\*.ps1") -ErrorAction SilentlyContinue )
-
-foreach ($import in @($Enums + $Types + $Public + $Private))
+function New-DatabaseSchemaJson
 {
-    try
+    [cmdletbinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        [string]$Database,
+
+        [Parameter(Mandatory=$true)]
+        [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory=$true)]
+        [SqlConnectionInfo]$ConnectionInfo
+    )
+
+    $nodes = @()
+    $edges = @()
+    $colors = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
+    $random = New-Object "System.Random"
+    $allColors = @()
+
+    for ($i = 0; $i -lt $DatabaseInfo.AllSchemas.Count; $i += 1)
     {
-        . $import.fullname
+        $allColors += """rgb($($random.Next(255)),$($random.Next(255)),$($random.Next(255)))"""
     }
-    catch
+
+    
+    $i = 0
+    $tableSize = @()
+    foreach ($table in $DatabaseInfo.Tables)
+    {    
+        $i += 1
+        $tableSize += @{Table=$table; Size = $table.Statistics.Rows}
+    }
+
+    $sorted = $tableSize | Sort-Object -Property Size
+    $sizes = New-Object "System.Collections.Generic.Dictionary[[string], [int]]"
+    foreach ($table in $DatabaseInfo.Tables)
+    {    
+        $t = $sorted | Where-Object {$_.Table -eq $table}
+        $index = $sorted.IndexOf($t)
+        $sizes[$table.SchemaName + $table.TableName] = $index
+    }
+
+
+    $i = 0
+    $j = 0
+    foreach ($table in $DatabaseInfo.Tables)
     {
-        Write-Error -Message "Failed to import function $($import.fullname): $_"
+        $i += 1
+        if ($table.SchemaName.StartsWith("SqlSizer"))
+        {
+            continue
+        }
+
+        $colorForSchema = $null
+        if ($colors.ContainsKey($table.SchemaName))
+        {
+            $colorForSchema = $colors[$table.SchemaName]
+        }
+        else
+        {
+            $colorForSchema = $allColors[$random.Next($allColors.Length)]
+            $colors[$table.SchemaName] = $colorForSchema
+        }
+
+        $nodes += "{ ""data"": { ""id"": $i, ""order"": $($sizes[$table.SchemaName + $table.TableName]), ""color"": $colorForSchema, ""label"": ""$($table.SchemaName).$($table.TableName)""}}"
+
+        foreach ($fk in $table.ForeignKeys)
+        {
+            $j += 1
+            $tableBase = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+            $tableIndex = $DatabaseInfo.Tables.IndexOf($tableBase)
+
+            $within = "false";
+
+            if (($fk.Schema -eq $table.SchemaName))
+            {
+                $within = "true"
+            }
+
+            $edges += "{ ""data"": { ""id"": ""e$j"", ""source"": $i, ""target"": $tableIndex,  ""within_schema"": $within}}"
+        }   
     }
+
+    
+    $nodesArray = "[$([string]::Join(",", $nodes))]"
+    $edgesArray = "[$([string]::Join(",", $edges))]"
+
+    $json = "{""nodes"": $nodesArray, ""edges"": $edgesArray}"
+
+    return $json
 }
-Export-ModuleMember -Function $Public.Basename
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDvRULWQegP2lT5
-# w2ZrcTX6rc4xJyd9kDxx6OgN0xMGrqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAO2KSdmr1jv6Em
+# Nx59Lt/AN2qoZ8bjiQJ5MFH2MTDBoKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -197,38 +275,38 @@ Export-ModuleMember -Function $Public.Basename
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDHM6B9IPY/F0B72l9H4qOHpFehwZcRWVpR7DovBuywiTANBgkqhkiG9w0B
-# AQEFAASCAgCUu8NhbYfTZ3ZYRVB+Gib5ccYuRAlWKbLEDeckxIUafpKKua1abI/H
-# YEUS8BeXOzV4iFesiml3HowZqaTWzcj9N8lmfOOEsftefAorlTVkz8Cg+0c5es75
-# BJxlpia/EftxEEp922tTOqv3Id+fKEIaCBtd37xObVcyKLxF5W01knVYD7SoNPIp
-# PNrYU4LXiLXryhFC59L+vXjrMIl3iYx9kyv/bv/NXVqJNRwbJq0I4cSxTcwTQKFb
-# IppfOnzyprimjHIgM7tiIBQ60678n3NOBa3r+82eUZq7cDaEWSS9w+mpwE4F7boC
-# u1OFg6UuBvx1dx1ebvCL64WsSJWhdiZNbjmXvjxq5Su6xbdhlvNeZazdBhz1NpLm
-# l1D5dDsMBI/ajqNcAZVVoD174QWefb5ML2giTauGpzoJvgC/bGO5/IH8WLL1BXd4
-# AeSEAAi4m/7gFauCbgUAWiKH7nqOnu07yDQ6cPnW2y1OEjhuGY1P2G/STYA5iCrp
-# pf4qfTP4nJv0RDmYjxquJRcHa/ay8FoYfHnEvMuRYnDNGJoxumSfaR2vPX1E6v5g
-# sFg1hPxwwSCfkme+OFasTKPG80JHpaceeCvKa9guW0nP/yjBXeXZxt+/R6lm4AxC
-# vu/qnlKBjOEQMTxWCjYmjGz7ac4YczXfUG/Bz+N0qaBaQ2HjYpvpt6GCBAIwggP+
+# BDEiBCBB4oS6swoM+QVrJvcYxCqVDrYtCXaNHS+04vUYEeR4dTANBgkqhkiG9w0B
+# AQEFAASCAgCm/hfHl5C/u8a4dP16HzDhit5+LiryBOA7ozrZ8tOt0j7kcAk+Ohuz
+# 1ofxegVfVXk9r9rbJgN5xPw4LQ5sYo1FgfnrqKsdwxKhhpoFoLc5iApy/8xKY49Z
+# s5obZ/5m3zgRNpfzr1F2426RfXO7ZqMKCKgtBTEl4ylsgoAWySoDHDvNT/MXfyav
+# MrjAoBoZOPAJG+LuOj+pMvG0IExA6GrsUUXk+NSp5jDhIprpZ0MGM365XOl/qPDa
+# XLilE60Lx5QNk6FuVyYM0PwlbKPJ28cE7yeCfxkv4pkaPYIM20JBQHoYUKXD/LdM
+# cC8M1ql6BSZdPKxnkTco5huX7l67udZVJ8E0pa37fT+GcekfTqvZYzQrzxFtALd7
+# 0IE+iYT9+2cwzH7W24ldImQObJ5CqlKQsnzhDa1+FA3yT+Xa+l/ZFrz/3eI83Sxv
+# +PNl3hauYxPSBJ3DCpdnlKZpo0DcxQE8tZcm/3zRrVFLRrW93RwBB2NImkje5Sqg
+# p92oX6NFruBEKoFohLbyeoRdEny/r8noReqceSNPR+tacmpXHLCQVRQO7IlApUbw
+# sp1uWwR7dxs6UdCi8ueipFfn0Q2SEUfTFjPyMAcWNFl9Eo6YBGLK0Kr05MgDn8Dy
+# qOKGdaKTHh1SOefoWpUWgySqWIkvDoPXMawbD4Ii+Brsas/ZTJTTtaGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MDMxMzA4MzFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDA7EYzb2Q6p
-# +Wm5L9DdyHgHWetT7IapN9gxUB3umYTyU7CvhwMf0mfRF3GZCTaK8pQwgZ8GCyqG
+# Fw0yMjA5MDMxMzA4MzZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCQBxYMeB5v
+# yYo69RHYH9XvenFe63/U1oEb6aVmJoL9NJgr5paxQuK7CPV8g0Eczb0wgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIADl+m+IWH8+2uP7NCjGcoKOAo
-# NBC/0pqLVDrZyuQFUWVB7bliFmv3oU8BiRvMhyHPBr/lbowG2HV6ioWss8zXxR50
-# 0pFkDBO2At/Jmbgvfy54m+oZ4mZdMSR2NROOE34chJ0T4MqlafaheXdzk2RIRf9l
-# wYHxsRiu/Azd8f1b3jvVTmon30iVOnb2gSgvjo5wWo/8TVLKtun1YDhJLzR/Vh4o
-# AjMg8vpL0R6W4rkqlPfUX8s5jVmBvNz703UKmOEAtYQeDfIPGRYuTET4xY0kBWo/
-# zrCYr9B4+EshIQZgNjxVzmEhbhynq1s7KyobKfAZL117JNg/Bb2EYSn28fGwS2aM
-# qhtADMiCaa0moHVa4cd4VuwJbpT/Q26It0DV/rAaS+wYFVCpZX337yYPO2MGK8WP
-# 9eBnvz278gdlaRh10+DtNPTJWquohNouDQt4cMPgBPB2+V+pVpOCu1T3QWt+kkmJ
-# VpHzi/HM/zFXgRCg78AAcrrxiyvXofC9XTYsdC3TkndGgMiO/BFQgef7BT76D3/d
-# VZP69/qaq4HuCHG9ERcPHwYM/nXmwVaoEb1MZ6srcovtx9PFnqqULc/iDJ2plyVo
-# 5p9hz1go77KDIO64g8n1CpRzn9uTWAUgw4OCoupQi6MN2zWd7DcdKq/kB+/8u4hE
-# rJWfGcIJatqEmwuYa9Q=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAn663bn9rtX+cvV+afsMhmehR
+# kTDBk6G+BVQSdMoeFhJ5Ue4CeYz2+oDYnRnbU9bCaPWqheozE5j3sUNWiVX7jQ3d
+# 2YFCiQ+OFCPZJ2KgR4VW3pzjpe3hDCVmIRhV52Fnrwwgu92jbkD68xGDgx1sh7Gt
+# quRRf6tvNMzPYhkr72f5PpWP2n3oQQvn5QTenbawZ59P01fWBW+0LmO2D9wSFRxV
+# ELQX537EDrW5XA+NvzIHdp3RGOGppRF7rH7uM8MIomPV8Mqz88eHm/Nkgm0vZ+vj
+# as0lcBfOE4BRiNtOOP3SJ7s0mgU2Iea5V1KO2RPP0UhopkoS1V9Gns9uDDnnyc99
+# C4AGaKLMr+Vxl5oRq7ZYEgRSWexJBq0RTfTxiuvzpZ0zMgclMz7JXlqOm0bLNgWA
+# o1j84VdemyheOcRjxSOBDGNo6ehDe2ynswpr1gb2wVZ+RxikqbvdYRJHpjLFIY2b
+# iASF67l+PTcjPzD00ekM2/7f7DKV1ZKrIgbJwpDNEoPOMvQicjvJxlGGXnwl1xS/
+# i1hIAme09uJpO1e+K6QlKXbpOvkzrWBeSVaqbG847rk2VSmAcJJfolJ8Q3Aserb/
+# iW9bhqrGEBD8EcWfvakQ5vSqkx9bKOnUiGMh7atwh1JGWtn4uikeLfjvwuScATsL
+# supriS8P3qv9yFaYUTI=
 # SIG # End signature block
