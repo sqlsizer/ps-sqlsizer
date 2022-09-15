@@ -8,7 +8,7 @@ The subsets are highly configurable. The final result is outcome of the original
 # Use cases 
 - Removing unwanted data from database 
 - Creating smaller database from production database for development/testing purposes
-- GDRP Data Masking 
+- GDPR Data Masking 
 - Finding all related data to some rows in database
 - Tracking changes to data (new/deleted data in other tables)
 - Data integrity verification (e.g. using SHA2_512)
