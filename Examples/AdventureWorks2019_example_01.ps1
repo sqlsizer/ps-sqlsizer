@@ -33,13 +33,24 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
+# Basic limiting color map
+$colorMap = New-Object -Type ColorMap
+foreach ($table in $info.Tables)
+{
+    $colorMapItem = New-Object -Type ColorItem
+    $colorMapItem.SchemaName = $table.SchemaName
+    $colorMapItem.TableName = $table.TableName
+    $colorMapItem.Condition = New-Object -Type Condition
+    $colorMapItem.Condition.Top = 100 # limit all dependend data for each fk by 100 rows
+    $colorMap.Items += $colorMapItem
+}
 
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
@@ -88,8 +99,8 @@ Write-Output $xml.OuterXml
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCClaUCO2yi8DG6m
-# F8cgsCOISx1ua6sltQFQbCBiP16JDKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDrHtFwjmhfJYCV
+# C5rGkR2aoQBKe5fmvFdupHIZhKPh9KCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -269,38 +280,38 @@ Write-Output $xml.OuterXml
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCC4m5yoeFNgJmH1nvWXyfSlV3wyhKhfd5VgTOVDVmkh5zANBgkqhkiG9w0B
-# AQEFAASCAgBDtAWiIHRFfZKJwM4HE45mrBaJfHuFiehtdYq1MB4rT63e3FV6KCP6
-# u3uKcIv9aTohg12ivVjmEtz6ieY2M0cBUoRvv1x+/s3VikGN2B38F3BJ2Rbbr8oe
-# iiSaS9kn9fWQkVsGY1uqinKry0oC9YO7O9bkyQuyHUHJYUemJNKxxkHvYzcnoexQ
-# oTdhaBYiDZFEUZzz3guXvDwOChzOCtBvEDwRSPbOexqwjou1i3DCVUX/HDoW3Xih
-# +x0k7qIEGnl3xNEe5gg5Qlmi2W7/mc1uv88pCwU/Co6kKJSq2Mcq08BcFyWFfWe8
-# 72q61+mzYeuqR3RiuWeY+sy1Ez4SaH5UNpFKlCDdB4GMc2QfkrSxaSEYGk4htp/P
-# QuZpa2X1Mqq24OggAlYSV8om6/uxKBlMaHzGeF0CkmHN9AarSrd87KYMeUVznynv
-# TbfFK5FQ6CDHQEgOa7n+dNECDeYQ379Z1Tb7PFxWQ3bOiWSz3j3eGWtgbtqp7DCe
-# 21uAxo/UDHimAgJDw0+ckKqKTnmO3Tc1JrDdoUEL+hcx9fBT52fwsMRX3tUKkNdz
-# VU4RBvqoBHGOxfOqjoUuoXu9OpOv3mxIXhrMt4pv08dSQT4P/MFQzCBqKBcS+kul
-# neqwKhwSYMwK6tdgWveQMHQSWE4mCPabmDzedniCy8N/ER30YQg+3aGCBAIwggP+
+# BDEiBCAf2nO1EZa+xzD+7t8VzaFBNOJCiEhqNcHRumTfIMQnKTANBgkqhkiG9w0B
+# AQEFAASCAgCppRxVHnK97IA1PJmfIsQF33SkeARhdVLwq2IQOjHOESgALXAVj6u4
+# rkG/bjNOJg/0QOOehDAsPojDa6Y3aviFElcodUN9rZUScUl9QZQpa9mnmASnWNGc
+# f30jEu2qdL6MK1ibYZ1CRW3bm129LMBqCEIE4EXqoUJlqngIBT0nuHYOrlvcAN4y
+# NhCUA6xjGBcpLu+J5FntVvmluz90f59CHWHI5QzYPUaIPgZ/EGe5gPMrnJypG9dX
+# F6IZaYwdnsjtY359GMUpX5+yy5iN6kQSZj+0GdLXTqi9O3RUd8eQgCm9nQJPwFJL
+# FP4aS3gqjfIl+4cTwoeePG4Fni4m3SvoXeSTbEpC7sdQxcmIUo3pyKk++pl8fKK1
+# 7EmHHs3jVv9e6lfJ3zJ7x7f+xCLL6UXpwLO2h8TL47BXrOOE/kiWf0pXei89tVtQ
+# 0YDSvUd82wShbh6zw1ZnEQThTbcp2ZTIfUmQGQQzZQvqgm9M1U7+R6EzwJZ/nxs8
+# pBG+PoUZXq+yZ7kpKLsC8NpJ5JUIew1iBdwue65uCQOfiMsUg03OuemPka0xVGht
+# 99KOJ+SOUTuWAVQKpJMp2lDQIyPR7vTMafnFMPOMzEgIdNwGkGoa9pxVmTyYHMme
+# L82M4S+UOm8jJCjZKCc/guWbjtO1WNanPeP7jexi0RWrK/AcB8ILvKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MDUxODE2MDRaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCgVlNmYRup
-# g/owAEDUB1JoALFEyDkHjembopf1K00EWXX2xlH+sZhc+Zsfp+7c1xkwgZ8GCyqG
+# Fw0yMjA5MTUyMDU3MjNaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDAj8El8gw2I
+# 6I3gbnErsWlJU40yasyHEYOEHKvKyBLhc4h3/zKoKdIk1QPYzKdB6TowgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAqlzhm1/oHXZ7oxL8sTfBGjaU
-# Qx1GgV4EN8J/NUGriKPBvHvtaoLTjS0tifrTsRDtTcal9eflOc0FVR0IWocHaKDc
-# RGQheXeJichaH/82LeLHLbySb3wSTogpfaJpqQMmTXOBN8Fh/CCCWMgHuVUTTKev
-# DuUyfb7iclFcwG+Sratu7ZJftA0hJqpR0z0zfonk5/AblyhjKuo+JUXXL0GiyCxL
-# LaMt17SVXLEfac+5CqzdI+YIqEgbir+jVycFCjXQtSpx25dBqCqsHUzcKMHO4cs5
-# l10ex4ObipxNK8pL2wuW/jmQxg54DzqSr3/xiV3cnKG2ghSSsWWtBjFtBVmRW5Pv
-# GXod7lzpgGTcUBVPMTxMiwkrM3vRH70jej9Qc6vJkNx47LMGh/3aPUPmE70xE9Kw
-# b/DV6ZgQWHNYQtD0im3XWRV+Y19jpjmilwN+217cJRxnlm3sUDbNGWsPaZo6Blgm
-# Y4XzGqbbmY60dOtvIdZKbqKFvsoz9NmzIAhjYSzCxMrj48btyCEFFVEmsyYRH6Q+
-# qIqqOHlRvVnBsSd/VjZhRZQRyCRXB2riydKE8qz2JeH5sD5AyMPAqoPfdAK6Mdce
-# DYAqfcf2TExwntL+ilI7BBF0ZXkoLoejaSvA7eBoHbNGiBAR2UqIEaRkWgu4C3ND
-# rGbh1ZM/eMGpTlCzdNc=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAVQ3sUwqDuf2XJWuIMstn26kM
+# EjuW/OnczbnRQmlnSqV1m6nJWAPP/j4Bx1806Aj4R/j3rFY5FgzY/7CjeygtfLQu
+# wzVT28bpF1uX9EvnzaMp/xghXDbsQG8OcLdBZzTS2muY2fJ1wXKPKZWrjfs9Oz0J
+# yvfue2MqwyUUwcgS/sfq4Cph64faHYXehbbQ/QYcqK39XFdFcY+oigO+65xmSZdN
+# Ql0TrlOQCO3XOFa4lD332W9J49ZUQ1/01xX3qNawxO/m+iJJ/gEweFe/WaFs3tMk
+# 84HECb1Vb+dyVR118ND8ErVaezED5u21342Vi/qBTAiu2uAWv1RCAFRLfvzFO6Q1
+# t/OY65OvDpA9HRrDUCL8jQpn/j5N5S9iX/uO30EgGMkTsF3HMn8laqsrbZT/suRR
+# Fd4yiuuy3mOG8yx3FxZ5RNhn6qkCE0QiTz8/vBX48BGaKm9edPtvxx0iqJIOFxg3
+# eEUzpb3Hh0OhVvJX1YxzKG/5GAqWXEUffOvtKP3ksXmybXopiww0zpIOerCWJwkG
+# 8WhdAX1Z4rvoaMRjkLL5oQNj+aUmWxSr5mcz8pb5wngSXjrONX7fj29uT6fUT10N
+# tJmGCFrdotEGkbRPqQoMCtyR5almNaKenb32SJeKuimVHcAF2PP1mkTUXGpsM3Af
+# UUKxj6xPAO31bNg1EW4=
 # SIG # End signature block

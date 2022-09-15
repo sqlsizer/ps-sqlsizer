@@ -104,8 +104,8 @@
             $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
         }
 
-        # Red and Purple color
-        if (($color -eq [int][Color]::Red) -or ($color -eq [int][Color]::Purple))
+        # Green/Purple/Red color
+        if (($color -eq [int][Color]::Red) -or ($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple))
         {
            foreach ($fk in $table.ForeignKeys)
            {
@@ -114,24 +114,32 @@
                     continue
                }
 
-               $newColor = [int][Color]::Red
+                # default new color
+                if ($color -eq [int][Color]::Green)
+                {
+                    $newColor = [int][Color]::Yellow
+                }
+                else
+                {
+                    $newColor = [int][Color]::Red
+                }
 
-               if ($null -ne $ColorMap)
-               {
+                if ($null -ne $ColorMap)
+                {
                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
                     $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName)))}
                     if (($null -ne $items) -and ($null -ne $items.ForcedColor))
                     {
                         $newColor = [int]$items.ForcedColor.Color
                     }
-               }
+                }
 
-               $baseTable = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table]
-               $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
-               $baseSignature = $structure.Tables[$baseTable]
-               $baseProcessing = $structure.GetProcessingName($baseSignature)
+                $baseTable = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table]
+                $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
+                $baseSignature = $structure.Tables[$baseTable]
+                $baseProcessing = $structure.GetProcessingName($baseSignature)
 
-               $primaryKey = $table.PrimaryKey
+                $primaryKey = $table.PrimaryKey
 
                #where
                $columns = ""
@@ -380,8 +388,8 @@
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAAzALZFGVmIFQa
-# xoFVeGeC24C2+IPHpW3x7+Pfof7u66CCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDJ+VRBFCMkhCC4
+# XLVCybJPsdwLULkpSSfkJ+X2a7ciqKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -561,38 +569,38 @@
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCB1zKCRcx4r+sMCbXu/Jod2F4dtn9lcP/TbMTZFzuD1cDANBgkqhkiG9w0B
-# AQEFAASCAgBjpYBHDjC0qWYl6Ynk+ZKcQKYx3Wy1itKkn2i1VE2/dzywraPUCVIe
-# m+Y1PYXB+CEeKIeqrgQ5SqXv2bS9gq14zHCvyAdWIOOfpqWJFm2P9nNRBqzWqqPx
-# 9vyjia8g2Fd8GbTZgpY1ENeuduR3Wcffo0lvUiUf7ekq2zVOKP9WxrTTk3ikCOJd
-# bqv35kwPnfwfywozOwQVy27EACYGOqUSNbtC/Rot1swdQOCtdhV/jNPeurkUKpBR
-# zHLALy9kpNKHjpvAEiuLdLhmAJzCEODmPgIbSwlWFwXFQRgYQoxb+HEeA2BZ02nf
-# aQMmuaZrCSAsY3CzPqTmswrI7xX1sGkmLQ9E1xaQL+qwIV7WT8R3qONb3+x0nIHZ
-# Mohcw2MXj8RFVmd+eTS34JHmnorR/jPA786lB/xVzKpvMYCck8Mb0jkdTRFkw6Ur
-# ZoDPBjahX6wk7uAYZFRKGARsJt9c/ZyBNpJew20rWF/+lMktHOQVDnpVL6LWvAJH
-# gu/yFFHQOUjZDIm8IgJpTbLKoLjL2wl2nyW64tZL7y8ejy/ofD3hgFbI5mo+4QF1
-# L39rqgU20rxCZHekn4mDGbMuDmIVUlbHxvSD2kUqn1GRjIudO/eHkvvJKMweKaeF
-# EHawNobbCJB++5eslgFZPjwBq5Fzpn6t4shxRxqtynvKQ5ezhb8ErqGCBAIwggP+
+# BDEiBCBocsgXLSuN42nZYzgfdMfYja0r9TJOdcPMTy/VgR9SszANBgkqhkiG9w0B
+# AQEFAASCAgABBaMr/zNYhQ+aMJ7h0nJsMajwUWVc2ARHtjuiCcrTMmVFy0V8cpim
+# kHWbbRnDx4AzAJzfHDqJkVR/574gwSdjjAsqj4q7YJz5tdvGiKlmx58vQFU3ySlB
+# R1n1wVWuLLeWMzuFADx0kNCkIPF8aAvdsTs7FxvmzP5eOm380r9xd7/gCYqN3KJL
+# oO+KS4YkqMOlPTn/xSkI0SA22p5SHDoU2X4H2aW3ZnHRfstcXT5b1bjKB3iBUPSf
+# pQXVCu8OvUR2QonZJCxumO262z6iN1GCGqkSQMGQYq/+A1G5zt/Vm1r8qbY/Px8N
+# fncOnKzp2GdNgaVYiSG9VWkol7KP+eH2vZZJJatyCRCAMfPLz56OJDqi17V4CMhO
+# oT/n1/7CezxDGdD1l6L0joEpukekd6ikQ7CCNnIFTFw4T4qJzqPQs3W4M6AzbXjw
+# WV3+JoG1FixXNNBnJQl4bClS6jumdw4bfqosd6lGSvXV43Gv6gLhbCNouzUd60J3
+# AwjJicLJBpta+OfBWAPBCI2nZOTfCHco3g45r1KMPh4wK/aHEdwEH8sJSFb1l0I/
+# Nc8V3TrKgspktEBjKJSvOwdUM1TH2A3P2E4aD1shC7sCnNRjA63HIX/rwP3K5Rx0
+# VORbrOP/HGP4fMzGxXR55CBH4+srFjsLYQVBqmgN3TOa0KAHjYx0nqGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MDUxODIwMzlaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDBB+3AP3z4B
-# /J47iTEqAHAPDubKyYGPGGV5aPle9jqfMUiA1/idf+tpo6tOMAhapqowgZ8GCyqG
+# Fw0yMjA5MTUyMTAyMDNaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDewszteH2z
+# FYNx6kXHlPydWh0TZ4KlrnsLNXO/wYT1RC7uAcFfhYRNXtnN9cWfImgwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIALYOebJ6/SlQe4EubbuYseNLm
-# RKuMIt9biegWrvwS/cm8QfW0oDklMbOAcA0DjgdBihmX9/O2S+5vBO2GqN7MepYy
-# 8TsaO65ccpi1Ld7KuKXP4ToTYz40FUD6mEbmsN7nWoert8vaaxaZvTa5oTOtaUJT
-# dAI2PvZyFG2vubNbm+MyiVvi4mLLlkU48UgL1X7ECXYdS3xVG+83Q7V/2zS9pqFm
-# lDGRUGaxCAQqk9WU/Tk4IcF2+/U+OM/PNPjY2GzFp8K4EFg4B/iX80L9Zvo2UWTO
-# sHv+LZ8FbArOiQHUWkCQOjo9SKkeMUN8vQVXUG2IBCXOvV82/5cV+NDcaJTwwQIi
-# WGJKHxJ1+VfGwFVr2RC3S+QQ8GVKGr+ne6D8Ho/N7o572ZjjXFdIS0CAv3d/+jeg
-# oSBE74hBD8FiGA0B//DA2E9erJk1pOtspEbY6bdO6RXbMvPbqmE3prGKz+uOC6Va
-# YVOG3Y+X0pZoAekGHStVDMpa2IS2kgAMLZjLVlHHHvrshAwCVs/hSEThHTctFnuH
-# /Ix0+StK+OgDePtEmOsQ3l8vkjKoMtVfy0v2qFlqp5QAJKYrU3jRnkY3iro7sNt/
-# 4jHuYAwOdN4hrly0yqZHvnImhZn1d4lEEQjlJKtrDtqcD379CtwlAsgskjJ/a1fM
-# h8CkiAHN1BZHogi6bi8=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAMPPZJo7S2a3MgVpO1/PFE1uN
+# NPFwp9f/DYqRjuAqCIHzZbegRtclWXcuglntQAJDhHvsNgdpHoMi1lLFPEc3hyE3
+# 4URwfOfN/OSFs1Ywk9zSLNlp2x0pe159NrqgeSnYZvYr14+iMVIo4M3RmANbowme
+# lFU5kOeCqWKvk7zyCvZr1VgNmxEPVlTWwZ0GupLWJpLBFgMEl1DvQzZOS7arMUB1
+# BawvhbAIqqi6RveOi4cXFOPm98QcgO9Ea8QmEIoc88M9sQHsal3n+1m+hYJvS314
+# 32TTVmbL8qVJnucEMGpCyZ4VAruHyUvFBKHMBMbHFhLBdx8hWx1y8HhhfWIwv+0L
+# l5TCvPg/hQznGDQ3/GKddRO1252VlwBIQuz3VhxVwphfQichuskjClP9f/p4VaXc
+# apBMjbZRc4Er4yiYH/XVkc5dq/txKKLpU1i1cPiid9BPW2LjIH071b6Umc9fskNK
+# h0ZOZUHNnmMctPHoAqqtS8swWqhhcyKPYGJ5SmCCTHUfxXYaxsMmR3nL7hMevvfq
+# RuFAAfaCro3eCqkgbR79cNAS+1zc/pHjwoBUB1aVxGZxmv/Wbniep3I9QoZ8yJHa
+# kw0POIBLk10lpssqc8pgO/9fqeor40ZbxiKCDoH5jw+Ir3XaSa0k4pW/TJAL+xXQ
+# I8/2tQNgfbdok9+Xs9U=
 # SIG # End signature block
