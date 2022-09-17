@@ -33,7 +33,7 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
-# Basic limiting color map
+# Basic limiting color map (because full search is enabled)
 $colorMap = New-Object -Type ColorMap
 foreach ($table in $info.Tables)
 {
@@ -50,7 +50,7 @@ Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $in
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $true
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info

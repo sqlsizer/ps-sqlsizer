@@ -120,7 +120,7 @@
                 # default new color
                 if ($color -eq [int][Color]::Green)
                 {
-                    $newColor = [int][Color]::Yellow
+                    $newColor = [int][Color]::Green
                 }
                 else
                 {
@@ -227,7 +227,14 @@
                 # default new color
                 if ($color -eq [int][Color]::Green)
                 {
-                    $newColor = [int][Color]::Yellow
+                    if ($FullSearch -eq $true)
+                    {
+                        $newColor = [int][Color]::Green
+                    }
+                    else
+                    {
+                        $newColor = [int][Color]::Yellow
+                    }
                 }
 
                 if ($color -eq [int][Color]::Purple)
