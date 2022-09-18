@@ -99,6 +99,7 @@ class SubsettingTableResult
     [string]$SchemaName
     [string]$TableName
     [long]$RowCount
+    [int]$PrimaryKeySize
 }
 
 class SubsettingProcess

@@ -44,6 +44,7 @@ function Get-SubsetTableStatistics
         $obj = New-Object -TypeName SubsettingTableResult
         $obj.SchemaName = $table.SchemaName
         $obj.TableName = $table.TableName
+        $obj.PrimaryKeySize = $table.PrimaryKey.Count
         $obj.RowCount = $count["Count"]
         $result += $obj
     }

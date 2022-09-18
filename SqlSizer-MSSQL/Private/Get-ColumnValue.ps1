@@ -13,22 +13,26 @@
     {
         return "$($Prefix)[" + $ColumnName + "]"
     }
-
-    if (($OnlyXml -eq $false) -and ($DataType -in @('hierarchyid', 'geography')))
+    
+    if ($OnlyXml)
     {
-        return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+        if ($DataType -in @('xml'))
+        {
+            return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+        }
     }
-
-    if ($DataType -in @('xml'))
+    else
     {
-        return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+        if ($DataType -in @('hierarchyid', 'geography', 'xml'))
+        {
+            return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+        }
+    
+        if ($DataType -eq 'bit')
+        {
+            return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"
+        }
     }
-
-    if (($OnlyXml -eq $false) -and ($DataType -eq 'bit'))
-    {
-        return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"
-    }
-
     return "$($Prefix)[" + $ColumnName + "]"
 }
 # SIG # Begin signature block

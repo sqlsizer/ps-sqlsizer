@@ -13,8 +13,12 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $tmp = "CREATE SCHEMA SqlSizer"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizer"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
@@ -140,6 +144,30 @@
             $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Table] ASC, [Color] ASC, [Depth] ASC) INCLUDE ($($keys), [Source], [Fk])"
             Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
+    }
+    
+    $schemaExists = Test-SchemaExists -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo
+
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizerHistory"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    }
+
+    if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "Subset" -ConnectionInfo $ConnectionInfo) -eq $false)
+    {
+        $sql = "CREATE TABLE SqlSizerHistory.Subset ([Id] int primary key identity(1,1), [Guid] [uniqueidentifier] NOT NULL, [Name] varchar(256), [Created] datetime default(GETDATE()))"
+        Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "SubsetTable" -ConnectionInfo $ConnectionInfo) -eq $false)
+    {
+        $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Id] int primary key identity(1,1), [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL,  [SubsetId] int NOT NULL)"
+        Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    
+        $sql = "ALTER TABLE SqlSizerHistory.SubsetTable ADD CONSTRAINT SubsetTable_SubsetId FOREIGN KEY (SubsetId) REFERENCES SqlSizerHistory.Subset([Id]) ON DELETE CASCADE"
+        Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
 # SIG # Begin signature block
