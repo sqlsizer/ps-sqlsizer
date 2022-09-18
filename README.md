@@ -13,7 +13,7 @@ It can help you with:
  - GDPR Data Masking
  - finding recent changes to your data in whole database
 
-# Flow (simplified)
+# How to find subset you need
 
 - Step 1: Provide configuration
     - Queries that define initial data (the table rows with colors)
