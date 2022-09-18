@@ -1,7 +1,14 @@
 ![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
 # sqlsizer-mssql
 
-A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
+A PowerShell module for Microsoft SQL Server and Azure SQL databases data management. 
+
+You can:
+ - make a copy of a Microsoft SQL database with a subset of data from the original database
+ - do selective compare of the subsets
+ - copy schemas and tables to the same or different database
+ - do simple data integrity verifications
+ - get the schema object model that you can use to implement your own data management logic
 
 The subsets are highly configurable. The final result is outcome of the original database, the color map and the colors of initial data.
 
