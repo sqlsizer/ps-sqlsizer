@@ -5,7 +5,7 @@ A PowerShell module for Microsoft SQL Server and Azure SQL databases data manage
 
 You can:
  - make a copy of a Microsoft SQL database with a subset of data from the original database
- - do selective compare of the subsets
+ - do selective compare of databases (comparing only data that you are interested in)
  - copy schemas and tables to the same or different database
  - do simple data integrity verifications
  - get the schema object model that you can use to implement your own data management logic
