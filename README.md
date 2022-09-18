@@ -42,7 +42,7 @@ Colors rules:
 - Blue: find rows that are required to remove that row (recursively)
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
 
-![Diagram1](https://user-images.githubusercontent.com/115426/190852647-f689abe3-fe25-4e13-8055-65044455f305.png)
+![Diagram1](https://user-images.githubusercontent.com/115426/190853966-c51be4e3-0e24-41bf-bda8-1eabec89a6c5.png)
 
 ## Example: Created help structures when subsetting AdventureWorks2019 database
 ![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
