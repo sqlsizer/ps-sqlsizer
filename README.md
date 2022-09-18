@@ -9,14 +9,9 @@ It can help you with:
  - copying schemas and tables to the same or different database
  - doing simple data integrity verifications
  - getting the schema object model that you can use to implement your own data management logic
-
-# Use cases 
-- Removing unwanted data from database 
-- Creating smaller database from production database for development/testing purposes
-- GDPR Data Masking 
-- Finding all related data to some rows in database
-- Tracking changes to data (new/deleted data in other tables)
-- Data integrity verification (e.g. using SHA2_512)
+ - removing unwanted data from database  
+ - GDPR Data Masking
+ - finding recent changes to your data in whole database
 
 # Flow (simplified)
 
