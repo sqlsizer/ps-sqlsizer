@@ -3,7 +3,9 @@
 
 A PowerShell module for Microsoft SQL Server and Azure SQL databases data management. 
 
-It can help you with:
+The core feature is ability to find the subset from the database that meets your specification.
+
+The module can help you with:
  - making a copy of a Microsoft SQL database with a subset of data from the original database
  - doing selective compare of databases (comparing only data that you are interested in)
  - copying schemas and tables to the same or different database
