@@ -12,8 +12,9 @@ The module can help you with:
  - doing simple data integrity verifications
  - getting the schema object model that you can use to implement your own data management logic
  - removing unwanted data from database  
- - GDPR Data Masking
+ - removing large amount of data from database in safe way (with log file that will not grow that much)
  - finding recent changes to your data in whole database
+ - GDPR tasks
 
 # How to find subset you need
 
