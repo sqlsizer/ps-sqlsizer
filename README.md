@@ -1,19 +1,22 @@
 ![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
 # sqlsizer-mssql
 
-A set of PowerShell scripts to make a copy of a Microsoft SQL database with a subset of data from the original database.
+A PowerShell module for Microsoft SQL Server and Azure SQL databases data management. 
 
-The subsets are highly configurable. The final result is outcome of the original database, the color map and the colors of initial data.
+The core feature is ability to find the subset from the database that meets your specification.
 
-# Use cases 
-- Removing unwanted data from database 
-- Creating smaller database from production database for development/testing purposes
-- GDPR Data Masking 
-- Finding all related data to some rows in database
-- Tracking changes to data (new/deleted data in other tables)
-- Data integrity verification (e.g. using SHA2_512)
+The module can help you with:
+ - making a copy of a Microsoft SQL database with a subset of data from the original database
+ - doing selective compare of databases (comparing only data that you are interested in)
+ - copying schemas and tables to the same or different database
+ - doing simple data integrity verifications
+ - getting the schema object model that you can use to implement your own data management logic
+ - removing unwanted data from database  
+ - removing large amount of data from database in safe way (with log file that will not grow that much)
+ - finding recent changes to your data in whole database
+ - GDPR tasks
 
-# Flow (simplified)
+# How to find subset you need
 
 - Step 1: Provide configuration
     - Queries that define initial data (the table rows with colors)
@@ -43,10 +46,6 @@ Colors rules:
 - Purple: find referenced (recursively) and dependent data on the row (no-recursively)
 
 ![Diagram1](https://user-images.githubusercontent.com/115426/190853966-c51be4e3-0e24-41bf-bda8-1eabec89a6c5.png)
-
-## Example: Created help structures when subsetting AdventureWorks2019 database
-![image](https://user-images.githubusercontent.com/115426/169397874-0d7ee4c2-31da-44a3-846f-e40c9cf10537.png)
-
 
 # Prerequisites
 
