@@ -1,4 +1,4 @@
-﻿## Example that shows how to find data needed to remove initial data set
+﻿## Another example that shows how to find data needed to remove initial data set
 
 # Connection settings
 $server = "localhost"
@@ -17,13 +17,13 @@ Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $
 
 # Define start set
 
-# Query 1: All persons with first name = 'Michael'
+# Query 1: All persons with first name = 'Rob'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Blue
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "[`$table].FirstName = 'Michael'"
+$query.Where = "[`$table].FirstName = 'Rob'"
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 

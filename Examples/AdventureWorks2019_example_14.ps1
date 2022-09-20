@@ -23,7 +23,7 @@ $query.Color = [Color]::Yellow
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "[`$table].FirstName = 'John'"
+$query.Where = "[`$table].FirstName = 'Gigi'"
 $query.Top = 10
 $query.OrderBy = "[`$table].LastName ASC"
 

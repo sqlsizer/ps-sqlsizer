@@ -1,4 +1,4 @@
-﻿## Example that shows how to find two subsets
+﻿## Example that shows how to install indexes for all foreign keys
 
 # Connection settings
 $server = "localhost"

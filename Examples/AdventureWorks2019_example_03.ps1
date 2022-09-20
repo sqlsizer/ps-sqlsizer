@@ -1,4 +1,4 @@
-﻿## Example that shows how to check how many tables are reachable by queries
+﻿## Example that shows how to check which tables are reachable by queries and color map
 
 # Connection settings
 $server = "localhost"
@@ -28,7 +28,7 @@ $colorMapItem.ForcedColor = New-Object -Type ForcedColor
 $colorMapItem.ForcedColor.Color = [Color]::Purple
 $colorMap.Items += $colorMapItem
 
-$testResult = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -ColorMap $colorMap
+Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -ColorMap $colorMap
 
 # end of script
 # SIG # Begin signature block

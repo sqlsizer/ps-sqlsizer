@@ -1,4 +1,4 @@
-﻿## Example that shows how to create a new database with the subset of data based on queries which define initial data
+﻿## Example that shows how to create a new database with the subset of data
 
 # Connection settings
 $server = "localhost"

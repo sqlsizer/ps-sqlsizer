@@ -15,7 +15,6 @@ $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 # Install SqlSizer
 Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-
 # Find subset1
 
 # Query 1: top 100 persons with peron types EM

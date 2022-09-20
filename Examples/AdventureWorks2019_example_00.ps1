@@ -1,4 +1,4 @@
-﻿## Example that shows how to get work with trigger
+﻿## Example that shows how to get work with triggers
 
 # Connection settings
 $server = "localhost"

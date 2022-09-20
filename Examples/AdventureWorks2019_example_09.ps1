@@ -1,4 +1,4 @@
-﻿## Example that shows ignored tables feature
+﻿## Example that shows color map feature
 
 # Connection settings
 $server = "localhost"

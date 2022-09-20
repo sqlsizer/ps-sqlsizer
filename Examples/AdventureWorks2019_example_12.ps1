@@ -51,7 +51,7 @@ $subsetId = (New-Guid).ToString().Replace('-', '_')
 New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
                      -NewSchemaPrefix "SqlSizer_subset_$subsetId"
 
-Write-Output "New subset id: $subsetId"
+Write-Output "New schema: SqlSizer_subset_$subsetId"
 
 # end of script
 # SIG # Begin signature block

@@ -1,4 +1,4 @@
-﻿## Example that shows how to find data needed to remove initial data set
+﻿## Example that shows how to find data needed to remove desired data
 
 # Connection settings
 $server = "localhost"
@@ -31,22 +31,9 @@ $ignored.TableName = "Store"
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
-# Find smallest subset that allows to remove start set from the database
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored)
 
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
-$rows = Get-SubsetTableRows -Database $database -Connection $connection -DatabaseInfo $info -SchemaName "Sales" -TableName "Customer" -AllColumns $true -IgnoredTables  @($ignored)
-
-foreach ($row in $rows)
-{
-    $i = 0
-    foreach ($column in $row.ItemArray)
-    {
-        Write-Output "Column $($row.Table.Columns[$i]) = '$($column)'"
-        $i += 1
-    }
-    Write-Output "==========="
-}
 
 # end of script
 # SIG # Begin signature block

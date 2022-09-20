@@ -68,7 +68,7 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 # Create a new db with found subset of data
 
-$newDatabase = "AdventureWorks2019_subset_01"
+$newDatabase = "AdventureWorks2019_subset_07"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info

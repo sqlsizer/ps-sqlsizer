@@ -8,8 +8,9 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
-
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # change all fk to delte and update cascade
 foreach ($table in $info.Tables)
@@ -23,6 +24,7 @@ foreach ($table in $info.Tables)
     }
 }
 
+Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
