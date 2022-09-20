@@ -45,7 +45,7 @@ function New-SchemaFromDatabase
         Write-Progress -Activity "Copy schema $SchemaName to $NewSchemaName in $TargetDatabase database" -PercentComplete (100 * ($i / ($DatabaseInfo.Tables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
         if ($table.SchemaName -eq $SchemaName)
         {
-            New-DataTableClone -SourceDatabase $SourceDatabase -TargetDatabase $TargetDatabase -DatabaseInfo $DatabaseInfo -SchemaName $SchemaName -TableName $table.TableName `
+            $null = New-DataTableClone -SourceDatabase $SourceDatabase -TargetDatabase $TargetDatabase -DatabaseInfo $DatabaseInfo -SchemaName $SchemaName -TableName $table.TableName `
                                -CopyData $CopyData -NewSchemaName $NewSchemaName -NewTableName $table.TableName -ConnectionInfo $ConnectionInfo
         }
         $i = $i + 1
@@ -65,7 +65,7 @@ function New-SchemaFromDatabase
                 }
 
                 $sql = "ALTER TABLE $($NewSchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
-                Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Silent $false
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Silent $false
             }
         }
     }

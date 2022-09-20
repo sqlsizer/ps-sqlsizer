@@ -28,7 +28,7 @@ function New-DataTableFromSubsetTable
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
+    $null = New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
                      -ViewSchemaName "SqlSizerResult" -ViewName "$($SchemaName)_$($TableName)" -CopyData $CopyData -ConnectionInfo $ConnectionInfo
 
     # setup primary key

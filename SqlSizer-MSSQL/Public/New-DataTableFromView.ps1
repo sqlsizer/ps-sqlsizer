@@ -46,7 +46,7 @@ function New-DataTableFromView
     }
 
     # copy schema
-    IF ($CopyData)
+    if ($CopyData)
     {
         $sql = "SELECT * INTO [$NewSchemaName].[$NewTableName] FROM [$ViewSchemaName].[$ViewName]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

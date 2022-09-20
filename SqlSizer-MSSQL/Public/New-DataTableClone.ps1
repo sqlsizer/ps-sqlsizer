@@ -54,7 +54,7 @@ function New-DataTableClone
     $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $true -Prefix $null -AddAs $true -SkipGenerated $false -OnlyXml $true
 
     # copy schema
-    IF ($CopyData)
+    if ($CopyData)
     {
         $sql = "SELECT $tableSelect INTO [$TargetDatabase].[$NewSchemaName].[$NewTableName] FROM [$SchemaName].[$TableName]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
