@@ -12,6 +12,7 @@ The module can help you with:
  - copying schemas/tables/data to the same or different database or to Azure BLOB storage
  - getting the database object model that you can use to implement your own data management logic
  - extracting selected data from your database in CSV, JSON format to file
+ - importing previously extracted subset data from Azure BLOB storage
  - removing unwanted data, tables or schemas from database  
  - removing large amount of data from database in safe way (with log file that will not grow that much)
  - tracking changes to data that you are interested in
