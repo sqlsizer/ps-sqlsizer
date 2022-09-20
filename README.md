@@ -25,7 +25,7 @@ The module can help you with:
     - Queries that define initial data (the table rows with colors)
     - (Optional) Color map that allow to configure colors for the data and limits
 
-- Step 2: Execute `Find-Subset` function to find the subset you want
+- Step 2: Execute `Find-Subset` cmdlet to find the subset you want
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
