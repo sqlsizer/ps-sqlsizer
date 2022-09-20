@@ -24,56 +24,16 @@ function Compare-SavedSubsets
     $sourceTables = Get-SavedSubsetTables -Database $SourceDatabase -SubsetGuid $SourceSubsetGuid -ConnectionInfo $ConnectionInfo
     $targetTables = Get-SavedSubsetTables -Database $TargetDatabase -SubsetGuid $TargetSubsetGuid -ConnectionInfo $ConnectionInfo
 
-    $newTables = @()
-    $removedTables = @()
-
-    # find newTables
-    foreach ($destinationTable in $targetTables)
-    {
-        $found = $false
-        foreach ($sourceTable in $sourceTables)
-        {
-            if (($sourceTable.SchemaName -eq $destinationTable.SchemaName) -and ($sourceTable.TableName -eq $destinationTable.TableName))
-            {
-                $found = $true
-                break
-            }
-        }
-
-        if ($found -eq $false)
-        {
-            $newTables += $destinationTable
-        }
-    }
-
-    # find removedTables
-    foreach ($sourceTable in $sourceTables)
-    {
-        $found = $false
-        foreach ($destinationTable in $targetTables)
-        {
-            if (($sourceTable.SchemaName -eq $destinationTable.SchemaName) -and ($sourceTable.TableName -eq $destinationTable.TableName))
-            {
-                $found = $true
-                break
-            }
-        }
-
-        if ($found -eq $false)
-        {
-            $removedTables += $sourceTable
-        }
-    }
-
-    # find changed and new table data
     $changed = @()
-    $new = @()
+    $removed = @()
+    $added = @()
+
     foreach ($sourceTable in $sourceTables)
     { 
         $found = $false
-        foreach ($destinationTable in $targetTables)
+        foreach ($targetTable in $targetTables)
         {
-            if (($sourceTable.SchemaName -eq $destinationTable.SchemaName) -and ($sourceTable.TableName -eq $destinationTable.TableName))
+            if (($sourceTable.SchemaName -eq $targetTable.SchemaName) -and ($sourceTable.TableName -eq $targetTable.TableName))
             {
                 $found = $true
                 break
@@ -86,15 +46,15 @@ function Compare-SavedSubsets
             $conds = @()
             for ($i = 0; $i -lt $sourceTable.PrimaryKeySize; $i++)
             {
-                $keys += "d.Key$i as Key$i"
-                $conds += "d.Key$i = s.Key$i"
+                $keys += "t.Key$i as Key$i"
+                $conds += "t.Key$i = s.Key$i"
             }
 
-            #query database to find changes to data based on sha hash
+            #query database to find changed data based on HASH
             $sql = "SELECT $([string]::Join(',', $keys))
-                    FROM $($DesinationDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] d
+                    FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] t
                     INNER JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON $([string]::Join(' AND ', $conds))
-                    WHERE d.Hash <> s.Hash AND d.TableId = $($destinationTable.TableId) AND s.TableId = $($sourceTable.TableId)"
+                    WHERE t.Hash <> s.Hash AND t.TableId = $($targetTable.TableId) AND s.TableId = $($sourceTable.TableId)"
             
             $changeRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
@@ -113,22 +73,49 @@ function Compare-SavedSubsets
                 }
             }
 
-            #query database to find new data
+            $keys = @()
+            for ($i = 0; $i -lt $sourceTable.PrimaryKeySize; $i++)
+            {
+                $keys += "s.Key$i as Key$i"
+            }
+            
             $sql = "SELECT $([string]::Join(',', $keys))
-                    FROM $($DesinationDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] d
-                    LEFT JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON s.TableId = $($sourceTable.TableId) AND $([string]::Join(' AND ', $conds))
-                    WHERE s.Key0 IS NULL AND d.TableId = $($destinationTable.TableId)"
-            $newRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
+                    FROM $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s
+                    LEFT JOIN $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] t ON t.TableId = $($targetTable.TableId) AND $([string]::Join(' AND ', $conds))
+                    WHERE t.Key0 IS NULL AND s.TableId = $($sourceTable.TableId)"
+            $removedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
-            foreach ($newRow in $newRows)
+            foreach ($removedRow in $removedRows)
             {
                 $key = @()
-                foreach ($item in $newRow)
-                {
+                foreach ($item in $removedRow)
+                {   
                     $key += $item
                 }
 
-                $new += [pscustomobject] @{
+                $removed += [pscustomobject] @{
+                    SchemaName = $sourceTable.SchemaName
+                    TableName = $sourceTable.TableName
+                    Key = $key
+                }
+            }
+        }
+        else
+        {
+            $sql = "SELECT $([string]::Join(',', $keys))
+                    FROM $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s
+                    WHERE s.TableId = $($sourceTable.TableId)"
+            $removedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
+
+            foreach ($removedRow in $removedRows)
+            {
+                $key = @()
+                foreach ($item in $removedRow)
+                {   
+                    $key += $item
+                }
+
+                $removed += [pscustomobject] @{
                     SchemaName = $sourceTable.SchemaName
                     TableName = $sourceTable.TableName
                     Key = $key
@@ -136,12 +123,81 @@ function Compare-SavedSubsets
             }
         }
     }
+    
+
+    foreach ($targetTable in $targetTables)
+    { 
+        $found = $false
+        foreach ($sourceTable in $sourceTables)
+        {
+            if (($sourceTable.SchemaName -eq $targetTable.SchemaName) -and ($sourceTable.TableName -eq $targetTable.TableName))
+            {
+                $found = $true
+                break
+            }
+        }
+
+        $keys = @()
+        $conds = @()
+        for ($i = 0; $i -lt $targetTable.PrimaryKeySize; $i++)
+        {
+            $keys += "t.Key$i as Key$i"
+            $conds += "t.Key$i = s.Key$i"
+        }
+
+        if ($found -eq $true)
+        {
+            $sql = "SELECT $([string]::Join(',', $keys))
+            FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+            LEFT JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] s ON s.TableId = $($sourceTable.TableId) AND $([string]::Join(' AND ', $conds))
+            WHERE s.Key0 IS NULL AND t.TableId = $($targetTable.TableId)"
+
+            $addedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
+
+            foreach ($addedRow in $addedRows)
+            {
+                $key = @()
+                foreach ($item in $addedRow)
+                {
+                    $key += $item
+                }
+
+                $added += [pscustomobject] @{
+                    SchemaName = $sourceTable.SchemaName
+                    TableName = $sourceTable.TableName
+                    Key = $key
+                }   
+            }
+        }
+        else
+        {
+            $sql = "SELECT $([string]::Join(',', $keys))
+            FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+            WHERE t.TableId = $($targetTable.TableId)"
+
+            $addedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
+
+            foreach ($addedRow in $addedRows)
+            {
+                $key = @()
+                foreach ($item in $addedRow)
+                {
+                    $key += $item
+                }
+
+                $added += [pscustomobject] @{
+                    SchemaName = $sourceTable.SchemaName
+                    TableName = $sourceTable.TableName
+                    Key = $key
+                }   
+            }
+        }
+    }
 
     $result = [pscustomobject]@{
-        NewTablesData = $newTables
-        RemovedTablesData = $removedTables
         ChangedData = $changed
-        AddedData = $new
+        AddedData = $added
+        RemovedData = $removed
     }
 
     return $result
