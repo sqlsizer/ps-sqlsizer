@@ -7,7 +7,7 @@
         [string]$Database,
         
         [Parameter(Mandatory=$false)]
-        [int]$Step=$null,
+        [int]$Step=100000,
 
         [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo = $null,
