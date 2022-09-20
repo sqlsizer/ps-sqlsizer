@@ -98,6 +98,7 @@ class SubsettingTableResult
 {
     [string]$SchemaName
     [string]$TableName
+    [bool]$CanBeDeleted
     [long]$RowCount
     [int]$PrimaryKeySize
 }

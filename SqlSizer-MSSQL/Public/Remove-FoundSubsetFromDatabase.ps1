@@ -1,4 +1,4 @@
-function Get-SubsetTableStatistics
+﻿function Remove-FoundSubsetFromDatabase
 {
     [cmdletbinding()]
     param
@@ -13,50 +13,64 @@ function Get-SubsetTableStatistics
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $structure = [Structure]::new($info)
-    $result = @()
-
-    foreach ($table in $info.Tables)
+    function GetWhere
     {
-        if ($table.PrimaryKey.Count -eq 0)
+        param (
+            [string]$Database,
+            [SubsettingTableResult]$TableInfo,
+            [DatabaseInfo]$DatabaseInfo
+        )
+
+        $table = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName)}
+        $primaryKey = $table.PrimaryKey
+        $where = " WHERE EXISTS(SELECT * FROM .SqlSizerResult.$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
+
+        $conditions = @()
+        foreach ($column in $primaryKey)
+        {
+            $conditions += " e." + $column.Name + " = t." + $column.Name
+        }
+
+        $where += [string]::Join(' AND ', $conditions) 
+        $where += ")"
+        
+        $where
+    }
+
+    Write-Progress -Activity "Removing data from database" -PercentComplete 0
+
+    $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    
+    $i = 0
+    foreach ($table in $subsetTables)
+    {
+        $i += 1
+
+        Write-Progress -Activity "Removing data from database" -PercentComplete (100 * ($i / ($subsetTables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
+
+        $schema = $table.SchemaName
+        $tableName = $table.TableName
+
+        if ($table.CanBeDeleted -eq $false)
         {
             continue
         }
 
-        $tableName = $structure.GetProcessingName($structure.Tables[$table])
+        $where = GetWhere -Database $Database -TableInfo $table -DatabaseInfo $DatabaseInfo
+        $sql = "DELETE t FROM " + $schema + ".[" +  $tableName + "] t " + $where
 
-        $keys = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            $keys += "Key$($i)"
-
-            if ($i -lt ($table.PrimaryKey.Count - 1))
-            {
-                $keys += ", "
-            }
-        }
-
-        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($table.Id)) x"
-        $count = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
-        $obj = New-Object -TypeName SubsettingTableResult
-        $obj.SchemaName = $table.SchemaName
-        $obj.TableName = $table.TableName
-        $obj.PrimaryKeySize = $table.PrimaryKey.Count
-        $obj.CanBeDeleted = $table.IsHistoric -eq $false
-        $obj.RowCount = $count["Count"]
-        $result += $obj
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    return $result
+    Write-Progress -Activity "Removing data from database" -Completed
 }
+
+
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCxFP6LkLYeo5Jt
-# 29xYHb22jw0U2u8to4xbI3QJtPo5n6CCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCB3yTlDYl7Goz4U
+# LO03wBIjCKGRKllBCaIoZlKUDhl0yqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -236,38 +250,38 @@ function Get-SubsetTableStatistics
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCBabkiIvgL3n2sqhzBB/uYipaNgCTgoqvHhuzYxLLGymTANBgkqhkiG9w0B
-# AQEFAASCAgApH+itQR6bz5btyTKZeg7b7Kv/krDoK+67HI2KldNS8gtLpCHU7r7v
-# G5Ir2+c4+jTOtW2ZSeui5EPYUAG22KgknAOHvnrnG7yxbKvGkM47IIQ7W3k9d1Gz
-# GxiYyjTkstRhUOyyLn+PHRsY2AmmLoGZVbUwEN5T7gnvNQIUFRJ1JEsdQ+qU6bN9
-# CRsFgy+Mpu1pDJEnXG4S/UUT7U2+kIgZgAfbIdMDYoT2aRUlyZcNSLkGZDO4LIf0
-# xeQl+lIkKMnxoaRvuV/LPBWY3qFDxtp+r9Z/jisHo1abpTCyf03QWWoB5bnuWlxg
-# ombkQCVg9UeuzPMhuy8EPJC9/LdyIA3hGECuLhMRWsUG00nxUTwPz/ZQsRXdDKqI
-# yAlgOJytSugwaaHJIHVcc3pilsvfycWiqdGKkKEg9TTD3hntpBGMTZGaj/f4NOIX
-# TaUo7493yJvl7jXqfW7p2GLr3Gvy6NLAcxywHwC811jrEq7Q/HyiuawDydk60JQU
-# gfbY/GJI/YLp0YmVe+itEP77ccsZgTCgn4IPHiFM1TvKUerXgIUQB/w7rO35nuZm
-# K3JXIdMufyizpdigttmuzlfUAUBFY9q2UhyY2R5sFv9/itvrT+2nKlW2pjiTe73r
-# pKS3yDSBZlvg1mSWPZHl8aKNw2y3tmZmdd76eCPFC76rBbb1JPzjlaGCBAIwggP+
+# BDEiBCCYdmhktDWjmWcxYYYnq8Hf74W+unv8PvqyKRITcF8bJjANBgkqhkiG9w0B
+# AQEFAASCAgAZEm0oqOhXgVF6yPifXox19i0ljLnOQTonju59W67J/qNOrVy9zOnF
+# gqf69BQ0W627svRLGORAYUGxGE0B5o6YpLBtdH9DI9veIOiiU9N2bIKFyd3oKvWA
+# Z137zubmMQlEY+KUBYG9JdDrFMepghkjS0W+re1l6UbgEyOkGcbwqXYaSJSZu0fa
+# cAffPr/qn0P77yKfMWoIqJuqMZebUnAxHcitwh88Cw2J+ZUrIWd+wAx9ByA93sV6
+# nKbkFxrHdScA3oFLS+RWDyGFnPuiQoc234olFETDtunw6pGIPX9uSt/gFzLhdGUC
+# craokwOfBTrP++M3/yxdpY1zm2nOhDuxroOIFtUm8Nkw+g2Ni6ct3CTTKm9fd5fz
+# BZAp8cyi9w48Y3+8mdZDh0+tbEUOBqnq51dRkq0pOyGMoAD1xIhGDPp2dNnL8W47
+# 1We0o+tdRgRUAQt2FVuXzDzEFgA+QHlE2Lf/UjRnodPN1mKKnuvLEyoo937esDP3
+# EydWV8bTyKVWPoRXdgqeXlFxXT51BKgSE/i5zSv02Lg9mA0Vq6U1+ih3ydV/U1kp
+# S++66gYtZsvaeV2ZfjUUew/Bw7UnJQA8VB+q40py/a+LWjHse/PE/Ksnn1/sseZn
+# xeWC/AmVcfZkFApdM9NF6xLVrdiAKc90wdjXgJQ3KugwG1l/woOnZKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MTgxNjE5MjlaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDD753fXManq
-# epWJMlmtlzon4cwVSEamDlbmumKHejiUW205lER0zSv/3EZELYzH3HEwgZ8GCyqG
+# Fw0yMjA5MTgxNjIxMjZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCyZvLAIsr0
+# 7cVd2MPVH0xHRLeXBgPXlltN9HYGh7GVBZlbnMLoDcq96zwOGsNXs5EwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAwX9Za8TOxt8gYvQ3fu/URRXn
-# xAUVQDQ6ZJv3ftZzeXBhsWpLJ6EQKTACTJK0ANMx5cYoGpFwOg+ZnlAoJ+9mk3M3
-# 56eJ94nJs3RS+eZw28Wm8f6DB+uA7zxviXaAcWBJtEXVqEWrJOfi6NTyAPW90Yws
-# S1inKg5+j21uTf0r3Oz7Mebp/jgdlL+jdPfj0AHnhxi0xf/dDZAqqtlLpoR+2nQO
-# 7E8rZ7FUxViUM5AwZqQYZ9FbLZXedIQ6gl8CR9YlDtpvq5cq+4eCKP6/i0qHHv60
-# ULwJjQ6Pbed2ddfMqv5vOMRuyyytuNA4CERMiJlcsMMqa6pA3z0ufZzJ7ZPkn9qZ
-# aOVZtpByrq+1sEFtZTW5R5yLVSpA8lI8LvS/11dMchfqkQ6Zz0nF28pXSUv5hDMJ
-# MngsqbYFkm5B9fRC83SLoek48QkhTULOjyJPXi9USebyOgQTzfWD8y5p/EY6P5Fo
-# gAf2Nf96rEt1sYErdMeEwS1eP0c/xdOkkMdau6xDs3R9W7+BC03b4Sym80Nbvr5W
-# gTTZVmX9XA8aKHWsqivfMDhv5sQzGrItA3D1/4HqqmBsW8qcF4t3JWeYrGDxPVnV
-# dJIPPHJ+hEtOO6LXRGoERwKriNjbBYZTuQ17QP7N9cTCxtXardHvsftuPDlMT3lp
-# IWSV5Aux8924bpR2w28=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAPnELZKktsw9lY4WAlRFHWjA0
+# /cBkNiWCN/LOOO7bVBZppS8jRM94S0vESodlcyWaJ/kNMelkY3BlixoeHQd0wgpZ
+# U0MsdT06AbohLgwf8UuZb3jANXNQDBj4I4E7KPQ1+eBuz3LPmNg9B5lYPFeu6T4P
+# 9THKy+xyUy7x5DQ400G4lrpbWHK8Fy/mYbjWczZHs8N4rfIboiMZSOW9y9zz8U1B
+# SDjTl86jjFa+W8t4FYY9SOncbEnWd3HT4IdXW9K7/ts2JmrMiPWbAenCImfgqxaK
+# qFUol3CQu0zyTxVqWtZQ6kwSCe08n3lOextC1h6fq4koj4a/9jSJ5062iXO29ohB
+# KwkGQVIYdcjaf9hgeKg7q0KWnvt2O/8k4l0GtCIQjLymXZkyniu1REYJuoXVhCgs
+# fLwkpO22K4Z8bKJlWzWZ2d7M+PUKMjYTV+3wt5+YsHCIR+rSvF3pu7m2DHuosUQE
+# Vaz+Ohqf5uQgJMKHbtuLccE3E1dWcsBfPwJNyU+eSgbv7m5NMisYxPVQu6xbmocw
+# ZQSHpn+SWarLCJdutlFBLJ2DaAt8dJZSDk5k/E7HHl4obkBaFNRZviRO4pSKne3c
+# HFilTpuZ6Hd7E3w2zTNFROhhzOrtGha4G2LtTSrrFG849rM+uNpROhkVsGB+oH/F
+# FVLmkdQWDj2g/nfzaH0=
 # SIG # End signature block

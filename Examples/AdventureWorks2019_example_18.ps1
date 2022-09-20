@@ -1,71 +1,64 @@
-﻿function Remove-SubsetData
-{
-    [cmdletbinding()]
-    param
-    (
-        [Parameter(Mandatory=$true)]
-        [string]$Source,
+﻿## Example that shows how to remove data from database
+## Persons with name 'Roberto' will be removed from database
 
-        [Parameter(Mandatory=$true)]
-        [string]$Target,
+# Connection settings
+$server = "localhost"
+$database = "AdventureWorks2019"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 
-        [Parameter(Mandatory=$false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
-        [Parameter(Mandatory=$true)]
-        [SqlConnectionInfo]$ConnectionInfo
-    )
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $structure = [Structure]::new($info)
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-    foreach ($table in $info.Tables)
-    {
-        $schema = $table.SchemaName
-        $tableName = $table.TableName
+# Define start set
+$query = New-Object -TypeName Query
+$query.Color = [Color]::Blue
+$query.Schema = "Person"
+$query.Table = "Person"
+$query.KeyColumns = @('BusinessEntityID')
+$query.Where = "[`$table].FirstName = 'Roberto'"
 
-        if ($table.IsHistoric -eq $true)
-        {
-            continue
-        }
+# Define ignored tables
 
-        $where = GetTableWhere -Database $Source -TableInfo $table -Structure $structure
-        $sql = "DELETE FROM " + $schema + ".[" +  $tableName + "] " + $where
+$ignored = New-Object -Type TableInfo2
+$ignored.SchemaName = "dbo"
+$ignored.TableName = "ErrorLog"
 
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Target -ConnectionInfo $ConnectionInfo
-    }
-}
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-# Function that creates a where part of query
-function GetTableWhere
-{
-    param (
-        [string]$Database,
-        [TableInfo]$TableInfo,
-        [Structure]$Structure
-    )
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
-    $primaryKey = $TableInfo.PrimaryKey
-    $processing = $Structure.GetProcessingName($Structure.Tables[$TableInfo])
-    $where = " WHERE EXISTS(SELECT * FROM " + $Database + ".$($processing) WHERE [Schema] = '" +  $Schema + "' and TableName = '" + $TableName + "' "
+# Find subset
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 
-    $i = 0
-    foreach ($column in $primaryKey)
-    {
-        $where += " AND Key" + $i + " = " + $column.Name + " "
-        $i += 1
-    }
+# Disable integrity checks and triggers
+Disable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-    $where += ")"
+# Remove subset from database
+Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-    $where
-}
+# Enable integrity checks and triggers
+Enable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Test foreign keys
+Test-ForeignKeys -Database $database -ConnectionInfo $connection
+
+# Remove all SqlSizer
+Uninstall-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveHistory $true
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCB3yTlDYl7Goz4U
-# LO03wBIjCKGRKllBCaIoZlKUDhl0yqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBySSGJ5QUpYv2A
+# yl9LnwsT/0aWb4SVjbeRH99+268gCqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -245,38 +238,38 @@ function GetTableWhere
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCCYdmhktDWjmWcxYYYnq8Hf74W+unv8PvqyKRITcF8bJjANBgkqhkiG9w0B
-# AQEFAASCAgAZEm0oqOhXgVF6yPifXox19i0ljLnOQTonju59W67J/qNOrVy9zOnF
-# gqf69BQ0W627svRLGORAYUGxGE0B5o6YpLBtdH9DI9veIOiiU9N2bIKFyd3oKvWA
-# Z137zubmMQlEY+KUBYG9JdDrFMepghkjS0W+re1l6UbgEyOkGcbwqXYaSJSZu0fa
-# cAffPr/qn0P77yKfMWoIqJuqMZebUnAxHcitwh88Cw2J+ZUrIWd+wAx9ByA93sV6
-# nKbkFxrHdScA3oFLS+RWDyGFnPuiQoc234olFETDtunw6pGIPX9uSt/gFzLhdGUC
-# craokwOfBTrP++M3/yxdpY1zm2nOhDuxroOIFtUm8Nkw+g2Ni6ct3CTTKm9fd5fz
-# BZAp8cyi9w48Y3+8mdZDh0+tbEUOBqnq51dRkq0pOyGMoAD1xIhGDPp2dNnL8W47
-# 1We0o+tdRgRUAQt2FVuXzDzEFgA+QHlE2Lf/UjRnodPN1mKKnuvLEyoo937esDP3
-# EydWV8bTyKVWPoRXdgqeXlFxXT51BKgSE/i5zSv02Lg9mA0Vq6U1+ih3ydV/U1kp
-# S++66gYtZsvaeV2ZfjUUew/Bw7UnJQA8VB+q40py/a+LWjHse/PE/Ksnn1/sseZn
-# xeWC/AmVcfZkFApdM9NF6xLVrdiAKc90wdjXgJQ3KugwG1l/woOnZKGCBAIwggP+
+# BDEiBCC2OC1XWzBfHM1lR5R1BuxOKInrje/h3XsTrUR2drun5zANBgkqhkiG9w0B
+# AQEFAASCAgCNzSzOxznN8U1yuieAgeAefP2wq49CAtwYrHWX6PyYwBFhGmbDMKTZ
+# wwSYKW8TdA9EaGuUwUVjDfLIaSC+a/1knIQslGo4Lumy41c8Lxvz3dLQH5CmVy7e
+# kCyBfjzN5K4sT7XxzM2M3wtIvH9hPB4d8T5zFzHUjliZUDeIzdJl/mJ5OmIfQbUV
+# 12ILzDlQhvMhMiFAeDVuKksLw3hzp4Opu36RyBPOvnPJ2chdjiaxttWyWACdoEJN
+# eZAEc1cm2/O9i/Jp74MUVt5brFchqyvqLjon5HQhiwcb3MRRrHqzlnKl9N/1hePg
+# u+Eyz1aLtl0Twd7NXATf6P7VOUHvqH5Kmo345ub3NQVl94IzxWdrOPEtSIj5lYDI
+# PwzmrIrVE5TxGpjU0mqiumeF5jFIQjNYItZmFD+Gjcj6myMf+9I7uKWFzDRgdNSN
+# WGI2axSlWg/noyW4puLpXnPSdu4US5JGAyTuEJgXy5d3pin6ytDlFLFPh7bb7QBR
+# PCGXDFjP6t7JiRErjaaTC7ewxG+MI9Odu4RLjanWMCSIzB/4zOVTRpxlTjf9J+a3
+# J5TsikiEbber2qjlSxD8ZVSR4YibhR1nHUbhtVnB/slakmkF3WgBf6c1Z8mbCzpA
+# D/vu9WhFVe/8aXnKYoBvWC4xcNDbJGSN8I9MQ3UZu/g2tYl8fm9OiqGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MTgxNjIxMjZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCyZvLAIsr0
-# 7cVd2MPVH0xHRLeXBgPXlltN9HYGh7GVBZlbnMLoDcq96zwOGsNXs5EwgZ8GCyqG
+# Fw0yMjA5MTgxNjE1MThaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCFVzI2qnZg
+# NKQC6qLE8PmK9pZTW7/f5qEOadpqhCk4LUoSaPJN1aJ4FSiwS6EewpQwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAPnELZKktsw9lY4WAlRFHWjA0
-# /cBkNiWCN/LOOO7bVBZppS8jRM94S0vESodlcyWaJ/kNMelkY3BlixoeHQd0wgpZ
-# U0MsdT06AbohLgwf8UuZb3jANXNQDBj4I4E7KPQ1+eBuz3LPmNg9B5lYPFeu6T4P
-# 9THKy+xyUy7x5DQ400G4lrpbWHK8Fy/mYbjWczZHs8N4rfIboiMZSOW9y9zz8U1B
-# SDjTl86jjFa+W8t4FYY9SOncbEnWd3HT4IdXW9K7/ts2JmrMiPWbAenCImfgqxaK
-# qFUol3CQu0zyTxVqWtZQ6kwSCe08n3lOextC1h6fq4koj4a/9jSJ5062iXO29ohB
-# KwkGQVIYdcjaf9hgeKg7q0KWnvt2O/8k4l0GtCIQjLymXZkyniu1REYJuoXVhCgs
-# fLwkpO22K4Z8bKJlWzWZ2d7M+PUKMjYTV+3wt5+YsHCIR+rSvF3pu7m2DHuosUQE
-# Vaz+Ohqf5uQgJMKHbtuLccE3E1dWcsBfPwJNyU+eSgbv7m5NMisYxPVQu6xbmocw
-# ZQSHpn+SWarLCJdutlFBLJ2DaAt8dJZSDk5k/E7HHl4obkBaFNRZviRO4pSKne3c
-# HFilTpuZ6Hd7E3w2zTNFROhhzOrtGha4G2LtTSrrFG849rM+uNpROhkVsGB+oH/F
-# FVLmkdQWDj2g/nfzaH0=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIATH8AEd9LyvVAl8MnFThJ25Ed
+# EFuRj6EPKnZW5mfJt5Op8tx4eS2QN9OFeNqChjN0uB8PJZU4B8eN3TjcbPLDisPh
+# 0s79VpFzNhT+W/ZQyu5NFHPYIvmVQajVGZR95SIn6RvnkGBda9//NMtRMUv4rQbk
+# I2rGr+sL91KM10M5OVGq2eQjkKK1U46icPFFc7lrniO9hoavbu7Dd4Zom0CiV19V
+# q4EPyDw06VLBEfc/qo9yc/CFGMLRroNwgdfSbJN7h/VgpYYBVd6DhmL8h0SNuanA
+# eEnRML8YoIn7+Vo2F+SmWQMXM627fSQDeDCoxIhQB2jdWJFPBKTDui58V/rDsyB5
+# 3abs5QdrWgoixVcSbrKCXVkc15+UhY9nAv5i2Lm39zDSfPWfmf7ZBc99/BWSfs2l
+# 6jpGl3HI6gXTSKOV8fou13vc2HaAc9ssWrscIcT9NepUXQQTD8I0ARedUkPE3MBr
+# /3HsJEEQH5i6Sy0v8a1Ia8r3yhsa8HYAFnObu+YUBKHQqbRpRM92wJC29m59v/x8
+# eYgL1r61WYIH7hCnAOyK0IyQJlBVI3bp6SUkcIXmbE/b5rNcKhLzslD4lhPZq3tX
+# jhz2wxD03ARh2MLvcSEsX+WUrXsrzlijA5hxfrNgG9QmMYpWSZ8FhHEKCkt/G/xX
+# idaC6Hn//3qx8kHk+qw=
 # SIG # End signature block
