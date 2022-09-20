@@ -1,5 +1,5 @@
 ﻿## Example that shows how to remove data from database
-## Persons with name 'Roberto' will be removed from database
+## Persons with name 'Roberto' will be removed from database (in "slow way")
 
 # Connection settings
 $server = "localhost"
@@ -42,7 +42,7 @@ Disable-IntegrityChecks -Database $database -ConnectionInfo $connection -Databas
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Remove subset from database
-Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1
 
 # Enable integrity checks and triggers
 Enable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
