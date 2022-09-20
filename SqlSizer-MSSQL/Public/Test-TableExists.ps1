@@ -17,7 +17,6 @@ function Test-TableExists
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    # create schema if not exist
     $sql = "SELECT OBJECT_ID(N'$SchemaName.$TableName', N'U') as Id"
     $results = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
