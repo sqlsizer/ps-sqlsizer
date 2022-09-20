@@ -8,6 +8,7 @@ The core feature is ability to find the subset from the database that meets your
 The module can help you with:
  - making a copy of a Microsoft SQL database with a subset of data from the original database
  - doing selective compare of databases (comparing only data that you are interested in)
+ - tracking changes to data that you are interested in
  - copying schemas and tables to the same or different database
  - doing simple data integrity verifications
  - getting the schema object model that you can use to implement your own data management logic
