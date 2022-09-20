@@ -7,6 +7,9 @@
         [string]$Database,
 
         [Parameter(Mandatory=$false)]
+        [string]$RemoveHistory=$false,
+
+        [Parameter(Mandatory=$false)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory=$true)]
@@ -16,6 +19,12 @@
     Remove-Schema -Database $Database -SchemaName "SqlSizerResult" -ConnectionInfo $ConnectionInfo
     Remove-Schema -Database $Database -SchemaName "SqlSizerSecure" -ConnectionInfo $ConnectionInfo
     Remove-Schema -Database $Database -SchemaName "SqlSizerExport" -ConnectionInfo $ConnectionInfo
+
+    if ($RemoveHistory -eq $true)
+    {
+        Remove-Schema -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo    
+    }
+
     Remove-Schema -Database $Database -SchemaName "SqlSizer" -ConnectionInfo $ConnectionInfo
 }
 # SIG # Begin signature block
