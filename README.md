@@ -28,7 +28,7 @@ The module can help you with:
 # Internals
 The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search algorithm applied to a relational database.
 
-All processing is done on Microsoft SQL Server side. No heavy operations are done in Powershell.
+All processing is done on Microsoft SQL Server or Azure SQL side. No heavy operations are done in Powershell.
 
 The initial set of table rows needs to be defined before the start of the scripts and added to processing tables 
 which consists of multiple tables with all possible primary key definitions from the database.
