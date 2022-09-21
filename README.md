@@ -6,15 +6,18 @@ A PowerShell module for Microsoft SQL Server and Azure SQL databases data manage
 The core feature is ability to find the subset from the database that meets your specification.
 
 The module can help you with:
- - making a copy of a Microsoft SQL database with a subset of data from the original database
- - doing selective compare of databases (comparing only data that you are interested in)
- - copying schemas and tables to the same or different database
- - doing simple data integrity verifications
- - getting the schema object model that you can use to implement your own data management logic
- - removing unwanted data from database  
+ - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
+ - doing selective compare of databases/subsets (comparing only data that you are interested in)
+ - doing selective data integrity verifications (making sure that data is not changed using SHA2_512)
+ - copying schemas/tables/data to the same or different database or to Azure BLOB storage
+ - getting the database object model that you can use to implement your own data management logic
+ - extracting selected data from your database in CSV, JSON format to file
+ - importing previously extracted subset data from Azure BLOB storage
+ - removing unwanted data, tables or schemas from database  
  - removing large amount of data from database in safe way (with log file that will not grow that much)
- - finding recent changes to your data in whole database
- - GDPR tasks
+ - tracking changes to data that you are interested in
+ - disabling/enabling/editing table foreign keys 
+ - disabling/enabling triggers
 
 # How to find subset you need
 
@@ -22,7 +25,7 @@ The module can help you with:
     - Queries that define initial data (the table rows with colors)
     - (Optional) Color map that allow to configure colors for the data and limits
 
-- Step 2: Execute `Find-Subset` function to find the subset you want
+- Step 2: Execute `Find-Subset` cmdlet to find the subset you want
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
