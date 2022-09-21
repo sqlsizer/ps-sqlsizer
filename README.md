@@ -15,7 +15,6 @@ The module can help you with:
  - importing previously extracted subset data from Azure BLOB storage
  - removing unwanted data, tables or schemas from database  
  - removing large amount of data from database in safe way (with log file that will not grow that much)
- - tracking changes to data that you are interested in
  - disabling/enabling/editing table foreign keys 
  - disabling/enabling triggers
 
