@@ -7,8 +7,8 @@ The core feature is ability to find the subset from the database that meets your
 
 The module can help you with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
- - doing selective compare of databases/subsets (comparing only data that you are interested in)
- - doing selective data integrity verifications (making sure that data is not changed using SHA2_512)
+ - doing comparision of subsets (comparing only data that you are interested in)
+ - doing data integrity verifications (making sure that data is not changed using SHA2_512)
  - copying schemas/tables/data to the same or different database or to Azure BLOB storage
  - getting the database object model that you can use to implement your own data management logic
  - extracting selected data from your database in CSV, JSON format to file
