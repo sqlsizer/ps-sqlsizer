@@ -26,13 +26,32 @@
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
 
+
+    $sql = "SELECT [Id]
+    ,[Schema]
+    ,[TableName]
+    FROM [SqlSizer].[Tables]"
+    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGrouped = $allTables | Group-Object -Property Id -AsHashTable -AsString
+    $allTablesGroupedbyName = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
+
+    $sql = "SELECT  f.[Id]
+        ,[FkTableId]
+        ,[TableId]
+        ,[Name]
+		,ft.[Schema]
+		,ft.[TableName]
+    FROM [SqlSizer].[ForeignKeys] f
+	INNER JOIN [SqlSizer].[Tables] ft ON f.FkTableId = ft.Id"
+    $allFks = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $allFksGrouped = $allFks | Group-Object -Property Schema, TableName, Name -AsHashTable -AsString
+
     $structure = [Structure]::new($info)
 
     # Test ignored tables
     Test-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
 
     $interval = 5
-    $tablesGrouped = $info.Tables | Group-Object -Property Id -AsHashTable -AsString
     $tablesGroupedByName = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
     $percent = 0
@@ -51,7 +70,7 @@
 
         # Logic
         $q = "SELECT TOP 1
-               [Table],
+			   [Table],
                [ToProcess],
                [Color],
                [Depth]
@@ -74,7 +93,9 @@
         $tableId = $first.Table
         $color = $first.Color
         $depth = $first.Depth
-        $table = $tablesGrouped["$tableId"]
+        $tableData = $allTablesGrouped["$($tableId)"]
+        
+        $table = $info.Tables | Where-Object { ($_.SchemaName -eq $tableData.Schema) -and ($_.TableName -eq $tableData.TableName)}
         $schema = $table.SchemaName
         $tableName = $table.TableName
 
@@ -87,7 +108,7 @@
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
-           $keys = $keys + "Key" + $i + ","
+            $keys = $keys + "Key" + $i + ","
         }
 
         $q = "TRUNCATE TABLE $($slice)"
@@ -138,7 +159,10 @@
                 }
 
                 $baseTable = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table]
+                $baseTableId = $allTablesGroupedbyName[$baseTable.SchemaName + ", " + $baseTable.TableName].Id
                 $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
+                $fkTableId = $allTablesGroupedbyName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
+
                 $baseSignature = $structure.Tables[$baseTable]
                 $baseProcessing = $structure.GetProcessingName($baseSignature)
 
@@ -156,7 +180,7 @@
                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                     $i += 1
                }
-               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Table] = $($baseTable.Id) and " + $columns +  ")"
+               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Table] = $($baseTableId) and " + $columns +  ")"
 
                # from
                $join = " INNER JOIN $($slice) s ON "
@@ -195,13 +219,14 @@
                     $columns = $columns + "x.val" + $i + ","
                }
 
-               $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTable.Id), " + $columns + " " + $newColor + ", $($table.Id), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
+               $fkId = $allFksGrouped[$fk.FkSchema + ", " + $fk.FkTable + ", " +  $fk.Name].Id
+               $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
                $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
                if ($results.Count -gt 0)
                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTable.Id), $($newColor), $($results.Count),  0, $($table.Id), $($depth + 1), GETDATE())"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), $($results.Count),  0, $($tableId), $($depth + 1), GETDATE())"
                     $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                }
             }
@@ -275,6 +300,8 @@
                 }
 
                 $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
+                $fkTableId = $allTablesGroupedbyName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
+
                 $fkSignature = $structure.Tables[$fkTable]
                 $fkProcessing = $structure.GetProcessingName($fkSignature)
 
@@ -292,10 +319,10 @@
                      $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
                      $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Table] = $($fkTable.Id) and " + $columns +  ")"
+                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Table] = $($fkTableId) and " + $columns +  ")"
 
                 # prevent go-back
-                $where += " AND s.Source <> $($fkTable.Id)"
+                $where += " AND s.Source <> $($fkTableId)"
 
                 if ($null -ne $maxDepth)
                 {
@@ -310,7 +337,7 @@
                 {
                     if ($i -gt 0)
                     {
-                         $join += " and "
+                        $join += " and "
                     }
 
                     $join += " s.Key" + $i + " = f." + $fkColumn.Name
@@ -348,14 +375,16 @@
                      $columns = $columns + "x.val" + $i + ","
                 }
 
-                $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTable.Id), " + $columns  + " " + $newColor +  ", $($table.Id), x.Depth + 1, $($fk.Id) FROM (" + $sql + ") x"
+                $fkId = $allFksGrouped[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
+                $fkTableId = $allTablesGroupedbyName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
+                $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns  + " " + $newColor +  ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
 
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
 
                 $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 if ($results.Count -gt 0)
                 {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTable.Id), $newColor, $($results.Count), 0, $($table.Id), $($depth + 1), GETDATE())"
+                    $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, $($results.Count), 0, $($tableId), $($depth + 1), GETDATE())"
                     $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 }
              }
@@ -377,7 +406,7 @@
             $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Red), $($results.Count), 0, $($table.Id), $($depth), GETDATE())"
+            $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Red), $($results.Count), 0, $($tableId), $($depth), GETDATE())"
             $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # insert
@@ -386,7 +415,7 @@
             $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
-            $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Green), $($results.Count), 0, $($table.Id), $depth, GETDATE())"
+            $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Green), $($results.Count), 0, $($tableId), $depth, GETDATE())"
             $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
 

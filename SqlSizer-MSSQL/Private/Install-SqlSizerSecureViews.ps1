@@ -15,14 +15,6 @@ function Install-SqlSizerSecureViews
         [Parameter(Mandatory=$false)]
         [TableInfo2[]]$IgnoredTables
     )
-
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizerSecure" -Database $Database -ConnectionInfo $ConnectionInfo
-    if ($schemaExists -eq $false)
-    {
-        $tmp = "CREATE SCHEMA SqlSizerSecure"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
@@ -42,13 +34,13 @@ function Install-SqlSizerSecureViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizerSecure.$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE OR ALTER VIEW SqlSizer.Secure_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizerSecure.$($table.SchemaName)_$($table.TableName)"
+        $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizer.Secure_$($table.SchemaName)_$($table.TableName)"
     }
 
-    $sql = "CREATE VIEW SqlSizerSecure.Summary AS $([string]::Join(' UNION ALL ', $total))"
+    $sql = "CREATE OR ALTER VIEW SqlSizer.Secure_Summary AS $([string]::Join(' UNION ALL ', $total))"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }
 

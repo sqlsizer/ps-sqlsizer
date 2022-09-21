@@ -16,13 +16,6 @@ function Install-SqlSizerResultViews
         [TableInfo2[]]$IgnoredTables
     )
 
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizerResult" -Database $Database -ConnectionInfo $ConnectionInfo
-    if ($schemaExists -eq $false)
-    {
-        $tmp = "CREATE SCHEMA SqlSizerResult"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
@@ -40,7 +33,7 @@ function Install-SqlSizerResultViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizerResult.$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE OR ALTER VIEW SqlSizer.Result_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }

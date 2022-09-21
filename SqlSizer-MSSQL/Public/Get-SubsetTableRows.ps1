@@ -28,6 +28,12 @@ function Get-SubsetTableRows
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
+    $sql = "SELECT [Id]
+    ,[Schema]
+    ,[TableName]
+    FROM [SqlSizer].[Tables]"
+    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedbyName = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
     foreach ($table in $info.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
@@ -47,7 +53,7 @@ function Get-SubsetTableRows
                     }
                 }
 
-                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE [Table] = $($table.Id)"
+                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)"
                 $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }

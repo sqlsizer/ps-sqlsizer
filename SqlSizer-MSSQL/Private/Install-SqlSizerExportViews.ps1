@@ -15,13 +15,6 @@ function Install-SqlSizerExportViews
         [Parameter(Mandatory=$false)]
         [TableInfo2[]]$IgnoredTables
     )
-
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizerExport" -Database $Database -ConnectionInfo $ConnectionInfo
-    if ($schemaExists -eq $false)
-    {
-        $tmp = "CREATE SCHEMA SqlSizerExport"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    }
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
@@ -40,7 +33,7 @@ function Install-SqlSizerExportViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizerExport.$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE OR ALTER VIEW SqlSizer.Export_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }

@@ -20,20 +20,30 @@
     $sql = "DELETE FROM SqlSizer.Operations"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
+    $sql = "SELECT [Id]
+    ,[Schema]
+    ,[TableName]
+    FROM [SqlSizer].[Tables]"
+    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGrouped = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
+
     foreach ($table in $info.Tables)
     {
         if ($table.PrimaryKey.Length -eq 0)
         {
             continue
         }
-
+        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+        {
+            continue
+        }
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature)
 
         $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created])
         SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE()
         FROM $($processing) p
-        WHERE p.[Table] = $($table.Id)
+        WHERE p.[Table] = $($allTablesGrouped[$table.SchemaName + ", " + $table.TableName].Id)
         GROUP BY [Table], [Color]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }

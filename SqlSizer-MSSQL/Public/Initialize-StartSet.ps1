@@ -21,6 +21,13 @@
 
     $null = Clear-SqlSizer -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
+    $sql = "SELECT [Id]
+    ,[Schema]
+    ,[TableName]
+    FROM [SqlSizer].[Tables]"
+    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGrouped = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
+
     foreach ($query in $Queries)
     {
         $top = "";
@@ -30,7 +37,7 @@
         }
         $table = $info.Tables | Where-Object {($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table)}
         $procesing = $Structure.GetProcessingName($structure.Tables[$table])
-        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + " $($table.Id), "
+        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + " $($allTablesGrouped[$table.SchemaName + ", " + $table.TableName].Id), "
 
         $i = 0
         foreach ($column in $query.KeyColumns)

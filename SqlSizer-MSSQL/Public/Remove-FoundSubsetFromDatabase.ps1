@@ -26,7 +26,7 @@
 
         $table = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName)}
         $primaryKey = $table.PrimaryKey
-        $where = " WHERE EXISTS(SELECT * FROM .SqlSizerResult.$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
+        $where = " WHERE EXISTS(SELECT * FROM SqlSizer.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
 
         $conditions = @()
         foreach ($column in $primaryKey)

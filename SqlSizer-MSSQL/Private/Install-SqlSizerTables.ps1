@@ -24,15 +24,15 @@
 
     $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
         Drop Table SqlSizer.Operations"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "IF OBJECT_ID('SqlSizer.Tables') IS NOT NULL
         Drop Table SqlSizer.Tables"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "IF OBJECT_ID('SqlSizer.ForeignKeys') IS NOT NULL
         Drop Table SqlSizer.ForeignKeys"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $structure = [Structure]::new($info)
     foreach ($signature in $structure.Signatures.Keys)
@@ -52,22 +52,21 @@
     }
 
     $tmp = "CREATE TABLE SqlSizer.Files(Id int primary key identity(1,1), FileId uniqueidentifier, [Index] int, [Content] nvarchar(max))"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "CREATE TABLE SqlSizer.Tables(Id int primary key identity(1,1), [Schema] varchar(128), [TableName] varchar(128))"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $sql = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Tables ([Schema] ASC, [TableName] ASC)"
-    Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "CREATE TABLE SqlSizer.ForeignKeys(Id int primary key identity(1,1), [FkTableId] int, [TableId] int, [Name] varchar(256))"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     foreach ($table in $info.Tables)
     {
-        $tmp = "INSERT INTO SqlSizer.Tables VALUES('$($table.SchemaName)', '$($table.TableName)')  SELECT SCOPE_IDENTITY() as Id"
-        $result = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-        $table.Id = $result.Id
+        $tmp = "INSERT INTO SqlSizer.Tables VALUES('$($table.SchemaName)', '$($table.TableName)')"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     foreach ($table in $info.Tables)
@@ -81,18 +80,16 @@
             $result2 = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
             $tmp = "INSERT INTO SqlSizer.ForeignKeys VALUES($($result.Id), $($result2.Id), '$($fk.Name)') SELECT SCOPE_IDENTITY() as Id"
-            $result3 = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-
-            $fk.Id = $result3.Id
+            $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 
 
     $tmp = "CREATE TABLE SqlSizer.Operations(Id int primary key identity(1,1), [Table] smallint, [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL)"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Table] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     foreach ($signature in $structure.Signatures.Keys)
     {
@@ -133,16 +130,16 @@
         if ($len -gt 0)
         {
             $sql = "CREATE TABLE $($slice) ([Id] int primary key identity(1,1), $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
-            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE TABLE $($processing) (Id int primary key identity(1,1), [Table] smallint NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
-            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Table] ASC, $($keysIndex), [Color] ASC)"
-            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Table] ASC, [Color] ASC, [Depth] ASC) INCLUDE ($($keys), [Source], [Fk])"
-            Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
     
@@ -158,16 +155,16 @@
     if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "Subset" -ConnectionInfo $ConnectionInfo) -eq $false)
     {
         $sql = "CREATE TABLE SqlSizerHistory.Subset ([Id] int primary key identity(1,1), [Guid] [uniqueidentifier] NOT NULL, [Name] varchar(256), [Created] datetime default(GETDATE()))"
-        Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "SubsetTable" -ConnectionInfo $ConnectionInfo) -eq $false)
     {
         $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Id] int primary key identity(1,1), [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL,  [SubsetId] int NOT NULL)"
-        Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     
         $sql = "ALTER TABLE SqlSizerHistory.SubsetTable ADD CONSTRAINT SubsetTable_SubsetId FOREIGN KEY (SubsetId) REFERENCES SqlSizerHistory.Subset([Id]) ON DELETE CASCADE"
-        Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
 # SIG # Begin signature block

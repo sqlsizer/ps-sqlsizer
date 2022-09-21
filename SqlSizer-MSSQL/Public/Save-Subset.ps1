@@ -61,7 +61,7 @@ function Save-Subset
 
         $sql = "INSERT INTO SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize)($([string]::Join(',', $keys)), TableId, [Hash])
         SELECT $([string]::Join(',', $columns)), $tableId, row_sha2_512
-        FROM SqlSizerSecure.$($tableInfo.SchemaName)_$($tableInfo.TableName)"
+        FROM SqlSizer.Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
         
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }

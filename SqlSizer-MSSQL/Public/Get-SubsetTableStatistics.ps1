@@ -14,6 +14,12 @@ function Get-SubsetTableStatistics
     )
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $sql = "SELECT [Id]
+    ,[Schema]
+    ,[TableName]
+    FROM [SqlSizer].[Tables]"
+    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedbyName = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
 
     $structure = [Structure]::new($info)
     $result = @()
@@ -24,7 +30,10 @@ function Get-SubsetTableStatistics
         {
             continue
         }
-
+        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+        {
+            continue
+        }
         $tableName = $structure.GetProcessingName($structure.Tables[$table])
 
         $keys = ""
@@ -38,7 +47,7 @@ function Get-SubsetTableStatistics
             }
         }
 
-        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($table.Id)) x"
+        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)) x"
         $count = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $obj = New-Object -TypeName SubsettingTableResult

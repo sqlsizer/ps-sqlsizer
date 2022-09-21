@@ -13,7 +13,12 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $true)
+    {
+        Write-Output "SqlSizer is already installed. It will be uninstalled and installed again"
+        Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    }
 
     Install-SqlSizerTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     Install-SqlSizerResultViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo

@@ -36,6 +36,8 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 
 # Find subset
 Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
+# Test foreign keys
+Test-ForeignKeys -Database $database -ConnectionInfo $connection
 
 # Disable integrity checks and triggers
 Disable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info

@@ -22,10 +22,10 @@ function Get-SubsetTableJson
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $schema = "SqlSizerExport"
+    $schema = "Export"
     if ($Secure -eq $true)
     {
-        $schema = "SqlSizerSecure"
+        $schema = "Secure"
     }
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
@@ -34,7 +34,7 @@ function Get-SubsetTableJson
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $sql = "SELECT * FROM $schema.$($SchemaName)_$($TableName) FOR JSON PATH"
+            $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH"
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $json = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join ""
             return $json

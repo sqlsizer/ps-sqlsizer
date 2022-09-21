@@ -16,10 +16,6 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    Remove-Schema -Database $Database -SchemaName "SqlSizerResult" -ConnectionInfo $ConnectionInfo
-    Remove-Schema -Database $Database -SchemaName "SqlSizerSecure" -ConnectionInfo $ConnectionInfo
-    Remove-Schema -Database $Database -SchemaName "SqlSizerExport" -ConnectionInfo $ConnectionInfo
-
     if ($RemoveHistory -eq $true)
     {
         Remove-Schema -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo    

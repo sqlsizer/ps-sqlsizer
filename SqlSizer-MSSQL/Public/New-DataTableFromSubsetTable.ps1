@@ -29,7 +29,8 @@ function New-DataTableFromSubsetTable
     )
 
     $null = New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
-                     -ViewSchemaName "SqlSizerResult" -ViewName "$($SchemaName)_$($TableName)" -CopyData $CopyData -ConnectionInfo $ConnectionInfo
+                                -ViewSchemaName "SqlSizer" -ViewName "Result_$($SchemaName)_$($TableName)" `
+                                -CopyData $CopyData -ConnectionInfo $ConnectionInfo
 
     # setup primary key
     foreach ($table in $DatabaseInfo.Tables)

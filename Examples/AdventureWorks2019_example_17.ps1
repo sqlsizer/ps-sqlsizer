@@ -17,7 +17,7 @@ Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $
 
 # Define start set
 $query = New-Object -TypeName Query
-$query.Color = [Color]::Yellow
+$query.Color = [Color]::Blue
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
@@ -41,6 +41,9 @@ Disable-IntegrityChecks -Database $database -ConnectionInfo $connection -Databas
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info 
+
+# Test foreign keys
+Test-ForeignKeys -Database $database -ConnectionInfo $connection
 
 Enable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info

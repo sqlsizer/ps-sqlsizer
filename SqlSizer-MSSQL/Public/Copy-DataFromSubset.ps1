@@ -41,7 +41,7 @@
         $tableColumns = Get-TableSelect -TableInfo $tableInfo -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $false -SkipGenerated $true
         $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $true -IgnoredTables $IgnoredTables -Prefix $null -AddAs $true -SkipGenerated $true
 
-        $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] ($tableColumns) SELECT $tableSelect FROM " + $Source + ".SqlSizerResult." + $schema + "_" + $tableName
+        $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] ($tableColumns) SELECT $tableSelect FROM " + $Source + ".SqlSizer.Result_" + $schema + "_" + $tableName
         if ($isIdentity)
         {
             $sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON " + $sql + " SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF"

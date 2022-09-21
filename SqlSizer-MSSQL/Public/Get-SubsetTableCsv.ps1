@@ -25,10 +25,10 @@ function Get-SubsetTableCsv
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $schema = "SqlSizerExport"
+    $schema = "Export"
     if ($Secure -eq $true)
     {
-        $schema = 'SqlSizerSecure'
+        $schema = 'Secure'
     }
 
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
@@ -36,7 +36,7 @@ function Get-SubsetTableCsv
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $sql = "SELECT * FROM $schema.$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
+            $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
             $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
