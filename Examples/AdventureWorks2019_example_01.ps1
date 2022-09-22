@@ -60,6 +60,7 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 # Create a new db with found subset of data
 
 $newDatabase = "AdventureWorks2019_subset_05"
+$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
@@ -68,17 +69,17 @@ Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo 
 Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
 
 Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 
-$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Output "Subset size: $($infoNew.DatabaseSize)"
+Write-Output "Subset size: $($info.DatabaseSize)"
 $sum = 0
-foreach ($table in $infoNew.Tables)
+foreach ($table in $info.Tables)
 {
     $sum += $table.Statistics.Rows
 }

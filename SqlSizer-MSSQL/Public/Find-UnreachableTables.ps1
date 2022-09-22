@@ -12,14 +12,12 @@ function Find-UnreachableTables
         [Parameter(Mandatory = $false)]
         [ColorMap]$ColorMap = $null,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $reachableTables = New-Object 'System.Collections.Generic.HashSet[string]'
     $processedTableColors = New-Object 'System.Collections.Generic.HashSet[string]'
@@ -51,7 +49,7 @@ function Find-UnreachableTables
             continue
         }
 
-        $table = $info.Tables.Where(({ ($_.TableName -eq $item.TableName) -and ($_.SchemaName -eq $item.SchemaName) }))[0]
+        $table = $DatabaseInfo.Tables.Where(({ ($_.TableName -eq $item.TableName) -and ($_.SchemaName -eq $item.SchemaName) }))[0]
 
         if ($item.Color -eq [Color]::Yellow)
         {
@@ -140,7 +138,7 @@ function Find-UnreachableTables
 
     $toReturn = @()
 
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         $key = $table.SchemaName + "." + $table.TableName
 

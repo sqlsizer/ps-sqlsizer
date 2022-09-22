@@ -9,16 +9,15 @@
         [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     # get metadata
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
 
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
@@ -33,7 +32,7 @@
         {
             $top = " TOP " + $query.Top;
         }
-        $table = $info.Tables | Where-Object { ($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table) }
+        $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table) }
         $procesing = $Structure.GetProcessingName($structure.Tables[$table])
         $tmp = "INSERT INTO $($procesing) SELECT " + $top + " $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id), "
 

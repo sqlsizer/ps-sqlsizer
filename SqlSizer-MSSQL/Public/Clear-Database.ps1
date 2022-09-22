@@ -6,19 +6,18 @@
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $i = 0
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         $i += 1
-        Write-Progress -Activity "Database truncate" -PercentComplete (100 * ($i / ($info.Tables.Count)))
+        Write-Progress -Activity "Database truncate" -PercentComplete (100 * ($i / ($DatabaseInfo.Tables.Count)))
 
         if ($table.IsHistoric -eq $true)
         {
@@ -27,7 +26,7 @@
 
         if ($table.HasHistory -eq $true)
         {
-            $historyTable = $info.Tables | Where-Object { ($_.IsHistoric -eq $true) -and ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName) }
+            $historyTable = $DatabaseInfo.Tables | Where-Object { ($_.IsHistoric -eq $true) -and ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName) }
 
             $sql = "ALTER TABLE " + $table.SchemaName + ".[" + $table.TableName + "] SET ( SYSTEM_VERSIONING = OFF )"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

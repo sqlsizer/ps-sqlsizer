@@ -16,7 +16,7 @@ foreach ($schema in $info.AllSchemas)
 {
     if ($schema.StartsWith("SqlSizer"))
     {
-        Remove-Schema -Database $database -SchemaName $schema -ConnectionInfo $connection
+        Remove-Schema -Database $database -SchemaName $schema -ConnectionInfo $connection -DatabaseInfo $info
     }
 }
 

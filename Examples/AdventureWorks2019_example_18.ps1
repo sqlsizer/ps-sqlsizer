@@ -37,7 +37,7 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 # Find subset
 Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
 # Test foreign keys
-Test-ForeignKeys -Database $database -ConnectionInfo $connection
+Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Disable integrity checks and triggers
 Disable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -51,7 +51,7 @@ Enable-IntegrityChecks -Database $database -ConnectionInfo $connection -Database
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Test foreign keys
-Test-ForeignKeys -Database $database -ConnectionInfo $connection
+Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Remove all SqlSizer
 Uninstall-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveHistory $true

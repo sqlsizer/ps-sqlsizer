@@ -79,7 +79,7 @@ Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
 

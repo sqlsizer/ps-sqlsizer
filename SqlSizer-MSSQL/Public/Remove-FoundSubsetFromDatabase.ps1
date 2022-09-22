@@ -9,8 +9,8 @@
         [Parameter(Mandatory = $false)]
         [int]$Step = 100000,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo

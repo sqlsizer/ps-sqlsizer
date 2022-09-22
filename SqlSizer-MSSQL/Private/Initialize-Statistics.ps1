@@ -6,17 +6,15 @@
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     # load meta data
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $allTablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
@@ -25,7 +23,7 @@
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     # initialize operations
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         if ($table.PrimaryKey.Length -eq 0)
         {

@@ -6,15 +6,15 @@ function Get-SubsetUnreachableEdges
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
+    
     $reachedEdges = New-Object 'System.Collections.Generic.HashSet[int]'
     $allEdges = New-Object 'System.Collections.Generic.HashSet[int]'
 

@@ -9,7 +9,7 @@
         [Parameter(Mandatory = $true)]
         [string]$Destination,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $false)]
@@ -19,7 +19,6 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Source -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $i = 0
     $subsetTables = Get-SubsetTables -Database $Source -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
@@ -27,7 +26,7 @@
     {
         $i += 1
 
-        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
         Write-Progress -Activity "Copying data" -PercentComplete (100 * ($i / ($subsetTables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
 
         if ($tableInfo.IsHistoric -eq $true)

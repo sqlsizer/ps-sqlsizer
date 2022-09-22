@@ -12,7 +12,7 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-Remove-Schema -Database $database -ConnectionInfo $connection -SchemaName "Person6"
+Remove-Schema -Database $database -ConnectionInfo $connection -SchemaName "Person6" -DatabaseInfo $info
 New-SchemaFromDatabase -SourceDatabase $database -TargetDatabase $database -ConnectionInfo $connection -SchemaName "Person" -NewSchemaName "Person6" -CopyData $false -DatabaseInfo $info
 
 # end of script

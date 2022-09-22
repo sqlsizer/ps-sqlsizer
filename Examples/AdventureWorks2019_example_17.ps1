@@ -43,7 +43,7 @@ Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -Datab
 Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info 
 
 # Test foreign keys
-Test-ForeignKeys -Database $database -ConnectionInfo $connection
+Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Enable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info

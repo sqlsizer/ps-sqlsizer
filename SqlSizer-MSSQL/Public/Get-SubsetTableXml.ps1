@@ -15,8 +15,8 @@ function Get-SubsetTableXml
         [Parameter(Mandatory = $true)]
         [bool]$Secure,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -28,8 +28,7 @@ function Get-SubsetTableXml
         $schema = 'Secure'
     }
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {

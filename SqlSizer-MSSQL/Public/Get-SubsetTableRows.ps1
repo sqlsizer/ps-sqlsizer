@@ -18,21 +18,20 @@ function Get-SubsetTableRows
         [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     # get metadata
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
     # get subset rows
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {

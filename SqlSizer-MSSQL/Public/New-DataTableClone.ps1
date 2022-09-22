@@ -50,7 +50,7 @@ function New-DataTableClone
         $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
     }
 
-    $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName) }
+    $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName) }
     $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $true -Prefix $null -AddAs $true -SkipGenerated $false -OnlyXml $true
 
     # copy schema

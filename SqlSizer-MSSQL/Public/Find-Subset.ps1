@@ -9,8 +9,8 @@
         [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $false)]
         [ColorMap]$ColorMap = $null,
@@ -26,15 +26,14 @@
     $start = Get-Date
     
     # get meta data
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $tablesGroupedById = $sqlSizerInfo.Tables | Group-Object -Property Id -AsHashTable -AsString
     $tablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
     $fkGroupedByName = $sqlSizerInfo.ForeignKeys | Group-Object -Property FkSchemaName, FkTableName, Name -AsHashTable -AsString
 
     # init
-    $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
+    $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $interval = 5
     $percent = 0
@@ -80,7 +79,7 @@
         $tableData = $tablesGroupedById["$($tableId)"]
         $schema = $tableData.SchemaName
         $tableName = $tableData.TableName
-        $table = $info.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
+        $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
         $primaryKey = $table.PrimaryKey
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
@@ -141,7 +140,7 @@
                     }
                 }
 
-                $baseTable = $info.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
+                $baseTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
                 $baseTableId = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table].Id
                 $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
                 $fkTableId = $fkTable.Id
@@ -279,7 +278,7 @@
                         }
                     }
 
-                    $fkTable = $info.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+                    $fkTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
                     $fkTableId = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable].Id
                     $fkSignature = $structure.Tables[$fkTable]
                     $fkProcessing = $structure.GetProcessingName($fkSignature)

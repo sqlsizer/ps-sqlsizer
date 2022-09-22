@@ -6,20 +6,18 @@ function Clear-SqlSizer
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
     $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
         TRUNCATE TABLE SqlSizer.Operations"
     Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
 
     foreach ($signature in $structure.Signatures.Keys)
     {

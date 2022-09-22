@@ -6,7 +6,7 @@ function Install-SqlSizerSecureViews
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
@@ -15,11 +15,10 @@ function Install-SqlSizerSecureViews
         [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables
     )
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
 
     $total = @()
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         if ($table.SchemaName.StartsWith('SqlSizer'))
         {

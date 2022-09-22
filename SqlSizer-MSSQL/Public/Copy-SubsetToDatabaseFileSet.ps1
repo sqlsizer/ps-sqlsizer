@@ -12,7 +12,7 @@ function Copy-SubsetToDatabaseFileSet
         [Parameter(Mandatory = $true)]
         [bool]$Secure,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]

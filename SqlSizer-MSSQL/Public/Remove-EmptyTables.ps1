@@ -7,14 +7,16 @@ function Remove-EmptyTables
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo -MeasureSize $true
     $i = 0
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
-        Write-Progress -Activity "Removing empty tables" -PercentComplete (100 * ($i / ($info.Tables.Count)))
+        Write-Progress -Activity "Removing empty tables" -PercentComplete (100 * ($i / ($DatabaseInfo.Tables.Count)))
 
         if ($table.Statistics.Rows -ne 0)
         {

@@ -9,8 +9,8 @@ function New-EmptyCompactDatabase
         [Parameter(Mandatory = $true)]
         [string]$NewDatabase,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo

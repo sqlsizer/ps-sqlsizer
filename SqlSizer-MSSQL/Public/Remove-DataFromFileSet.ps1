@@ -9,18 +9,16 @@
         [Parameter(Mandatory = $true)]
         [TableFile[]]$Files,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    
     foreach ($file in $Files)
     {
-        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $file.TableContent.SchemaName) -and ($_.TableName -eq $file.TableContent.TableName) }
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $file.TableContent.SchemaName) -and ($_.TableName -eq $file.TableContent.TableName) }
         $where = @()
         foreach ($column in $tableInfo.PrimaryKey)
         {

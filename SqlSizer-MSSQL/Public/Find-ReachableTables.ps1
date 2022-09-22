@@ -9,18 +9,17 @@ function Find-ReachableTables
         [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $unreachable = Find-UnreachableTables -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo -Queries $Queries
 
     $toReturn = @()
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         $unreachableTable = $unreachable | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
         $isUnreachable = $null -ne $unreachableTable

@@ -21,7 +21,7 @@
         [Parameter(Mandatory = $true)]
         [ForeignKeyRule]$UpdateRule,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]

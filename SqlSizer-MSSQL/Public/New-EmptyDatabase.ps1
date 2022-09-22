@@ -10,6 +10,9 @@ function New-EmptyDatabase
         [string]$NewDatabase,
 
         [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
+        
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -25,11 +28,11 @@ function New-EmptyDatabase
     while ($found -eq $false)
 
     # Clear copy
-    Disable-IntegrityChecks -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
-    Clear-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
+    Disable-IntegrityChecks -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    Clear-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Uninstall-SqlSizer -Database $NewDatabase -ConnectionInfo $ConnectionInfo
-    Enable-IntegrityChecks -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
-    Format-Indexes -Database $NewDatabase -ConnectionInfo $ConnectionInfo
+    Enable-IntegrityChecks -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    Format-Indexes -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Compress-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo
 }
 # SIG # Begin signature block

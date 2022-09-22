@@ -12,18 +12,16 @@ function Import-SubsetFromFileSet
         [Parameter(Mandatory = $true)]
         [TableFile[]]$Files,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $SourceDatabase -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    
     foreach ($file in $Files)
     {
-        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $file.TableContent.SchemaName) -and ($_.TableName -eq $file.TableContent.TableName) }
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $file.TableContent.SchemaName) -and ($_.TableName -eq $file.TableContent.TableName) }
 
         $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $false -Prefix $null -AddAs $false -SkipGenerated $true
         $columns = @()

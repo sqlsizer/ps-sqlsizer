@@ -74,7 +74,7 @@ Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo 
 Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
 

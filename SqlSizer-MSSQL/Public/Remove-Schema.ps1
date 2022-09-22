@@ -10,13 +10,14 @@
         [string]$SchemaName,
 
         [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfo -Database $Database -Connection $ConnectionInfo
-
     # remove foreign keys from tables
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         foreach ($fk in $table.ForeignKeys)
         {
@@ -29,7 +30,7 @@
     }
 
     # drop tables
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         if ($table.SchemaName -eq $SchemaName)
         {
@@ -45,7 +46,7 @@
     }
 
     # drop views
-    foreach ($view in $info.Views)
+    foreach ($view in $DatabaseInfo.Views)
     {
         if ($view.SchemaName -eq $SchemaName)
         {

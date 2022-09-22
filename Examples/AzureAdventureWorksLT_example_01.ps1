@@ -53,7 +53,7 @@ $emptyDb = "test03_empty"
 
 if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
 {
-   New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
+    New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
 }
 
 # Create a copy of empty db for new subset db
@@ -78,9 +78,9 @@ Copy-SubsetToAzStorageContainer -ContainerName $container -StorageContext $ctx -
 $masterPassword = "$((New-Guid).ToString().Replace('-', '_'))"
 # Copy data from Azure Blob storage
 Import-SubsetFromAzStorageContainer -MasterPassword $masterPassword -Database $newDatabase -OriginalDatabase $database -ConnectionInfo $connection -DatabaseInfo $info `
-                                  -ContainerName $container -StorageAccountName $storageAccount -StorageContext $ctx
+    -ContainerName $container -StorageAccountName $storageAccount -StorageContext $ctx
 
-Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection
 
 Write-Output "Azure SQL database created"

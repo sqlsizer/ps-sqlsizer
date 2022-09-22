@@ -6,7 +6,7 @@
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
@@ -20,8 +20,6 @@
         $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
     $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
         Drop Table SqlSizer.Operations"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
@@ -34,7 +32,7 @@
         Drop Table SqlSizer.ForeignKeys"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $structure = [Structure]::new($info)
+    $structure = [Structure]::new($DatabaseInfo)
     foreach ($signature in $structure.Signatures.Keys)
     {
         $slice = $structure.GetSliceName($signature)
@@ -63,13 +61,13 @@
     $tmp = "CREATE TABLE SqlSizer.ForeignKeys(Id int primary key identity(1,1), [FkTableId] int, [TableId] int, [Name] varchar(256))"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         $tmp = "INSERT INTO SqlSizer.Tables VALUES('$($table.SchemaName)', '$($table.TableName)')"
         $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
         foreach ($fk in $table.ForeignKeys)
         {

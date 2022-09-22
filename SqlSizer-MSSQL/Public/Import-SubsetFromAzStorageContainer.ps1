@@ -21,7 +21,7 @@ function Import-SubsetFromAzStorageContainer
         [Parameter(Mandatory = $true)]
         [string]$OriginalDatabase,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
@@ -46,12 +46,11 @@ function Import-SubsetFromAzStorageContainer
         CREDENTIAL = $($ContainerName)_credential
     )"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $subsetTables = Get-SubsetTables -Database $OriginalDatabase -DatabaseInfo $info -ConnectionInfo $ConnectionInfo
+    $subsetTables = Get-SubsetTables -Database $OriginalDatabase -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 
     foreach ($table in $subsetTables)
     {
-        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
 
         if ($tableInfo.IsIdentity)
         {

@@ -13,7 +13,7 @@ function Test-Queries
         [Parameter(Mandatory = $false)]
         [ColorMap]$ColorMap = $null,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]

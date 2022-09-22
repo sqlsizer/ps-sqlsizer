@@ -6,7 +6,7 @@ function Test-ForeignKeys
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
@@ -15,12 +15,10 @@ function Test-ForeignKeys
 
     Write-Progress -Activity "Testing foreign keys" -PercentComplete 0
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
     $i = 0
-    foreach ($table in $info.Tables)
+    foreach ($table in $DatabaseInfo.Tables)
     {
-        Write-Progress -Activity "Testing foreign keys" -PercentComplete (100 * ($i / $info.Tables.Count))
+        Write-Progress -Activity "Testing foreign keys" -PercentComplete (100 * ($i / $DatabaseInfo.Tables.Count))
 
         foreach ($fk in $table.ForeignKeys)
         {

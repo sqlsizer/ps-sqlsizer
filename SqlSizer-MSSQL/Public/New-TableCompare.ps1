@@ -18,17 +18,15 @@ function New-TableCompare
         [Parameter(Mandatory = $true)]
         [string]$TableName2,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $table1 = $info.Tables | Where-Object { ($_.SchemaName -eq $SchemaName1) -and ($_.TableName -eq $TableName1) }
-    $table2 = $info.Tables | Where-Object { ($_.SchemaName -eq $SchemaName2) -and ($_.TableName -eq $TableName2) }
+    $table1 = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName1) -and ($_.TableName -eq $TableName1) }
+    $table2 = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName2) -and ($_.TableName -eq $TableName2) }
 
     if ([string]::Join(',', $table1.Columns) -ne [string]::Join(',', $table2.Columns))
     {

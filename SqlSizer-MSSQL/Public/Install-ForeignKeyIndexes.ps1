@@ -12,17 +12,16 @@ function Install-ForeignKeyIndexes
         [Parameter(Mandatory = $false)]
         [bool]$OnlyMissing = $true,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $reachableTables = Find-ReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo
+    $reachableTables = Find-ReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
-    $tablesGrouped = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+    $tablesGrouped = $DatabaseInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
     foreach ($table in $reachableTables)
     {

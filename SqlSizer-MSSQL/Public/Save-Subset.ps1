@@ -9,14 +9,13 @@ function Save-Subset
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory = $false)]
-        [DatabaseInfo]$DatabaseInfo = $null,
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $guid = (New-Guid).ToString()
 
     $sql = "INSERT INTO SqlSizerHistory.Subset([Guid], [Name]) VALUES('$guid', '$SubsetName') SELECT SCOPE_IDENTITY() as Id"
@@ -49,7 +48,7 @@ function Save-Subset
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
 
-        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
         $keys = @()
         $columns = @()
         $i = 0;

@@ -53,7 +53,7 @@ $emptyDb = "test03_empty"
 
 if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
 {
-   New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
+    New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
 }
 
 # Create a copy of empty db for new subset db
