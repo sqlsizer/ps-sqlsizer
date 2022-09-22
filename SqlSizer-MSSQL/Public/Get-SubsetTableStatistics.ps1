@@ -13,15 +13,12 @@ function Get-SubsetTableStatistics
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    # get meta data
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    $sql = "SELECT [Id]
-    ,[Schema]
-    ,[TableName]
-    FROM [SqlSizer].[Tables]"
-    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGroupedbyName = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
-
+    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
     $structure = [Structure]::new($info)
+
     $result = @()
 
     foreach ($table in $info.Tables)

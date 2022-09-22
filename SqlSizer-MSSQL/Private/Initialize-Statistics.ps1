@@ -1,40 +1,34 @@
-﻿function Initialize-Statistics
-{
+﻿function Initialize-Statistics {
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    # init stats
+    # load meta data
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $structure = [Structure]::new($info)
+    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+
+    # clear operations
     $sql = "DELETE FROM SqlSizer.Operations"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $sql = "SELECT [Id]
-    ,[Schema]
-    ,[TableName]
-    FROM [SqlSizer].[Tables]"
-    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGrouped = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
-
-    foreach ($table in $info.Tables)
-    {
-        if ($table.PrimaryKey.Length -eq 0)
-        {
+    # initialize operations
+    foreach ($table in $info.Tables) {
+        if ($table.PrimaryKey.Length -eq 0) {
             continue
         }
-        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
-        {
+        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory')) {
             continue
         }
         $signature = $structure.Tables[$table]
@@ -43,7 +37,7 @@
         $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created])
         SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE()
         FROM $($processing) p
-        WHERE p.[Table] = $($allTablesGrouped[$table.SchemaName + ", " + $table.TableName].Id)
+        WHERE p.[Table] = $($allTablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id)
         GROUP BY [Table], [Color]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }

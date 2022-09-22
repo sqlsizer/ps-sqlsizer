@@ -16,17 +16,15 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    # get metadata
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
 
-    $null = Clear-SqlSizer -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
-    $sql = "SELECT [Id]
-    ,[Schema]
-    ,[TableName]
-    FROM [SqlSizer].[Tables]"
-    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGrouped = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
+    # clear SqlSizer
+    $null = Clear-SqlSizer -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     foreach ($query in $Queries)
     {
@@ -37,7 +35,7 @@
         }
         $table = $info.Tables | Where-Object {($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table)}
         $procesing = $Structure.GetProcessingName($structure.Tables[$table])
-        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + " $($allTablesGrouped[$table.SchemaName + ", " + $table.TableName].Id), "
+        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + " $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id), "
 
         $i = 0
         foreach ($column in $query.KeyColumns)

@@ -25,15 +25,13 @@ function Get-SubsetTableRows
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    # get metadata
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
     $structure = [Structure]::new($info)
+    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
-    $sql = "SELECT [Id]
-    ,[Schema]
-    ,[TableName]
-    FROM [SqlSizer].[Tables]"
-    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGroupedbyName = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
+    # get subset rows
     foreach ($table in $info.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))

@@ -55,8 +55,8 @@
     }
 
     # drop schema
-    $tmp = "DROP SCHEMA IF EXISTS $SchemaName"
-    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    $sql = "DROP SCHEMA IF EXISTS $SchemaName"
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

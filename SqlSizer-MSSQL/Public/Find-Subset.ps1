@@ -1,67 +1,46 @@
-﻿function Find-Subset
-{
+﻿function Find-Subset {
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [ColorMap]$ColorMap = $null,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [bool]$FullSearch = $false,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    # save start time
     $start = Get-Date
+    
+    # get meta data
     $info = Get-DatabaseInfoIfNull -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $structure = [Structure]::new($info)
+    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $tablesGroupedById = $sqlSizerInfo.Tables | Group-Object -Property Id -AsHashTable -AsString
+    $tablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+    $fkGroupedByName = $sqlSizerInfo.ForeignKeys | Group-Object -Property FkSchemaName, FkTableName, Name -AsHashTable -AsString
+
+    # init
     $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $info
 
-
-    $sql = "SELECT [Id]
-    ,[Schema]
-    ,[TableName]
-    FROM [SqlSizer].[Tables]"
-    $allTables = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGrouped = $allTables | Group-Object -Property Id -AsHashTable -AsString
-    $allTablesGroupedbyName = $allTables | Group-Object -Property Schema, TableName -AsHashTable -AsString
-
-    $sql = "SELECT  f.[Id]
-        ,[FkTableId]
-        ,[TableId]
-        ,[Name]
-		,ft.[Schema]
-		,ft.[TableName]
-    FROM [SqlSizer].[ForeignKeys] f
-	INNER JOIN [SqlSizer].[Tables] ft ON f.FkTableId = ft.Id"
-    $allFks = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    $allFksGrouped = $allFks | Group-Object -Property Schema, TableName, Name -AsHashTable -AsString
-
-    $structure = [Structure]::new($info)
-
-    # Test ignored tables
-    Test-IgnoredTables -Database $Database -ConnectionInfo $ConnectionInfo -IgnoredTables $IgnoredTables
-
     $interval = 5
-    $tablesGroupedByName = $info.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
-
     $percent = 0
-
-    while ($true)
-    {
+    while ($true) {
         # Progress handling
         $totalSeconds = (New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds
-        if ($totalSeconds -gt ($lastTotalSeconds + $interval))
-        {
+        if ($totalSeconds -gt ($lastTotalSeconds + $interval)) {
             $lastTotalSeconds = $totalSeconds
             $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
             $percent = (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
@@ -84,44 +63,41 @@
                 [Depth] ASC, [ToProcess] DESC"
         $first = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
-        if ($null -eq $first)
-        {
+        if ($null -eq $first) {
             Write-Progress -Activity "Finding subset" -Completed
             break
         }
+        
 
+        # load node info 
         $tableId = $first.Table
         $color = $first.Color
         $depth = $first.Depth
-        $tableData = $allTablesGrouped["$($tableId)"]
-        
-        $table = $info.Tables | Where-Object { ($_.SchemaName -eq $tableData.Schema) -and ($_.TableName -eq $tableData.TableName)}
-        $schema = $table.SchemaName
-        $tableName = $table.TableName
-
-        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
-
+        $tableData = $tablesGroupedById["$($tableId)"]
+        $schema = $tableData.SchemaName
+        $tableName = $tableData.TableName
+        $table = $info.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
+        $primaryKey = $table.PrimaryKey
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
 
+        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+
         $keys = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
+        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++) {
             $keys = $keys + "Key" + $i + ","
         }
 
         $q = "TRUNCATE TABLE $($slice)"
         $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
 
-        $q = "INSERT INTO  $($slice) " +  "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
+        $q = "INSERT INTO  $($slice) " + "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
         $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
         $cond = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            if ($i -gt 0)
-            {
+        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++) {
+            if ($i -gt 0) {
                 $cond += " and "
             }
 
@@ -129,280 +105,234 @@
         }
 
         # Green/Purple/Red color
-        if (($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple))
-        {
-           foreach ($fk in $table.ForeignKeys)
-           {
-               if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true)
-               {
+        if (($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple)) {
+            foreach ($fk in $table.ForeignKeys) {
+                if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true) {
                     continue
-               }
+                }
 
                 # default new color
-                if ($color -eq [int][Color]::Green)
-                {
+                if ($color -eq [int][Color]::Green) {
                     $newColor = [int][Color]::Green
                 }
-                else
-                {
+                else {
                     $newColor = [int][Color]::Red
                 }
 
-                if ($null -ne $ColorMap)
-                {
-                    $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
-                    $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName)))}
-                    if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-                    {
+                if ($null -ne $ColorMap) {
+                    $items = $ColorMap.Items | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
+                    $items = $items | Where-Object { ($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))) }
+                    if (($null -ne $items) -and ($null -ne $items.ForcedColor)) {
                         $newColor = [int]$items.ForcedColor.Color
                     }
                 }
 
-                $baseTable = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table]
-                $baseTableId = $allTablesGroupedbyName[$baseTable.SchemaName + ", " + $baseTable.TableName].Id
+                $baseTable = $info.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
+                $baseTableId = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table].Id
                 $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
-                $fkTableId = $allTablesGroupedbyName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
-
+                $fkTableId = $fkTable.Id
                 $baseSignature = $structure.Tables[$baseTable]
                 $baseProcessing = $structure.GetProcessingName($baseSignature)
 
-                $primaryKey = $table.PrimaryKey
-
-               #where
-               $columns = ""
-               $i = 0
-               foreach ($fkColumn in $fk.FkColumns)
-               {
-                    if ($i -gt 0)
-                    {
+                #where
+                $columns = ""
+                $i = 0
+                foreach ($fkColumn in $fk.FkColumns) {
+                    if ($i -gt 0) {
                         $columns += " and "
                     }
                     $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                     $i += 1
-               }
-               $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Table] = $($baseTableId) and " + $columns +  ")"
+                }
+                $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($baseProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Table] = $($baseTableId) and " + $columns + ")"
 
-               # from
-               $join = " INNER JOIN $($slice) s ON "
-               $i = 0
-               foreach ($primaryKeyColumn in $primaryKey)
-               {
-                    if ($i -gt 0)
-                    {
+                # from
+                $join = " INNER JOIN $($slice) s ON "
+                $i = 0
+                foreach ($primaryKeyColumn in $primaryKey) {
+                    if ($i -gt 0) {
                         $join += " and "
                     }
 
                     $join += " s.Key" + $i + " = f." + $primaryKeyColumn.Name
                     $i += 1
-               }
-               $from = " FROM " + $schema + "." + $tableName  + " f " + $join
-
-               # select
-               $columns = ""
-               $i = 0
-               foreach ($fkColumn in $fk.FkColumns)
-               {
-                   if ($columns -ne "")
-                   {
-                     $columns += ","
-                   }
-                   $columns = $columns + (Get-ColumnValue -ColumnName $fkColumn.Name -Prefix "f." -DataType $fkColumn.dataType) + " as val$i "
-                   $i += 1
-               }
-
-               $select = "SELECT DISTINCT " + $columns + ", s.Depth"
-               $sql = $select + $from + $where
-
-               $columns = ""
-               for ($i = 0; $i -lt $fk.FkColumns.Count; $i = $i + 1)
-               {
-                    $columns = $columns + "x.val" + $i + ","
-               }
-
-               $fkId = $allFksGrouped[$fk.FkSchema + ", " + $fk.FkTable + ", " +  $fk.Name].Id
-               $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
-               $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-               $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-
-               if ($results.Count -gt 0)
-               {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), $($results.Count),  0, $($tableId), $($depth + 1), GETDATE())"
-                    $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-               }
-            }
-        }
-
-        # Green/Purple/Blue Color
-        if (($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue))
-        {
-           foreach ($referencedByTable in $table.IsReferencedBy)
-           {
-             $fks = $referencedByTable.ForeignKeys | Where-Object {($_.Schema -eq $schema) -and ($_.Table -eq $tableName)}
-             foreach ($fk in $fks)
-             {
-                if ([TableInfo2]::IsIgnored($fk.FkSchema, $fk.FkTable, $ignoredTables) -eq $true)
-                {
-                    continue
                 }
-
-                $top = $null
-                $maxDepth = $null
-                $newColor = $null
-
-                # default new color
-                if ($color -eq [int][Color]::Green)
-                {
-                    if ($FullSearch -eq $true)
-                    {
-                        $newColor = [int][Color]::Green
-                    }
-                    else
-                    {
-                        $newColor = [int][Color]::Yellow
-                    }
-                }
-
-                if ($color -eq [int][Color]::Purple)
-                {
-                    $newColor = [int][Color]::Red
-                }
-
-                if ($color -eq [int][Color]::Blue)
-                {
-                    $newColor = [int][Color]::Blue
-                }
-
-                # forced color from color map
-                if ($null -ne $ColorMap)
-                {
-                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
-                     $items = $items | Where-Object {($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
-
-                     if (($null -ne $items) -and ($null -ne $items.Condition))
-                     {
-                         $top = [int]$items.Condition.Top
-                     }
-
-                     if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.Top -ne -1))
-                     {
-                         $top = [int]$items.Condition.Top
-                     }
-
-                     if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.MaxDepth -ne -1))
-                     {
-                         $maxDepth = [int]$items.Condition.MaxDepth
-                     }
-
-                     if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-                     {
-                         $newColor = [int]$items.ForcedColor.Color
-                     }
-                }
-
-                $fkTable = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable]
-                $fkTableId = $allTablesGroupedbyName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
-
-                $fkSignature = $structure.Tables[$fkTable]
-                $fkProcessing = $structure.GetProcessingName($fkSignature)
-
-                $primaryKey = $referencedByTable.PrimaryKey
-
-                #where
-                $columns = ""
-                $i = 0
-                foreach ($pk in $primaryKey)
-                {
-                     if ($i -gt 0)
-                     {
-                         $columns += " and "
-                     }
-                     $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
-                     $i += 1
-                }
-                $where = " WHERE " + $fk.FkColumns[0].Name +  " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor +  " and p.[Table] = $($fkTableId) and " + $columns +  ")"
-
-                # prevent go-back
-                $where += " AND s.Source <> $($fkTableId)"
-
-                if ($null -ne $maxDepth)
-                {
-                    $where += " AND s.Depth <= $($maxDepth)"
-                }
-
-                # from
-                $join = " INNER JOIN $($slice) s ON "
-                $i = 0
-
-                foreach ($fkColumn in $fk.FkColumns)
-                {
-                    if ($i -gt 0)
-                    {
-                        $join += " and "
-                    }
-
-                    $join += " s.Key" + $i + " = f." + $fkColumn.Name
-                    $i += 1
-                }
-
-                $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName   + " f " + $join
+                $from = " FROM " + $schema + "." + $tableName + " f " + $join
 
                 # select
                 $columns = ""
                 $i = 0
-                foreach ($primaryKeyColumn in $primaryKey)
-                {
-                    if ($columns -ne "")
-                    {
-                        $columns += ", "
+                foreach ($fkColumn in $fk.FkColumns) {
+                    if ($columns -ne "") {
+                        $columns += ","
                     }
-                    $columns = $columns + (Get-ColumnValue -ColumnName $primaryKeyColumn.Name -Prefix "f." -dataType $primaryKeyColumn.dataType) + " as val$i "
+                    $columns = $columns + (Get-ColumnValue -ColumnName $fkColumn.Name -Prefix "f." -DataType $fkColumn.dataType) + " as val$i "
                     $i += 1
                 }
 
-                $topPhrase = " "
-
-                if (($null -ne $top) -and ($top -ne -1))
-                {
-                    $topPhrase = " TOP $($top) "
-                }
-
-                $select = "SELECT DISTINCT " + $topPhrase + $columns + ", s.Depth"
+                $select = "SELECT DISTINCT " + $columns + ", s.Depth"
                 $sql = $select + $from + $where
 
                 $columns = ""
-                for ($i = 0; $i -lt $primaryKey.Count; $i = $i + 1)
-                {
-                     $columns = $columns + "x.val" + $i + ","
+                for ($i = 0; $i -lt $fk.FkColumns.Count; $i = $i + 1) {
+                    $columns = $columns + "x.val" + $i + ","
                 }
 
-                $fkId = $allFksGrouped[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
-                $fkTableId = $allTablesGroupedbyName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
-                $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns  + " " + $newColor +  ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
-
+                $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
+                $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
                 $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-
                 $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-                if ($results.Count -gt 0)
-                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, $($results.Count), 0, $($tableId), $($depth + 1), GETDATE())"
+
+                if ($results.Count -gt 0) {
+                    $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), $($results.Count),  0, $($tableId), $($depth + 1), GETDATE())"
                     $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
                 }
-             }
-           }
+            }
+        }
+
+        # Green/Purple/Blue Color
+        if (($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue)) {
+            foreach ($referencedByTable in $table.IsReferencedBy) {
+                $fks = $referencedByTable.ForeignKeys | Where-Object { ($_.Schema -eq $schema) -and ($_.Table -eq $tableName) }
+                foreach ($fk in $fks) {
+                    if ([TableInfo2]::IsIgnored($fk.FkSchema, $fk.FkTable, $ignoredTables) -eq $true) {
+                        continue
+                    }
+
+                    $top = $null
+                    $maxDepth = $null
+                    $newColor = $null
+
+                    # default new color
+                    if ($color -eq [int][Color]::Green) {
+                        if ($FullSearch -eq $true) {
+                            $newColor = [int][Color]::Green
+                        }
+                        else {
+                            $newColor = [int][Color]::Yellow
+                        }
+                    }
+
+                    if ($color -eq [int][Color]::Purple) {
+                        $newColor = [int][Color]::Red
+                    }
+
+                    if ($color -eq [int][Color]::Blue) {
+                        $newColor = [int][Color]::Blue
+                    }
+
+                    # forced color from color map
+                    if ($null -ne $ColorMap) {
+                        $items = $ColorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+                        $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
+
+                        if (($null -ne $items) -and ($null -ne $items.Condition)) {
+                            $top = [int]$items.Condition.Top
+                        }
+
+                        if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.Top -ne -1)) {
+                            $top = [int]$items.Condition.Top
+                        }
+
+                        if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.MaxDepth -ne -1)) {
+                            $maxDepth = [int]$items.Condition.MaxDepth
+                        }
+
+                        if (($null -ne $items) -and ($null -ne $items.ForcedColor)) {
+                            $newColor = [int]$items.ForcedColor.Color
+                        }
+                    }
+
+                    $fkTable =  $info.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+                    $fkTableId = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable].Id
+                    $fkSignature = $structure.Tables[$fkTable]
+                    $fkProcessing = $structure.GetProcessingName($fkSignature)
+                    $primaryKey = $referencedByTable.PrimaryKey
+
+                    #where
+                    $columns = ""
+                    $i = 0
+                    foreach ($pk in $primaryKey) {
+                        if ($i -gt 0) {
+                            $columns += " and "
+                        }
+                        $columns = $columns + " f." + $pk.Name + " = p.Key" + $i
+                        $i += 1
+                    }
+                    $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $($fkProcessing) p WHERE p.[Color] = " + $newColor + " and p.[Table] = $($fkTableId) and " + $columns + ")"
+
+                    # prevent go-back
+                    $where += " AND s.Source <> $($fkTableId)"
+
+                    if ($null -ne $maxDepth) {
+                        $where += " AND s.Depth <= $($maxDepth)"
+                    }
+
+                    # from
+                    $join = " INNER JOIN $($slice) s ON "
+                    $i = 0
+
+                    foreach ($fkColumn in $fk.FkColumns) {
+                        if ($i -gt 0) {
+                            $join += " and "
+                        }
+
+                        $join += " s.Key" + $i + " = f." + $fkColumn.Name
+                        $i += 1
+                    }
+
+                    $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName + " f " + $join
+
+                    # select
+                    $columns = ""
+                    $i = 0
+                    foreach ($primaryKeyColumn in $primaryKey) {
+                        if ($columns -ne "") {
+                            $columns += ", "
+                        }
+                        $columns = $columns + (Get-ColumnValue -ColumnName $primaryKeyColumn.Name -Prefix "f." -dataType $primaryKeyColumn.dataType) + " as val$i "
+                        $i += 1
+                    }
+
+                    $topPhrase = " "
+
+                    if (($null -ne $top) -and ($top -ne -1)) {
+                        $topPhrase = " TOP $($top) "
+                    }
+
+                    $select = "SELECT DISTINCT " + $topPhrase + $columns + ", s.Depth"
+                    $sql = $select + $from + $where
+
+                    $columns = ""
+                    for ($i = 0; $i -lt $primaryKey.Count; $i = $i + 1) {
+                        $columns = $columns + "x.val" + $i + ","
+                    }
+
+                    $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
+                    $fkTableId = $tablesGroupedByName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
+                    $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
+
+                    $insert = $insert + " SELECT @@ROWCOUNT AS Count"
+
+                    $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+                    if ($results.Count -gt 0) {
+                        $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, $($results.Count), 0, $($tableId), $($depth + 1), GETDATE())"
+                        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+                    }
+                }
+            }
         }
 
         # Yellow -> Split into Red and Green
-        if ($color -eq [int][Color]::Yellow)
-        {
+        if ($color -eq [int][Color]::Yellow) {
             $columns = ""
-            for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-            {
+            for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++) {
                 $columns = $columns + "s.Key" + $i + ","
             }
 
             # insert
-            $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red  + "  and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $processing " +  "SELECT $tableId, " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO $processing " + "SELECT $tableId, " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
             $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
@@ -410,8 +340,8 @@
             $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # insert
-            $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green  + " and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
-            $q = "INSERT INTO $processing " +  "SELECT $tableId, " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $slice s" + $where
+            $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + " and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+            $q = "INSERT INTO $processing " + "SELECT $tableId, " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $slice s" + $where
             $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
 
             # update opeations
