@@ -3,10 +3,10 @@ function Get-SavedSubsets
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -17,8 +17,8 @@ function Get-SavedSubsets
     foreach ($row in $rows)
     {
         $result += [pscustomobject]@{
-            Guid = $row.Guid
-            Name = $row.Name
+            Guid    = $row.Guid
+            Name    = $row.Name
             Created = $row.Created
         }
     }

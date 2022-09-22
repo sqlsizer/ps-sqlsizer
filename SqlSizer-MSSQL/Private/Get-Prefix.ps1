@@ -3,7 +3,7 @@ function Get-Prefix
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Value
     )
 

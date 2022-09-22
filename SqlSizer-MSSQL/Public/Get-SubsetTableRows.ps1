@@ -3,25 +3,25 @@ function Get-SubsetTableRows
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SchemaName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TableName,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [bool]$AllColumns = $false,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 

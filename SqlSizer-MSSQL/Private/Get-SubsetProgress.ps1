@@ -3,10 +3,10 @@ function Get-SubsetProgress
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 

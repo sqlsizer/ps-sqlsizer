@@ -4,7 +4,7 @@ function Get-LogicalReadsValue
     [outputtype([System.Int32])]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [AllowNull()]
         [AllowEmptyString()]
         [string[]]$Message

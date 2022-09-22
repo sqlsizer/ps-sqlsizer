@@ -5,30 +5,30 @@
     [outputtype([System.Object])]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Sql,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [string]$Silent = $false,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [bool]$Statistics = $false
     )
 
     try
     {
         $params = @{
-            Query = $Sql
-            ServerInstance = $ConnectionInfo.Server
-            Database = $Database
-            QueryTimeout = 6000
-            Verbose = $true
+            Query             = $Sql
+            ServerInstance    = $ConnectionInfo.Server
+            Database          = $Database
+            QueryTimeout      = 6000
+            Verbose           = $true
             EncryptConnection = $ConnectionInfo.EncryptConnection
         }
 

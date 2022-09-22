@@ -3,34 +3,34 @@ function New-DataTableFromSubsetTable
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$NewSchemaName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$NewTableName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SchemaName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TableName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [bool]$CopyData,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     $null = New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
-                                -ViewSchemaName "SqlSizer" -ViewName "Result_$($SchemaName)_$($TableName)" `
-                                -CopyData $CopyData -ConnectionInfo $ConnectionInfo
+        -ViewSchemaName "SqlSizer" -ViewName "Result_$($SchemaName)_$($TableName)" `
+        -CopyData $CopyData -ConnectionInfo $ConnectionInfo
 
     # setup primary key
     foreach ($table in $DatabaseInfo.Tables)

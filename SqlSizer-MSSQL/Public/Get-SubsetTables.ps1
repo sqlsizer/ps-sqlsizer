@@ -3,16 +3,16 @@ function Get-SubsetTables
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [boolean]$Negation = $false,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -20,11 +20,11 @@ function Get-SubsetTables
 
     if ($Negation -eq $false)
     {
-        return $tables | Where-Object {$_.RowCount -gt 0}
+        return $tables | Where-Object { $_.RowCount -gt 0 }
     }
     else
     {
-        return $tables | Where-Object {$_.RowCount -eq 0}
+        return $tables | Where-Object { $_.RowCount -eq 0 }
     }
 }
 # SIG # Begin signature block

@@ -3,16 +3,16 @@ function Find-ReachableTables
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -22,7 +22,7 @@ function Find-ReachableTables
     $toReturn = @()
     foreach ($table in $info.Tables)
     {
-        $unreachableTable = $unreachable | Where-Object {($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName)}
+        $unreachableTable = $unreachable | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
         $isUnreachable = $null -ne $unreachableTable
 
         if ($isUnreachable -eq $false)

@@ -1,13 +1,13 @@
 ﻿function Get-DatabaseInfo
 {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [bool]$MeasureSize,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -22,15 +22,15 @@
 	END as [is_historic],
 	t.table_name as [history_owner],
 	t.[schema] as [history_owner_schema]
-FROM INFORMATION_SCHEMA.TABLES tables
-LEFT JOIN 
+    FROM INFORMATION_SCHEMA.TABLES tables
+    LEFT JOIN 
 	(	SELECT t.name as table_name, OBJECT_NAME(history_table_id) as history_table_name, s.[name] as [schema]
 		FROM sys.tables t
 			INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
 		WHERE OBJECT_NAME(history_table_id) IS NOT NULL
 	) t ON tables.TABLE_NAME = t.history_table_name AND tables.TABLE_SCHEMA = t.[schema]
-WHERE tables.TABLE_TYPE = 'BASE TABLE'
-ORDER BY [schema], [table]"
+    WHERE tables.TABLE_TYPE = 'BASE TABLE'
+    ORDER BY [schema], [table]"
 
     $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $result = New-Object -TypeName DatabaseInfo
@@ -42,13 +42,13 @@ ORDER BY [schema], [table]"
     c.DATA_TYPE [dataType],
 	c.CHARACTER_MAXIMUM_LENGTH [length],
 	row_number() over(PARTITION BY c.TABLE_SCHEMA, c.TABLE_NAME order by c.ORDINAL_POSITION) as [position]
-FROM	
+    FROM
 	INFORMATION_SCHEMA.COLUMNS c 
 	INNER JOIN 	INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cc ON c.COLUMN_NAME = cc.COLUMN_NAME AND c.TABLE_NAME = cc.TABLE_NAME AND c.TABLE_SCHEMA = cc.TABLE_SCHEMA
 	INNER JOIN  INFORMATION_SCHEMA.TABLE_CONSTRAINTS t ON t.TABLE_NAME = cc.TABLE_NAME AND t.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
-WHERE
+    WHERE
 	t.CONSTRAINT_TYPE = 'PRIMARY KEY'
-ORDER BY 
+    ORDER BY 
 	c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
 
     $primaryKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -76,7 +76,7 @@ ORDER BY
 			THEN 1
 			ELSE 0
 	END as [isGenerated]
-FROM 
+    FROM 
     INFORMATION_SCHEMA.COLUMNS c
 	LEFT JOIN 
 		(SELECT 1 as [isComputed], c.[definition], s.name as [schema], o.name as [table], c.[name] as [column]
@@ -90,7 +90,7 @@ FROM
 		INNER JOIN sys.objects o ON o.object_id = c.object_id
 		INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed2 
 		ON c.TABLE_SCHEMA = computed2.[schema] and c.TABLE_NAME = computed2.[table] and c.COLUMN_NAME = computed2.[column]
-ORDER BY 
+    ORDER BY 
 	c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
 
     $columnsRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -109,51 +109,51 @@ ORDER BY
 	ROW_NUMBER() OVER(PARTITION BY [objects].name ORDER BY [columns2].column_id) as [column_position],
 	[rules].DELETE_RULE AS [delete_rule],
 	[rules].UPDATE_RULE AS [update_rule]
-FROM 
+    FROM 
     sys.foreign_key_columns [fk]
-INNER JOIN sys.objects [objects]
+    INNER JOIN sys.objects [objects]
     ON [objects].object_id = [fk].constraint_object_id
-INNER JOIN sys.tables [tables]
+    INNER JOIN sys.tables [tables]
     ON [tables].object_id = [fk].parent_object_id
-INNER JOIN sys.schemas [schemas]
+    INNER JOIN sys.schemas [schemas]
     ON [tables].schema_id = [schemas].schema_id
-INNER JOIN sys.columns [columns]
+    INNER JOIN sys.columns [columns]
     ON [columns].column_id = [fk].parent_column_id AND [columns].object_id = [tables].object_id
-INNER JOIN sys.types [columnsT] 
+    INNER JOIN sys.types [columnsT] 
 	ON [columnsT].user_type_id = [columns].user_type_id
-INNER JOIN sys.tables [tables2]
+    INNER JOIN sys.tables [tables2]
     ON [tables2].object_id = [fk].referenced_object_id
-INNER JOIN sys.schemas [schemas2]
+    INNER JOIN sys.schemas [schemas2]
     ON [tables2].schema_id = [schemas2].schema_id
-INNER JOIN sys.columns [columns2]
+    INNER JOIN sys.columns [columns2]
     ON [columns2].column_id = [fk].referenced_column_id AND [columns2].object_id = [tables2].object_id
-INNER JOIN 	information_schema.REFERENTIAL_CONSTRAINTS [rules]
+    INNER JOIN 	information_schema.REFERENTIAL_CONSTRAINTS [rules]
 	ON [rules].CONSTRAINT_NAME = [objects].name and [rules].CONSTRAINT_SCHEMA = [schemas].name
-ORDER BY 
- [fk_schema], [fk_table], [column_position]"
+    ORDER BY 
+    [fk_schema], [fk_table], [column_position]"
 
     $foreignKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $foreignKeyRowsGrouped = $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
 
     $sql = "SELECT DISTINCT
 	i.[name] as [index], [schemas].[name] as [schema], t.[name] as [table], c.[name] as [column]
-FROM 
+    FROM
 	sys.objects t
-INNER JOIN sys.indexes i 
+    INNER JOIN sys.indexes i 
 	ON [t].object_id = [i].object_id
-INNER JOIN sys.objects [objects]
+    INNER JOIN sys.objects [objects]
     ON [objects].object_id = i.object_id
-INNER JOIN sys.tables [tables]
+    INNER JOIN sys.tables [tables]
     ON [tables].object_id = [objects].object_id
-INNER JOIN sys.schemas [schemas]
+    INNER JOIN sys.schemas [schemas]
     ON [tables].schema_id = [schemas].schema_id
-INNER JOIN sys.index_columns ic
+    INNER JOIN sys.index_columns ic
 	ON ic.object_id = i.object_id and ic.index_id = i.index_id
-INNER JOIN sys.columns c 
+    INNER JOIN sys.columns c 
 	ON c.object_id = ic.object_id and c.column_id = ic.column_id
-WHERE
+    WHERE
 	i.is_primary_key = 0 and [schemas].[name] not like 'SqlSizer%'
-ORDER BY 
+    ORDER BY 
 	[schemas].[name], t.[name]"
 
     $indexesRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -191,7 +191,7 @@ ORDER BY
     trig.[Name] as [TriggerName],
     s.name as [SchemaName],
 	t.name as [TableName]
-FROM
+    FROM
 	sys.triggers trig
 	INNER JOIN sys.tables t ON t.object_id = trig.parent_id
 	INNER JOIN sys.schemas s ON t.schema_id = s.schema_id"
@@ -202,9 +202,9 @@ FROM
     $sql = "SELECT 
     TABLE_SCHEMA as [schema],
     TABLE_NAME as [view]
-FROM 
+    FROM 
     INFORMATION_SCHEMA.VIEWS
-ORDER BY 
+    ORDER BY 
 	TABLE_SCHEMA"
     
     $viewsInfoRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

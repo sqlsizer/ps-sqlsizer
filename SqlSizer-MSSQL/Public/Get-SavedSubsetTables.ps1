@@ -3,13 +3,13 @@ function Get-SavedSubsetTables
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SubsetGuid,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -24,11 +24,11 @@ function Get-SavedSubsetTables
     foreach ($row in $rows)
     {
         $tables += [pscustomobject] @{
-            TableID = $row.TableId
+            TableID        = $row.TableId
             PrimaryKeySize = $row.PrimaryKeySize
-            SchemaName = $row.SchemaName
-            TableName = $row.TableName
-            RowCount = $row.RowCount
+            SchemaName     = $row.SchemaName
+            TableName      = $row.TableName
+            RowCount       = $row.RowCount
         }
     }
     

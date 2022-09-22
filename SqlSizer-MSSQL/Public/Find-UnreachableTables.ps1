@@ -3,19 +3,19 @@ function Find-UnreachableTables
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [ColorMap]$ColorMap = $null,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -33,7 +33,7 @@ function Find-UnreachableTables
         $item.TableName = $query.Table
         $item.Color = $query.Color
 
-       $null = $processingQueue.Enqueue($item)
+        $null = $processingQueue.Enqueue($item)
     }
 
     while ($true)
@@ -51,7 +51,7 @@ function Find-UnreachableTables
             continue
         }
 
-        $table = $info.Tables.Where(({($_.TableName -eq $item.TableName) -and ($_.SchemaName -eq $item.SchemaName)}))[0]
+        $table = $info.Tables.Where(({ ($_.TableName -eq $item.TableName) -and ($_.SchemaName -eq $item.SchemaName) }))[0]
 
         if ($item.Color -eq [Color]::Yellow)
         {
@@ -79,12 +79,12 @@ function Find-UnreachableTables
                 $newColor = [Color]::Red
                 if ($null -ne $ColorMap)
                 {
-                     $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
-                     $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName)))}
-                     if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-                     {
-                         $newColor = [int]$items.ForcedColor.Color
-                     }
+                    $items = $ColorMap.Items | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
+                    $items = $items | Where-Object { ($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))) }
+                    if (($null -ne $items) -and ($null -ne $items.ForcedColor))
+                    {
+                        $newColor = [int]$items.ForcedColor.Color
+                    }
                 }
 
                 $newItem.Color = $newColor
@@ -96,7 +96,7 @@ function Find-UnreachableTables
         {
             foreach ($referencedByTable in $table.IsReferencedBy)
             {
-                $fks = $referencedByTable.ForeignKeys | Where-Object {($_.Schema -eq $item.SchemaName) -and ($_.Table -eq $item.TableName)}
+                $fks = $referencedByTable.ForeignKeys | Where-Object { ($_.Schema -eq $item.SchemaName) -and ($_.Table -eq $item.TableName) }
                 foreach ($fk in $fks)
                 {
                     $newItem = New-Object TableInfo2WithColor
@@ -120,13 +120,13 @@ function Find-UnreachableTables
                     # forced color from color map
                     if ($null -ne $ColorMap)
                     {
-                         $items = $ColorMap.Items | Where-Object {($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable)}
-                         $items = $items | Where-Object {($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName)))}
+                        $items = $ColorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+                        $items = $items | Where-Object { ($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
 
-                         if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-                         {
-                             $newItem.Color = [int]$items.ForcedColor.Color
-                         }
+                        if (($null -ne $items) -and ($null -ne $items.ForcedColor))
+                        {
+                            $newItem.Color = [int]$items.ForcedColor.Color
+                        }
                     }
 
                     $null = $processingQueue.Enqueue($newItem)
@@ -152,7 +152,7 @@ function Find-UnreachableTables
             $item.TableName = $table.TableName
 
             $toReturn += $item
-       }
+        }
     }
 
     return $toReturn

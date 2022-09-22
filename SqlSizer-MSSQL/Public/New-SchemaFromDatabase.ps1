@@ -3,25 +3,25 @@ function New-SchemaFromDatabase
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SourceDatabase,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TargetDatabase,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SchemaName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$NewSchemaName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [bool]$CopyData,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -46,7 +46,7 @@ function New-SchemaFromDatabase
         if ($table.SchemaName -eq $SchemaName)
         {
             $null = New-DataTableClone -SourceDatabase $SourceDatabase -TargetDatabase $TargetDatabase -DatabaseInfo $DatabaseInfo -SchemaName $SchemaName -TableName $table.TableName `
-                               -CopyData $CopyData -NewSchemaName $NewSchemaName -NewTableName $table.TableName -ConnectionInfo $ConnectionInfo
+                -CopyData $CopyData -NewSchemaName $NewSchemaName -NewTableName $table.TableName -ConnectionInfo $ConnectionInfo
         }
         $i = $i + 1
     }

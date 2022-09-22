@@ -3,13 +3,13 @@ function New-DatabaseSchemaJson
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -30,14 +30,14 @@ function New-DatabaseSchemaJson
     foreach ($table in $DatabaseInfo.Tables)
     {    
         $i += 1
-        $tableSize += @{Table=$table; Size = $table.Statistics.Rows}
+        $tableSize += @{Table = $table; Size = $table.Statistics.Rows }
     }
 
     $sorted = $tableSize | Sort-Object -Property Size
     $sizes = New-Object "System.Collections.Generic.Dictionary[[string], [int]]"
     foreach ($table in $DatabaseInfo.Tables)
     {    
-        $t = $sorted | Where-Object {$_.Table -eq $table}
+        $t = $sorted | Where-Object { $_.Table -eq $table }
         $index = $sorted.IndexOf($t)
         $sizes[$table.SchemaName + $table.TableName] = $index
     }
@@ -69,7 +69,7 @@ function New-DatabaseSchemaJson
         foreach ($fk in $table.ForeignKeys)
         {
             $j += 1
-            $tableBase = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table)}
+            $tableBase = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
             $tableIndex = $DatabaseInfo.Tables.IndexOf($tableBase)
 
             $within = "false"

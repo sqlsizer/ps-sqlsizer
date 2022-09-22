@@ -3,13 +3,13 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -27,24 +27,24 @@
 
         if ($table.HasHistory -eq $true)
         {
-            $historyTable = $info.Tables | Where-Object { ($_.IsHistoric -eq $true) -and ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName)}
+            $historyTable = $info.Tables | Where-Object { ($_.IsHistoric -eq $true) -and ($_.HistoryOwner -eq $table.TableName) -and ($_.HistoryOwnerSchema -eq $table.SchemaName) }
 
-            $sql = "ALTER TABLE " + $table.SchemaName + ".[" +  $table.TableName + "] SET ( SYSTEM_VERSIONING = OFF )"
+            $sql = "ALTER TABLE " + $table.SchemaName + ".[" + $table.TableName + "] SET ( SYSTEM_VERSIONING = OFF )"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
 
-            $sql = "DELETE FROM " +  $table.SchemaName + "." + $table.TableName
+            $sql = "DELETE FROM " + $table.SchemaName + "." + $table.TableName
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "DELETE FROM " +  $historyTable.SchemaName + "." + $historyTable.TableName
+            $sql = "DELETE FROM " + $historyTable.SchemaName + "." + $historyTable.TableName
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-            $sql = "ALTER TABLE " + $table.SchemaName + ".[" +  $table.TableName + "] SET ( SYSTEM_VERSIONING = ON  (HISTORY_TABLE = " + $historyTable.SchemaName + ".[" + $historyTable.TableName +  "] ))"
+            $sql = "ALTER TABLE " + $table.SchemaName + ".[" + $table.TableName + "] SET ( SYSTEM_VERSIONING = ON  (HISTORY_TABLE = " + $historyTable.SchemaName + ".[" + $historyTable.TableName + "] ))"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
         else
         {
-            $sql = "DELETE FROM " +  $table.SchemaName + "." + $table.TableName
+            $sql = "DELETE FROM " + $table.SchemaName + "." + $table.TableName
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }

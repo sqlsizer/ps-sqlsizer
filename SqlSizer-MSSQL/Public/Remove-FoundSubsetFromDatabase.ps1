@@ -3,16 +3,16 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
         
-        [Parameter(Mandatory=$false)]
-        [int]$Step=100000,
+        [Parameter(Mandatory = $false)]
+        [int]$Step = 100000,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -24,7 +24,7 @@
             [DatabaseInfo]$DatabaseInfo
         )
 
-        $table = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName)}
+        $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName) }
         $primaryKey = $table.PrimaryKey
         $where = " WHERE EXISTS(SELECT * FROM SqlSizer.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
 
@@ -70,7 +70,7 @@
 
         do
         {
-            $sql = "DELETE $top t FROM " + $schema + ".[" +  $tableName + "] t " + $where + " SELECT @@ROWCOUNT as Removed"
+            $sql = "DELETE $top t FROM " + $schema + ".[" + $tableName + "] t " + $where + " SELECT @@ROWCOUNT as Removed"
             $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
         while ($result.Removed -gt 0)

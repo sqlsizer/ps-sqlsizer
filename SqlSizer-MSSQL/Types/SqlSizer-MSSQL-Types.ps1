@@ -82,7 +82,8 @@ class TableInfo2
         return $result
     }
 
-    [string] ToString() {
+    [string] ToString()
+    {
         return "$($this.SchemaName).$($this.TableName)"
     }
 }
@@ -117,7 +118,8 @@ class TableStatistics
     [long]$IndexSize
     [long]$UnusedKB
 
-    [string] ToString() {
+    [string] ToString()
+    {
         return "$($this.Rows) rows  => [$($this.DataKB) used of $($this.ReservedKB) reserved KB, $($this.IndexSize) index KB]"
     }
 }
@@ -152,7 +154,8 @@ class TableInfo
 
     [Index[]]$Indexes
 
-    [string] ToString() {
+    [string] ToString()
+    {
         return "$($this.SchemaName).$($this.TableName)"
     }
 }
@@ -173,7 +176,8 @@ class ColumnInfo
     [bool]$IsGenerated
     [string]$ComputedDefinition
 
-    [string] ToString() {
+    [string] ToString()
+    {
         return $this.Name;
     }
 }
@@ -229,7 +233,8 @@ class Structure
         $this.Signatures = New-Object "System.Collections.Generic.Dictionary[[string], ColumnInfo[]]"
         $this.Tables = New-Object "System.Collections.Generic.Dictionary[[TableInfo], [string]]"
 
-        foreach ($table in $this.DatabaseInfo.Tables) {
+        foreach ($table in $this.DatabaseInfo.Tables)
+        {
 
             if ($table.PrimaryKey.Count -eq 0)
             {
@@ -246,15 +251,18 @@ class Structure
         }
     }
 
-    [string] GetProcessingName([string] $Signature) {
+    [string] GetProcessingName([string] $Signature)
+    {
         return "SqlSizer.Processing" + $Signature
     }
 
-    [string] GetSliceName([string] $Signature) {
+    [string] GetSliceName([string] $Signature)
+    {
         return "SqlSizer.Slice" + $Signature
     }
 
-    [string] GetTablePrimaryKeySignature([TableInfo]$Table) {
+    [string] GetTablePrimaryKeySignature([TableInfo]$Table)
+    {
         $result = ""
         foreach ($pkColumn in $Table.PrimaryKey)
         {

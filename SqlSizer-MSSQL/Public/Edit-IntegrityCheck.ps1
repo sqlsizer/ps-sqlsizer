@@ -3,42 +3,42 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SchemaName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TableName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$FkName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ForeignKeyRule]$DeleteRule,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ForeignKeyRule]$UpdateRule,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
     Write-Progress -Activity "Editing FK $FkName on $SchemaName.$TableName" -PercentComplete 0
 
     # get info about fk
-    $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName)}
-    $fk = $table.ForeignKeys | Where-Object { ($_.Name -eq $FkName)}
+    $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName) }
+    $fk = $table.ForeignKeys | Where-Object { ($_.Name -eq $FkName) }
 
     # Drop foreign key
     $sql = "ALTER TABLE " + $SchemaName + "." + $TableName + " DROP CONSTRAINT " + $FkName
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     # Recreate it
-    $sql = "ALTER TABLE " + $SchemaName + "." + $TableName +  " WITH CHECK ADD CONSTRAINT " +  $FkName 
+    $sql = "ALTER TABLE " + $SchemaName + "." + $TableName + " WITH CHECK ADD CONSTRAINT " + $FkName 
 
     $fkNames = @()
     foreach ($column in $fk.FkColumns)
@@ -52,9 +52,10 @@
     {
         $names += $column.Name
     }
-    $sql += " REFERENCES $($fk.Schema).$($fk.Table) (" +  [string]::Join(',', $names) + ")"
+    $sql += " REFERENCES $($fk.Schema).$($fk.Table) (" + [string]::Join(',', $names) + ")"
 
-    try {
+    try
+    {
         $rules = ""
         if ($DeleteRule -eq [ForeignKeyRule]::Cascade)
         {
@@ -87,7 +88,8 @@
         }
         $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo    
     }
-    catch {
+    catch
+    {
         $rules = ""
         if ($fk.DeleteRule -eq [ForeignKeyRule]::Cascade)
         {

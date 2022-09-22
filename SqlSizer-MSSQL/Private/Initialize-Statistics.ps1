@@ -1,4 +1,5 @@
-﻿function Initialize-Statistics {
+﻿function Initialize-Statistics
+{
     [cmdletbinding()]
     param
     (
@@ -24,11 +25,14 @@
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     # initialize operations
-    foreach ($table in $info.Tables) {
-        if ($table.PrimaryKey.Length -eq 0) {
+    foreach ($table in $info.Tables)
+    {
+        if ($table.PrimaryKey.Length -eq 0)
+        {
             continue
         }
-        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory')) {
+        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+        {
             continue
         }
         $signature = $structure.Tables[$table]

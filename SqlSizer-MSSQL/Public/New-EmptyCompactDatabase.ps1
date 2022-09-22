@@ -3,16 +3,16 @@ function New-EmptyCompactDatabase
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$NewDatabase,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -31,7 +31,7 @@ function New-EmptyCompactDatabase
     foreach ($table in $DatabaseInfo.Tables)
     {
         New-DataTableClone -SourceDatabase $Database -TargetDatabase $NewDatabase -DatabaseInfo $DatabaseInfo -SchemaName $table.SchemaName -TableName $table.TableName `
-                            -CopyData $false -NewSchemaName $table.SchemaName -NewTableName $table.TableName -ConnectionInfo $ConnectionInfo
+            -CopyData $false -NewSchemaName $table.SchemaName -NewTableName $table.TableName -ConnectionInfo $ConnectionInfo
     }
 
     Copy-Constraints -SourceDatabase $Database -TargetDatabase $NewDatabase -ConnectionInfo $ConnectionInfo

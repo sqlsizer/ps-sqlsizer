@@ -3,25 +3,25 @@ function New-TableCompare
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SchemaName1,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TableName1,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SchemaName2,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TableName2,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -66,7 +66,7 @@ function New-TableCompare
     {
         $primary += "t." + $primaryColumn
         $cond += "t." + $primaryColumn + " = " + "t2." + $primaryColumn
-        $cond2 += "t2." + $primaryColumn  + " IS NULL "
+        $cond2 += "t2." + $primaryColumn + " IS NULL "
     }
 
     foreach ($column in $table1.Columns)

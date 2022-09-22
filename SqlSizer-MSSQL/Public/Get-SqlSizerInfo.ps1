@@ -3,10 +3,10 @@ function Get-SqlSizerInfo
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -26,23 +26,23 @@ function Get-SqlSizerInfo
 
     $tables = $tablesRows | ForEach-Object {
         [pscustomobject] @{
-            Id = $_.Id
+            Id         = $_.Id
             SchemaName = $_.Schema
-            TableName = $_.TableName
+            TableName  = $_.TableName
         }
     }
 
     $fks = $fkRows  | ForEach-Object {
         [pscustomobject] @{
-            Id = $_.Id
-            Name = $_.Name
+            Id           = $_.Id
+            Name         = $_.Name
             FkSchemaName = $_.Schema
-            FkTableName = $_.TableName
+            FkTableName  = $_.TableName
         }
     }
 
     $result = [pscustomobject]@{
-        Tables = $tables
+        Tables      = $tables
         ForeignKeys = $fks
     }
     

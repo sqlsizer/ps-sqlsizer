@@ -3,16 +3,16 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -33,9 +33,9 @@
         {
             $top = " TOP " + $query.Top;
         }
-        $table = $info.Tables | Where-Object {($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table)}
+        $table = $info.Tables | Where-Object { ($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table) }
         $procesing = $Structure.GetProcessingName($structure.Tables[$table])
-        $tmp = "INSERT INTO $($procesing) SELECT " + $top  + " $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id), "
+        $tmp = "INSERT INTO $($procesing) SELECT " + $top + " $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id), "
 
         $i = 0
         foreach ($column in $query.KeyColumns)

@@ -54,7 +54,7 @@ function Get-TableSelect
 
             if ($AddAs)
             {
-                $select +=  " as [$columnName]"
+                $select += " as [$columnName]"
             }
 
             $j += 1

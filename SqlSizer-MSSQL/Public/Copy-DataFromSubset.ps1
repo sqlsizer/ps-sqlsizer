@@ -3,19 +3,19 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Source,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Destination,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -41,10 +41,10 @@
         $tableColumns = Get-TableSelect -TableInfo $tableInfo -Conversion $false -IgnoredTables $IgnoredTables -Prefix $null -AddAs $false -SkipGenerated $true
         $tableSelect = Get-TableSelect -TableInfo $tableInfo -Conversion $true -IgnoredTables $IgnoredTables -Prefix $null -AddAs $true -SkipGenerated $true
 
-        $sql = "INSERT INTO " +  $schema + ".[" +  $tableName + "] ($tableColumns) SELECT $tableSelect FROM " + $Source + ".SqlSizer.Result_" + $schema + "_" + $tableName
+        $sql = "INSERT INTO " + $schema + ".[" + $tableName + "] ($tableColumns) SELECT $tableSelect FROM " + $Source + ".SqlSizer.Result_" + $schema + "_" + $tableName
         if ($isIdentity)
         {
-            $sql = "SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] ON " + $sql + " SET IDENTITY_INSERT " + $schema + ".[" +  $tableName + "] OFF"
+            $sql = "SET IDENTITY_INSERT " + $schema + ".[" + $tableName + "] ON " + $sql + " SET IDENTITY_INSERT " + $schema + ".[" + $tableName + "] OFF"
         }
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Destination -ConnectionInfo $ConnectionInfo
     }

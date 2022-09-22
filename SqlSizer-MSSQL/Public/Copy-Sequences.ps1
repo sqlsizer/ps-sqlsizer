@@ -3,13 +3,13 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SourceDatabase,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TargetDatabase,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -21,10 +21,10 @@
 	seq.increment,
 	ISNULL(seq.maximum_value, 2147483647) as maximum_value, -- todo 
 	t.[name] as [type]
-FROM 
-    sys.sequences seq
-INNER JOIN 
-    sys.types t ON seq.system_type_id = t.system_type_id"
+    FROM 
+        sys.sequences seq
+    INNER JOIN 
+        sys.types t ON seq.system_type_id = t.system_type_id"
     
     $sequencesRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 

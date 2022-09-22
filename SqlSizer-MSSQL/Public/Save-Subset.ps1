@@ -3,16 +3,16 @@ function Save-Subset
     [cmdletbinding()]
     param
     ( 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SubsetName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -49,7 +49,7 @@ function Save-Subset
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
 
-        $tableInfo = $info.Tables | Where-Object {($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName)}
+        $tableInfo = $info.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
         $keys = @()
         $columns = @()
         $i = 0;

@@ -3,19 +3,19 @@ function Install-ForeignKeyIndexes
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [bool]$OnlyMissing = $true,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [DatabaseInfo]$DatabaseInfo = $null,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -26,7 +26,7 @@ function Install-ForeignKeyIndexes
 
     foreach ($table in $reachableTables)
     {
-        $tableInfo = $tablesGrouped[$table.SchemaName + ", "  + $table.TableName]
+        $tableInfo = $tablesGrouped[$table.SchemaName + ", " + $table.TableName]
 
         foreach ($fk in $tableInfo.ForeignKeys)
         {
@@ -35,7 +35,7 @@ function Install-ForeignKeyIndexes
 
             foreach ($fkColumn in $fk.FkColumns)
             {
-                $pk = $tableInfo.PrimaryKey | Where-Object {$_.Name -eq $fkColumn.Name}
+                $pk = $tableInfo.PrimaryKey | Where-Object { $_.Name -eq $fkColumn.Name }
 
                 if ($null -ne $pk)
                 {
@@ -44,7 +44,7 @@ function Install-ForeignKeyIndexes
 
                 if ($OnlyMissing -eq $true)
                 {
-                    $index = $tableInfo.Indexes | Where-Object {$_.Columns.Contains($fkColumn.Name)}
+                    $index = $tableInfo.Indexes | Where-Object { $_.Columns.Contains($fkColumn.Name) }
 
                     if ($null -ne $index)
                     {

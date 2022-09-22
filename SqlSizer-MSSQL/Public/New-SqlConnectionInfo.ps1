@@ -3,7 +3,7 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Server,
         [string]$Username,
         [SecureString]$Password,
@@ -25,7 +25,8 @@
     {
         $connection.AccessToken = $AccessToken
     }
-    else {
+    else
+    {
         $connection.AccessToken = $null
     }
 

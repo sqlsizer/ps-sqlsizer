@@ -3,19 +3,19 @@ function Compare-SavedSubsets
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SourceDatabase,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TargetDatabase,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SourceSubsetGuid,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TargetSubsetGuid,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
@@ -68,8 +68,8 @@ function Compare-SavedSubsets
 
                 $changed += [pscustomobject] @{
                     SchemaName = $sourceTable.SchemaName
-                    TableName = $sourceTable.TableName
-                    Key = $key
+                    TableName  = $sourceTable.TableName
+                    Key        = $key
                 }
             }
 
@@ -95,8 +95,8 @@ function Compare-SavedSubsets
 
                 $removed += [pscustomobject] @{
                     SchemaName = $sourceTable.SchemaName
-                    TableName = $sourceTable.TableName
-                    Key = $key
+                    TableName  = $sourceTable.TableName
+                    Key        = $key
                 }
             }
         }
@@ -117,8 +117,8 @@ function Compare-SavedSubsets
 
                 $removed += [pscustomobject] @{
                     SchemaName = $sourceTable.SchemaName
-                    TableName = $sourceTable.TableName
-                    Key = $key
+                    TableName  = $sourceTable.TableName
+                    Key        = $key
                 }
             }
         }
@@ -164,8 +164,8 @@ function Compare-SavedSubsets
 
                 $added += [pscustomobject] @{
                     SchemaName = $sourceTable.SchemaName
-                    TableName = $sourceTable.TableName
-                    Key = $key
+                    TableName  = $sourceTable.TableName
+                    Key        = $key
                 }   
             }
         }
@@ -187,8 +187,8 @@ function Compare-SavedSubsets
 
                 $added += [pscustomobject] @{
                     SchemaName = $sourceTable.SchemaName
-                    TableName = $sourceTable.TableName
-                    Key = $key
+                    TableName  = $sourceTable.TableName
+                    Key        = $key
                 }   
             }
         }
@@ -196,7 +196,7 @@ function Compare-SavedSubsets
 
     $result = [pscustomobject]@{
         ChangedData = $changed
-        AddedData = $added
+        AddedData   = $added
         RemovedData = $removed
     }
 
