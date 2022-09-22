@@ -7,16 +7,15 @@ The core feature is ability to find the subset from the database that meets your
 
 The module can help you with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
- - doing selective compare of databases/subsets (comparing only data that you are interested in)
- - doing selective data integrity verifications (making sure that data is not changed using SHA2_512)
+ - doing comparision of subsets (comparing only data that you are interested in)
+ - doing data integrity verifications (making sure that data is not changed using SHA2_512)
  - copying schemas/tables/data to the same or different database or to Azure BLOB storage
  - getting the database object model that you can use to implement your own data management logic
  - extracting selected data from your database in CSV, JSON format to file
  - importing previously extracted subset data from Azure BLOB storage
  - removing unwanted data, tables or schemas from database  
  - removing large amount of data from database in safe way (with log file that will not grow that much)
- - tracking changes to data that you are interested in
- - disabling/enabling/editing table foreign keys 
+ - disabling/enabling/editing/testing table foreign keys 
  - disabling/enabling triggers
 
 # How to find subset you need
@@ -29,7 +28,7 @@ The module can help you with:
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
-The algorithm used in SqlSizer is a variation of Breadth-first and Depth-first search algorithm applied to a relational database.
+The algorithm used in SqlSizer is a variation of Breadth-first search algorithm applied to a relational database.
 
 All processing is done on Microsoft SQL Server or Azure SQL side. No heavy operations are done in Powershell.
 
