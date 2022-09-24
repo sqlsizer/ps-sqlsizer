@@ -22,8 +22,11 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    function HandleOutgoing
+    function CreateHandleOutgoingQuery
     {
+        $result = "DECLARE @count INT = 0 
+        "
+
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -119,20 +122,25 @@
             }
 
             $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
-            $insert = "INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
-            $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-            $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-
-            if ($results.Count -gt 0)
-            {
-                $q = "INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), $($results.Count),  0, $($tableId), $($depth + 1), GETDATE())"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-            }
+            $insert = " INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x "
+            $insert = $insert + " SELECT @count = @@ROWCOUNT "
+            $result += $insert
+            $result += " IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), $($results.Count),  0, $($tableId), $($depth + 1), GETDATE()) "
         }
+
+        return $result
     }
 
-    function HandleIncoming
+    function HandleOutgoing
     {
+        $query = CreateHandleOutgoingQuery
+        $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+    }
+    
+    function CreateIncomingQuery
+    {
+        $result = "DECLARE @count INT = 0 
+        "
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -286,20 +294,25 @@
                 $fkTableId = $tablesGroupedByName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
                 $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
 
-                $insert = $insert + " SELECT @@ROWCOUNT AS Count"
-
-                $results = Invoke-SqlcmdEx -Sql $insert -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-                if ($results.Count -gt 0)
-                {
-                    $q = "INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, $($results.Count), 0, $($tableId), $($depth + 1), GETDATE())"
-                    $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
-                }
+                $insert = $insert + " SELECT @count = @@ROWCOUNT "
+                $result += $insert
+                $result += "IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, $($results.Count), 0, $($tableId), $($depth + 1), GETDATE())"
             }
         }
+
+        return $result
     }
 
-    function Split
+    function HandleIncoming
     {
+        $query = CreateIncomingQuery
+        $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+    }
+
+    function CreateSplitQuery
+    {
+        $result = "DECLARE @count INT = 0
+        "
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -318,22 +331,32 @@
         }
 
         # insert
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
         $q = "INSERT INTO $processing " + "SELECT $tableId, " + $columns + " " + [int][Color]::Red + ", s.Source, s.Depth, s.Fk FROM $($slice) s" + $where
-        $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $q += " SELECT @count = @@ROWCOUNT "
+        $result += $q
 
         # update opeations
-        $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Red), $($results.Count), 0, $($tableId), $($depth), GETDATE())"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Red), @count, 0, $($tableId), $($depth), GETDATE())"
+        $result += $q        
 
         # insert
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + " and p.[Table] = $tableId and " + $cond + ") SELECT @@ROWCOUNT AS Count"
+        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + " and p.[Table] = $tableId and " + $cond + ")"
         $q = "INSERT INTO $processing " + "SELECT $tableId, " + $columns + " " + [int][Color]::Green + ", s.Source, s.Depth, s.Fk FROM $slice s" + $where
-        $results = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $q += " SELECT @count = @@ROWCOUNT "
+        $result += $q
 
         # update opeations
-        $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Green), $($results.Count), 0, $($tableId), $depth, GETDATE())"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $q = "INSERT INTO SqlSizer.Operations VALUES($tableId, $([int][Color]::Green), @count, 0, $($tableId), $depth, GETDATE())"
+        $result += $q
+
+        return $result
+    }
+
+    function Split
+    {
+        $query = CreateSplitQuery
+        $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 
     # save start time
@@ -377,7 +400,7 @@
                 [Table], [ToProcess], [Depth], [Color]
             ORDER BY
                 [Depth] ASC, [ToProcess] DESC"
-        $first = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $first = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
 
         if ($null -eq $first)
         {
@@ -408,10 +431,10 @@
         }
 
         $q = "TRUNCATE TABLE $($slice)"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
         $q = "INSERT INTO  $($slice) " + "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $($processing) WHERE [Depth] = $($depth) AND [Color] = " + $color + " AND [Table] = $tableId"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
 
         # Green/Purple/Red color
         if (($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple))
@@ -433,7 +456,7 @@
 
         # update operations
         $q = "UPDATE SqlSizer.Operations SET Processed = 1 WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 }
 # SIG # Begin signature block
