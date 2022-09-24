@@ -214,6 +214,9 @@
 
     $schemasRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
+    $sql = "select SCHEMA_NAME(schema_id) AS [schema], name from sys.objects where type = 'P'"
+    $proceduresRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
     if ($true -eq $MeasureSize)
     {
         $statsRows = Invoke-SqlcmdEx -Sql ("EXEC sp_spaceused") -Database $Database -ConnectionInfo $ConnectionInfo
@@ -408,6 +411,16 @@
     foreach ($row in $schemasRows)
     {
         $result.AllSchemas += $row.Name
+    }
+
+    foreach ($row in $proceduresRows)
+    { 
+        $storedProcedureInfo = New-Object StoredProcedureInfo
+        
+        $storedProcedureInfo.Schema = $row.Schema
+        $storedProcedureInfo.Name = $row.Name
+
+        $result.StoredProcedures += $storedProcedureInfo
     }
 
     return $result
