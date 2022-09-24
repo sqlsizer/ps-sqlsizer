@@ -242,7 +242,7 @@
 
     function GetStoredProceduresRows
     {
-        $sql = "select SCHEMA_NAME(schema_id) AS [schema], name from sys.objects where type = 'P'"
+        $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, object_definition(object_id) as [definition] from sys.objects where type = 'P'"
         return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
@@ -460,7 +460,7 @@
     {
         foreach ($row in $schemasRows)
         {
-            $result.Schemas += $row.Name
+            $result.Schemas += $row.name
         }
     }
 
@@ -469,8 +469,9 @@
         foreach ($row in $proceduresRows)
         { 
             $storedProcedureInfo = New-Object StoredProcedureInfo
-            $storedProcedureInfo.Schema = $row.Schema
-            $storedProcedureInfo.Name = $row.Name
+            $storedProcedureInfo.Schema = $row.schema
+            $storedProcedureInfo.Name = $row.name
+            $storedProcedureInfo.Definition = $row.definition
 
             $result.StoredProcedures += $storedProcedureInfo
         }

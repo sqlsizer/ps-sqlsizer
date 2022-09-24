@@ -67,6 +67,7 @@ class StoredProcedureInfo
 {
     [string]$Schema
     [string]$Name
+    [string]$Definition
 }
 
 class TableInfo2
