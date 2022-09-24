@@ -72,11 +72,9 @@ Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo
 Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
 
 Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-
 $info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 Write-Output "Subset size: $($info.DatabaseSize)"
