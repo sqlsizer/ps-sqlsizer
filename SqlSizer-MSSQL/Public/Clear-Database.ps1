@@ -18,7 +18,7 @@
 
     if ($true -eq $UseTruncate)
     {
-        Disable-ForeignKeys -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        Remove-ForeignKeys -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
     $i = 0
@@ -65,7 +65,7 @@
 
     if ($true -eq $UseTruncate)
     {
-        Enable-ForeignKeys -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        Restore-ForeignKeys -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
     Write-Progress -Activity "Database truncate" -Completed
