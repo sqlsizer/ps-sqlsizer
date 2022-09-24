@@ -19,7 +19,7 @@ function New-DatabaseSchemaJson
     $random = New-Object "System.Random"
     $allColors = @()
 
-    for ($i = 0; $i -lt $DatabaseInfo.AllSchemas.Count; $i += 1)
+    for ($i = 0; $i -lt $DatabaseInfo.Schemas.Count; $i += 1)
     {
         $allColors += """rgb($($random.Next(255)),$($random.Next(255)),$($random.Next(255)))"""
     }

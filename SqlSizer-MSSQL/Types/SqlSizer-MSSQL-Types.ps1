@@ -54,10 +54,11 @@ class Query
 }
 class DatabaseInfo
 {
+    [string[]]$Schemas
     [TableInfo[]]$Tables
-    [StoredProcedureInfo[]]$StoredProcedures
     [ViewInfo[]]$Views
-    [string[]]$AllSchemas
+    [StoredProcedureInfo[]]$StoredProcedures
+    
     [int]$PrimaryKeyMaxSize
     [string]$DatabaseSize
 }

@@ -410,7 +410,7 @@
 
     foreach ($row in $schemasRows)
     {
-        $result.AllSchemas += $row.Name
+        $result.Schemas += $row.Name
     }
 
     foreach ($row in $proceduresRows)

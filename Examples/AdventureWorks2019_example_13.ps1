@@ -12,7 +12,7 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-foreach ($schema in $info.AllSchemas)
+foreach ($schema in $info.Schemas)
 {
     if ($schema.StartsWith("SqlSizer"))
     {
