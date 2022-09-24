@@ -14,13 +14,11 @@
     function GetViewsRows
     {
         $sql = "SELECT 
-        v.TABLE_SCHEMA as [schema],
-        v.TABLE_NAME as [view],
-        v.VIEW_DEFINITION as [definition]
-    FROM 
-        INFORMATION_SCHEMA.VIEWS v
-    ORDER BY 
-        TABLE_SCHEMA"
+            SCHEMA_NAME(v.schema_id) as [schema],
+            OBJECT_NAME(v.object_id) as [view],
+            OBJECT_DEFINITION(v.object_id) as [definition]
+        FROM 
+            sys.views v"
         
         return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
