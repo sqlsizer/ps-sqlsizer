@@ -60,9 +60,11 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 # Create a new db with found subset of data
 
 $newDatabase = "AdventureWorks2019_subset_05"
-$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
+
+$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+
 Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
