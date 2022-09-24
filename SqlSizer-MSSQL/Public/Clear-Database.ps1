@@ -6,12 +6,20 @@
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
+        [Parameter(Mandatory = $false)]
+        [bool]$UseTruncate = $false,
+
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
+
+    if ($true -eq $UseTruncate)
+    {
+        Disable-ForeignKeys -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    }
 
     $i = 0
     foreach ($table in $DatabaseInfo.Tables)
@@ -31,7 +39,6 @@
             $sql = "ALTER TABLE " + $table.SchemaName + ".[" + $table.TableName + "] SET ( SYSTEM_VERSIONING = OFF )"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-
             $sql = "DELETE FROM " + $table.SchemaName + "." + $table.TableName
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
@@ -43,9 +50,22 @@
         }
         else
         {
-            $sql = "DELETE FROM " + $table.SchemaName + "." + $table.TableName
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            if ($true -eq $UseTruncate)
+            {
+                $sql = "TRUNCATE TABLE " + $table.SchemaName + "." + $table.TableName
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            }
+            else
+            {
+                $sql = "DELETE FROM " + $table.SchemaName + "." + $table.TableName
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            }
         }
+    }
+
+    if ($true -eq $UseTruncate)
+    {
+        Enable-ForeignKeys -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
     Write-Progress -Activity "Database truncate" -Completed

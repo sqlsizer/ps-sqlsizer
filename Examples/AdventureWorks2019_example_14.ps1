@@ -50,11 +50,11 @@ if ((New-EmptyCompactDatabase -Database $database -NewDatabase $newDatabase -Con
     return
 }
 
-Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 $files = Copy-SubsetToDatabaseFileSet -SourceDatabase $database -TargetDatabase $newDatabase -DatabaseInfo $info -ConnectionInfo $connection -Secure $false
 Import-SubsetFromFileSet -SourceDatabase $newDatabase -TargetDatabase $newDatabase -DatabaseInfo $info -ConnectionInfo $connection -Files $files
-Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

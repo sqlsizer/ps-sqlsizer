@@ -133,10 +133,10 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 $newDatabase = "AdventureWorks2019_subset_01"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
-Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Compress-Database -Database $newDatabase -ConnectionInfo $connection

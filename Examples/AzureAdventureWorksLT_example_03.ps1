@@ -67,7 +67,7 @@ while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) 
 }
 
 $newInfo = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $false
-Disable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
+Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 $files = Copy-SubsetToDatabaseFileSet -SourceDatabase $database -TargetDatabase $newDatabase -DatabaseInfo $info -ConnectionInfo $connection -Secure $false
 
@@ -77,7 +77,7 @@ Import-SubsetFromFileSet -SourceDatabase $newDatabase -TargetDatabase $newDataba
 # remove data 
 Remove-DataFromFileSet -Database $newDatabase -DatabaseInfo $newInfo -ConnectionInfo $connection -Files $files
 
-Enable-IntegrityChecks -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
+Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 # end of script
 # SIG # Begin signature block

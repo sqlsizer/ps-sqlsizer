@@ -17,7 +17,7 @@ foreach ($table in $info.Tables)
 {
     foreach ($fk in $table.ForeignKeys)
     {
-            Edit-IntegrityCheck -Database $database -ConnectionInfo $connection -DatabaseInfo $info `
+            Edit-ForeignKey -Database $database -ConnectionInfo $connection -DatabaseInfo $info `
                             -SchemaName $table.SchemaName -TableName $table.TableName -FkName $fk.Name `
                             -DeleteRule ([ForeignKeyRule]::Cascade) `
                             -UpdateRule ([ForeignKeyRule]::Cascade)

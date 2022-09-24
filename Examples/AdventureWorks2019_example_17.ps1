@@ -37,7 +37,7 @@ Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($
 Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false
 $subsetGuid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "Subset_from_example_17" -DatabaseInfo $info
 
-Disable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Disable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info 
@@ -45,7 +45,7 @@ Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-Enable-IntegrityChecks -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false

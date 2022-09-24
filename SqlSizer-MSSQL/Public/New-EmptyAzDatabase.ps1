@@ -28,10 +28,10 @@ function New-EmptyAzDatabase
     while ($found -eq $false)
 
     # Clear copy
-    Disable-IntegrityChecks -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    Disable-ForeignKeys -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Clear-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Uninstall-SqlSizer -Database $NewDatabase -ConnectionInfo $ConnectionInfo
-    Enable-IntegrityChecks -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    Enable-ForeignKeys -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Format-Indexes -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Compress-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo
 }

@@ -1,4 +1,4 @@
-﻿function Enable-IntegrityChecks
+﻿function Edit-ForeignKey
 {
     [cmdletbinding()]
     param
@@ -7,31 +7,132 @@
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
+        [string]$SchemaName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$TableName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$FkName,
+
+        [Parameter(Mandatory = $true)]
+        [ForeignKeyRule]$DeleteRule,
+
+        [Parameter(Mandatory = $true)]
+        [ForeignKeyRule]$UpdateRule,
+
+        [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
+    Write-Progress -Activity "Editing FK $FkName on $SchemaName.$TableName" -PercentComplete 0
 
-    Write-Progress -Activity "Enabling integrity checks on database" -PercentComplete 0
-    $i = 0
-    foreach ($table in $DatabaseInfo.Tables)
+    # get info about fk
+    $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName) }
+    $fk = $table.ForeignKeys | Where-Object { ($_.Name -eq $FkName) }
+
+    # Drop foreign key
+    $sql = "ALTER TABLE " + $SchemaName + "." + $TableName + " DROP CONSTRAINT " + $FkName
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+    # Recreate it
+    $sql = "ALTER TABLE " + $SchemaName + "." + $TableName + " WITH CHECK ADD CONSTRAINT " + $FkName 
+
+    $fkNames = @()
+    foreach ($column in $fk.FkColumns)
     {
-        $i += 1
-        Write-Progress -Activity "Enabling integrity checks on database" -PercentComplete (100 * ($i / $DatabaseInfo.Tables.Count))
+        $fkNames += $column.Name
+    }
+    $sql += " FOREIGN KEY (" + [string]::Join(',', $fkNames) + ")"
 
-        $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " CHECK CONSTRAINT ALL"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $names = @()
+    foreach ($column in $fk.Columns)
+    {
+        $names += $column.Name
+    }
+    $sql += " REFERENCES $($fk.Schema).$($fk.Table) (" + [string]::Join(',', $names) + ")"
+
+    try
+    {
+        $rules = ""
+        if ($DeleteRule -eq [ForeignKeyRule]::Cascade)
+        {
+            $rules += " ON DELETE CASCADE"
+        }
+        
+        if ($DeleteRule -eq [ForeignKeyRule]::SetNull)
+        {
+            $rules += " ON DELETE SET NULL"
+        }
+
+        if ($DeleteRule -eq [ForeignKeyRule]::SetDefault)
+        {
+            $rules += " ON DELETE SET DEFAULT"
+        }
+
+        if ($UpdateRule -eq [ForeignKeyRule]::Cascade)
+        {   
+            $rules += " ON UPDATE CASCADE"
+        }
+    
+        if ($UpdateRule -eq [ForeignKeyRule]::SetNull)
+        {
+            $rules += " ON UPDATE SET NULL"
+        }
+
+        if ($UpdateRule -eq [ForeignKeyRule]::SetDefault)
+        {
+            $rules += " ON UPDATE SET DEFAULT"
+        }
+        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo    
+    }
+    catch
+    {
+        $rules = ""
+        if ($fk.DeleteRule -eq [ForeignKeyRule]::Cascade)
+        {
+            $rules += " ON DELETE CASCADE"
+        }
+        
+        if ($fk.DeleteRule -eq [ForeignKeyRule]::SetNull)
+        {
+            $rules += " ON DELETE SET NULL"
+        }
+
+        if ($fk.DeleteRule -eq [ForeignKeyRule]::SetDefault)
+        {
+            $rules += " ON DELETE SET DEFAULT"
+        }
+
+        if ($fk.UpdateRule -eq [ForeignKeyRule]::Cascade)
+        {   
+            $rules += " ON UPDATE CASCADE"
+        }
+    
+        if ($fk.UpdateRule -eq [ForeignKeyRule]::SetNull)
+        {
+            $rules += " ON UPDATE SET NULL"
+        }
+
+        if ($fk.UpdateRule -eq [ForeignKeyRule]::SetDefault)
+        {
+            $rules += " ON UPDATE SET DEFAULT"
+        }
+
+        Write-Host -ForegroundColor Red "Error: $_ Cannot change $FkName. Reverting change..."
+        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo    
     }
 
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    Write-Progress -Activity "Enabling integrity checks on database" -Completed
+    Write-Progress -Activity "Editing FK $FkName on $SchemaName.$TableName" -Completed
 }
+
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBqfJFAYzf/sC9G
-# uK6SnRd2w+Qx4WN6/p8g44WWdTc2kKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAl6UcsYMCLXuZt
+# clD6yN+nWdOizsYEusx88p3jboeDHqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -211,38 +312,38 @@
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDFvlWezAdWKKDAOgetMnE5qFZzv2HElYQZJBiGlsbAcDANBgkqhkiG9w0B
-# AQEFAASCAgAc7FOq5Hd8076iJxwgNVTKsjoIl9wJChQE3VY2M+asqqgs4uowymij
-# HkhM/Xu8cLSzrHO4+HLbzNEzaVXv+ZhvohDZumBumPTRrgWcB6OGXBAGTxan4iMx
-# fVFjLqd8nrdpqsPNXx8jlkM9cAVvVN43qpTs3xSwd/xxBXgfUlbd34q0hVSziffL
-# dJp65oLbCJvdghhYGnyAIYxZ05VatoJQyrXgTcCmIJXQoBqVE1Laxei7Y7ZJd10N
-# 3S2JsBJ+1tbYxvJtZnlOS6LHEUibJUOPqErsafJkg62pL9WMuJ6FHvHCYE9AU2fh
-# JHGhnE58ZFtuZoW4uT/LqQK5LA4pUBezcIb3i4OKf8LlF2OUhFS9R+cp44zSkILW
-# 68nd/V5WfXHKsK7eE4pku9xC8Je/kzwpH4in4Gjtw71GnHuTOhWj79+wk/JOgJ4f
-# /JfDLZt+TJBD26EgXcT4yEva+XJpp865gzu8jZpbGg9wWr8YlIz4e3CvJoHLfOrY
-# nu8i6BcOSG7SmJE8/eu9Pa64A0xDmT2KUgV5PeNtvXTqkCbbVZXkVrTY5iSwDE7N
-# E+MWMPokRWRPFlEQMQhd6Sj63bD27E0j+S1wl14bcryzJXNCiHVODUP9QUhsg1d6
-# BWk5uNa3ifAm++ywjUAqqznAvDzZxjuN+SIVgnrhaVafI6JSAdbd8aGCBAIwggP+
+# BDEiBCCddKrbE0Eq9mKJfHRc6+5QQ5fKeqYlRLhtyBGqee0LYTANBgkqhkiG9w0B
+# AQEFAASCAgA4pcel9WPYnoc53O9fR7P3CFX8aj+wvi81H74qzzrBYK4u2qh1x5UO
+# 2hQ46ueuikBP+Rk0qgq76hj3geq6txRiQ40f35oybE/J/od3AV5HhfdIXaAvcI9Q
+# wN54VyM/CcI/feqDeGOp4dvQFe+YdihvXF7+KdlvQ/oe+qT5XxFCPl699zwRXkFC
+# S3hCGBCX0EXWFtHOSs/hWxWZgEt0zIIkDBLvD2MF6A2Ze39DVd0sj+n4+0oW/leH
+# iWznCuoC3k6NqSY7tteQhXp+zf6Gf4QlFEq8OHCIZIBZ/wu0fgMur9YQnqnQldBr
+# IsIr3lvWcCOvoS0P3r7ZKgNZffi0Q3frNJO3oS/U5GTXnFbnToWa5b9/N9GeQlJo
+# ffDpaKe4NyjqM/WGP13gbATR0CduHYi7LPNFN71RFhR0jC8UbR4GXPwU3quwT7ws
+# okaoNi/Wy4qUDP6o1qAgNyh1wRvEh3O/F925SnBC4xwFsQm8aEg6fJqRvCyUwpYw
+# wieWDKckd5XP/KkmkXW3po0ED0O4ajiI+P4r/yykHxhAOgTpAg5wLWMlFload37V
+# FeMXfzFyR83l6OoCm4MFQzU3hI3bop3ng+G54oaWlILHqrBzW53L9MuaqIQMkkl9
+# F7Fymgtwa5JDtJdSlEruO58bJoAestnfmKFqau+mKzeLChsKWFwMIKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MjIyMTQ2MDlaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDAaIHyJzR5+
-# POMfqPi6/7nSiEF+q+m5pDyy2XMi+QFH02zid9l3A9C8DMaUnS9eov4wgZ8GCyqG
+# Fw0yMjA5MjIyMTQ1NTVaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDBRp8EvMcG8
+# Oo8PM9Ox/AUMdMjSZuSqmw7DObH3PQxJ/Kwhfv58P0SekAqghxBTPzAwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAA12VnpMHkJ9OTCXhktA7y7yq
-# Hr+9Rscnk40c0qm5Eg7IvMSF1fErkuGREhe0oFMfzxOei2NfWtmDUF3kRZhNYkPR
-# k+wUObB4B0cJQH4L7E/t/+N+6o6kOornqawfEP9fdncdjl8IIXTD1IAqtxrsXfhE
-# 1dgpvtPqogeziGwqcRiiIdDAiQYoghyhnPZVro1WP6Te84NoisTVmThY4GXhCZUa
-# BtxEROVPZdLoZ8skALCcwhai6WxY3eLMu4eNgtKMPTBxB3VCgR4jARoO1gQJh1fm
-# 4KCwKIR48UTmY3LGnHq1OanUlb9uGJKBJM9ziBd1YDuqb/cvOtyuXyog8HxvjsXI
-# LdAZf64RwwD4lRkIOujVeW+bjXUg4ODtCAys5EfE17OJEDmLxYQG1VelDh0nxhmA
-# Bz7g5SUxpchNzdzry7X09LBTBFl8GluLLSIMKnDvd+QBtwF9J4HDBtxTBCWXgO+z
-# rL3vvLrLjF2P/woAN+oDisTn8ZdVFpDyU+YiDSu7OpzZhlcZOdFZwozs1Sgdnbak
-# GjN3FS1V8r9HjdpuH3SZTUDj2cwjHs5mkvsL31JZHn/NjD6Ky31jjB9fiibwWuB5
-# MHd0OqlDkplYQ6EIuastLuhhM9IEK15AuuSsA5Mm47xdyFyEoS9MjzY5D83TW7xT
-# 8KovvHWSfyt0WQnRN0g=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIATNjcCxaCAYReIg5EA9tF6nDl
+# K9dxFX1HGJE6YB17UFesQ1TAB/im7z84sH0Kxay4f2p34R5QduLMBaxggFymoNnA
+# 7C/3RwCNf8RF6NnN5d0X2DK9tIkDSgbPhKIYXlJpsXCHApxfGF5IjY3bLoTT6Our
+# fvgx/HlEUddmTY0s0nS4BzQrw9w+YBaSbNDOIvuUTHqAghmlbyC7gDZZ0CXLOxsw
+# wdrqFDtX7JCnPQQJsuTAmUVLc6RlZEcJrfZWweoauLMiTYBoOrYh+FT/BMl+JR1n
+# z90tD/B4daPXa266FGhzFTPm5T9V+qUEmXhQW8ht/EUBdfC4GX00NIpHJrCcv06w
+# TRpdd5lMWKkZPIHRBkAcc9OPogej3Q3goJO+B10bYCxyJNifzHArw5dTOh48mmfC
+# uZChIf3NGgJcnatPd+EK9BMXvY664rs+1RvZOomZdvFS3g/ERph8BL1OmE/uUqgi
+# Vt9703NaJvS3U4vIWMdngfD371Be9Dedg8vNAPHrB392TM/Sa5AHLxvzv3mqp4RS
+# EOHV6wAuoltHGsEw4Dq+OLHzjR8tI4FEn/SjnBDEppJTHfD3sp2gdZ8/oBd6e1zA
+# TQPsW/sbRZDWkO0RU8vHUPQrrhLpnV2Ya3FWFJ2q1o7HBT0n63rWEdsRPjWVzLBK
+# KVu/B75950/For+zUCs=
 # SIG # End signature block
