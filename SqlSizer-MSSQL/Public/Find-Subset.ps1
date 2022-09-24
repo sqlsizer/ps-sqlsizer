@@ -22,14 +22,23 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    $outgoingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
+    $incomingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
+
     function CreateHandleOutgoingQuery
     {
         param
         (
-            [TableInfo]$table
+            [TableInfo]$table,
+            [int]$color,
+            [int]$depth
         )
         $result = "DECLARE @count INT = 0 
         "
+        $signature = $structure.Tables[$table]
+        $slice = $structure.GetSliceName($signature)
+        $primaryKey = $table.PrimaryKey
+        $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
 
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
@@ -101,7 +110,7 @@
                 $join += " s.Key" + $i + " = f." + $primaryKeyColumn.Name
                 $i += 1
             }
-            $from = " FROM " + $schema + "." + $tableName + " f " + $join
+            $from = " FROM " + $table.SchemaName + "." + $table.TableName + " f " + $join
 
             # select
             $columns = ""
@@ -139,10 +148,22 @@
     {
         param
         (
-            [TableInfo]$table
+            [TableInfo]$table,
+            [int]$color,
+            [int]$depth
         )
 
-        $query = CreateHandleOutgoingQuery -table $table
+        $key = "$($table.SchemaName)_$($table.TableName)_$($color)_$($depth)"
+
+        if ($outgoingCache.ContainsKey($key))
+        {   
+            $query = $outgoingCache[$key]
+        }
+        else
+        {
+            $query = CreateHandleOutgoingQuery -table $table -color $color -depth $depth
+            $outgoingCache[$key] = $query
+        }   
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
     
@@ -150,24 +171,18 @@
     {
         param
         (
-            [TableInfo]$table
+            [TableInfo]$table,
+            [int]$color,
+            [int]$depth
         )
         $result = "DECLARE @count INT = 0 
         "
-        $cond = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            if ($i -gt 0)
-            {
-                $cond += " and "
-            }
-
-            $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
-        }
+        $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
+        $slice = $structure.GetSliceName($structure.Tables[$table])
 
         foreach ($referencedByTable in $table.IsReferencedBy)
         {
-            $fks = $referencedByTable.ForeignKeys | Where-Object { ($_.Schema -eq $schema) -and ($_.Table -eq $tableName) }
+            $fks = $referencedByTable.ForeignKeys | Where-Object { ($_.Schema -eq $table.SchemaName) -and ($_.Table -eq $table.TableName) }
             foreach ($fk in $fks)
             {
                 if ([TableInfo2]::IsIgnored($fk.FkSchema, $fk.FkTable, $ignoredTables) -eq $true)
@@ -304,12 +319,11 @@
                 }
 
                 $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
-                $fkTableId = $tablesGroupedByName[$fkTable.SchemaName + ", " + $fkTable.TableName].Id
                 $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
 
                 $insert = $insert + " SELECT @count = @@ROWCOUNT "
                 $result += $insert
-                $result += "IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, $($results.Count), 0, $($tableId), $($depth + 1), GETDATE())"
+                $result += "IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, @count, 0, $($tableId), $($depth + 1), GETDATE())"
             }
         }
 
@@ -320,10 +334,22 @@
     {
         param
         (
-            [TableInfo]$table
+            [TableInfo]$table,
+            [int]$color,
+            [int]$depth
         )
+        $key = "$($table.SchemaName)_$($table.TableName)_$($color)_$($depth)"
 
-        $query = CreateIncomingQuery -table $table
+        if ($incomingCache.ContainsKey($key))
+        {   
+            $query = $incomingCache[$key]
+        }
+        else
+        {
+            $query = CreateIncomingQuery -table $table -color $color -depth $depth
+            $incomingCache[$key] = $query
+        }   
+
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 
@@ -331,11 +357,16 @@
     {
         param
         (
-            [TableInfo]$table
+            [TableInfo]$table,
+            [int]$depth
         )
 
         $result = "DECLARE @count INT = 0
         "
+        $signature = $structure.Tables[$table]
+        $processing = $structure.GetProcessingName($signature)
+        $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
+
         $cond = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
         {
@@ -380,9 +411,11 @@
     {
         param
         (
-            [TableInfo]$table
+            [TableInfo]$table,
+            [int]$color,
+            [int]$depth
         )
-        $query = CreateSplitQuery -table $table
+        $query = CreateSplitQuery -table $table -color $color -depth $depth
 
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
@@ -442,14 +475,12 @@
         $color = $first.Color
         $depth = $first.Depth
         $tableData = $tablesGroupedById["$($tableId)"]
-        $schema = $tableData.SchemaName
-        $tableName = $tableData.TableName
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
-        $primaryKey = $table.PrimaryKey
+        
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
-
+        
         Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
         $keys = ""
@@ -467,19 +498,19 @@
         # Green/Purple/Red color
         if (($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple))
         {
-            HandleOutgoing -table $table
+            HandleOutgoing -table $table -color $color -depth $depth
         }
 
         # Green/Purple/Blue Color
         if (($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue))
         {
-            HandleIncoming -table $table
+            HandleIncoming -table $table -color $color -depth $depth
         }
 
         # Yellow -> Split into Red and Green
         if ($color -eq [int][Color]::Yellow)
         {
-            Split -table $table
+            Split -table $table -depth $depth
         }
 
         # update operations
