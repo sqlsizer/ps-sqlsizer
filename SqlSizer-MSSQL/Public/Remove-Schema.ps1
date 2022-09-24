@@ -16,41 +16,28 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    # remove foreign keys from tables
+    # drop tables in schema
     foreach ($table in $DatabaseInfo.Tables)
     {
-        foreach ($fk in $table.ForeignKeys)
-        {
-            if ($fk.Schema -eq $SchemaName)
-            {
-                $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
-                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-        }
+        Remove-Table -Database $Database -SchemaName $SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
-    # drop tables
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if ($table.SchemaName -eq $SchemaName)
-        {
-            foreach ($view in $table.Views)
-            {
-                $sql = "DROP VIEW if exists [$($view.SchemaName)].[$($view.ViewName)]"
-                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-
-            $sql = "DROP TABLE [$($table.SchemaName)].[$($table.TableName)]"
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        }
-    }
-
-    # drop views
+    # drop views in schema
     foreach ($view in $DatabaseInfo.Views)
     {
         if ($view.SchemaName -eq $SchemaName)
         {
             $sql = "DROP VIEW if exists [$($view.SchemaName)].[$($view.ViewName)]"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+    }
+
+    # drop stored procedures in schema
+    foreach ($storedInfo in $DatabaseInfo.StoredProcedures)
+    {
+        if ($storedInfo.Schema -eq $SchemaName)
+        {
+            $sql = "DROP PROCEDURE [$SchemaName].[$($storedInfo.Name)]"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
