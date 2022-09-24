@@ -24,6 +24,10 @@
 
     function CreateHandleOutgoingQuery
     {
+        param
+        (
+            [TableInfo]$table
+        )
         $result = "DECLARE @count INT = 0 
         "
 
@@ -133,12 +137,21 @@
 
     function HandleOutgoing
     {
-        $query = CreateHandleOutgoingQuery
+        param
+        (
+            [TableInfo]$table
+        )
+
+        $query = CreateHandleOutgoingQuery -table $table
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
     
     function CreateIncomingQuery
     {
+        param
+        (
+            [TableInfo]$table
+        )
         $result = "DECLARE @count INT = 0 
         "
         $cond = ""
@@ -305,12 +318,22 @@
 
     function HandleIncoming
     {
-        $query = CreateIncomingQuery
+        param
+        (
+            [TableInfo]$table
+        )
+
+        $query = CreateIncomingQuery -table $table
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 
     function CreateSplitQuery
     {
+        param
+        (
+            [TableInfo]$table
+        )
+
         $result = "DECLARE @count INT = 0
         "
         $cond = ""
@@ -355,7 +378,12 @@
 
     function Split
     {
-        $query = CreateSplitQuery
+        param
+        (
+            [TableInfo]$table
+        )
+        $query = CreateSplitQuery -table $table
+
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
 
@@ -439,19 +467,19 @@
         # Green/Purple/Red color
         if (($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple))
         {
-            HandleOutgoing
+            HandleOutgoing -table $table
         }
 
         # Green/Purple/Blue Color
         if (($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue))
         {
-            HandleIncoming
+            HandleIncoming -table $table
         }
 
         # Yellow -> Split into Red and Green
         if ($color -eq [int][Color]::Yellow)
         {
-            Split
+            Split -table $table
         }
 
         # update operations
