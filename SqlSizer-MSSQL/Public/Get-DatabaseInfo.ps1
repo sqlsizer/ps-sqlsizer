@@ -14,11 +14,12 @@
     function GetViewsRows
     {
         $sql = "SELECT 
-        TABLE_SCHEMA as [schema],
-        TABLE_NAME as [view]
-        FROM 
-        INFORMATION_SCHEMA.VIEWS
-        ORDER BY 
+        v.TABLE_SCHEMA as [schema],
+        v.TABLE_NAME as [view],
+        v.VIEW_DEFINITION as [definition]
+    FROM 
+        INFORMATION_SCHEMA.VIEWS v
+    ORDER BY 
         TABLE_SCHEMA"
         
         return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -258,12 +259,17 @@
     }
 
     $views = GetViewsRows
-    foreach ($viewRow in $views)
+
+    if ($null -ne $views)
     {
-        $view = New-Object -TypeName ViewInfo
-        $view.SchemaName = $viewRow["schema"]
-        $view.ViewName = $viewRow["view"]
-        $result.Views += $view
+        foreach ($viewRow in $views)
+        {
+            $view = New-Object -TypeName ViewInfo
+            $view.SchemaName = $viewRow["schema"]
+            $view.ViewName = $viewRow["view"]
+            $view.Definition = $viewRow["definition"]
+            $result.Views += $view
+        }
     }
 
     $tables = GetTablesRows
@@ -329,41 +335,43 @@
             $table.Columns += $column
         }
 
-        $tableForeignKeys = $fkInfo[$key]
-        $tableForeignKeysGrouped = $tableForeignKeys | Group-Object -Property fk_name
-        foreach ($item in $tableForeignKeysGrouped)
+        if ($null -ne $fkInfo)
         {
-            $fk = New-Object -TypeName TableFk
-            $fk.Name = $item.Name
-
-            foreach ($column in $item.Group)
+            $tableForeignKeys = $fkInfo[$key]
+            $tableForeignKeysGrouped = $tableForeignKeys | Group-Object -Property fk_name
+            foreach ($item in $tableForeignKeysGrouped)
             {
-                $fk.Schema = $column["schema"]
-                $fk.Table = $column["table"]
-                $fk.FkSchema = $column["fk_schema"]
-                $fk.FkTable = $column["fk_table"]
-                $fk.UpdateRule = Get-FkRule($column["update_rule"])
-                $fk.DeleteRule = Get-FkRule($column["delete_rule"])
+                $fk = New-Object -TypeName TableFk
+                $fk.Name = $item.Name
 
-                $fkColumn = New-Object -TypeName ColumnInfo
-                $fkColumn.Name = $column["fk_column"]
-                $fkColumn.DataType = $column["fk_column_data_type"]
-                $fkColumn.IsNullable = $column["fk_column_is_nullable"]
-                $fkColumn.IsComputed = $false
+                foreach ($column in $item.Group)
+                {
+                    $fk.Schema = $column["schema"]
+                    $fk.Table = $column["table"]
+                    $fk.FkSchema = $column["fk_schema"]
+                    $fk.FkTable = $column["fk_table"]
+                    $fk.UpdateRule = Get-FkRule($column["update_rule"])
+                    $fk.DeleteRule = Get-FkRule($column["delete_rule"])
 
-                $baseColumn = New-Object -TypeName ColumnInfo
-                $baseColumn.Name = $column["column"]
-                $baseColumn.DataType = $column["fk_column_data_type"]
-                $baseColumn.IsNullable = $false
-                $baseColumn.IsComputed = $false
+                    $fkColumn = New-Object -TypeName ColumnInfo
+                    $fkColumn.Name = $column["fk_column"]
+                    $fkColumn.DataType = $column["fk_column_data_type"]
+                    $fkColumn.IsNullable = $column["fk_column_is_nullable"]
+                    $fkColumn.IsComputed = $false
 
-                $fk.Columns += $baseColumn
-                $fk.FkColumns += $fkColumn
+                    $baseColumn = New-Object -TypeName ColumnInfo
+                    $baseColumn.Name = $column["column"]
+                    $baseColumn.DataType = $column["fk_column_data_type"]
+                    $baseColumn.IsNullable = $false
+                    $baseColumn.IsComputed = $false
+
+                    $fk.Columns += $baseColumn
+                    $fk.FkColumns += $fkColumn
+                }
+
+                $table.ForeignKeys += $fk
             }
-
-            $table.ForeignKeys += $fk
         }
-
         if ($null -ne $indexInfo)
         {
             $indexesForTable = $indexInfo[$key]
@@ -450,21 +458,26 @@
 
     $result.PrimaryKeyMaxSize = $primaryKeyMaxSize
 
-    foreach ($row in $schemasRows)
+    if ($null -ne $schemasRows)
     {
-        $result.Schemas += $row.Name
+        foreach ($row in $schemasRows)
+        {
+            $result.Schemas += $row.Name
+        }
     }
 
-    foreach ($row in $proceduresRows)
-    { 
-        $storedProcedureInfo = New-Object StoredProcedureInfo
-        
-        $storedProcedureInfo.Schema = $row.Schema
-        $storedProcedureInfo.Name = $row.Name
+    if ($null -ne $proceduresRows)
+    {
+        foreach ($row in $proceduresRows)
+        { 
+            $storedProcedureInfo = New-Object StoredProcedureInfo
+            $storedProcedureInfo.Schema = $row.Schema
+            $storedProcedureInfo.Name = $row.Name
 
-        $result.StoredProcedures += $storedProcedureInfo
+            $result.StoredProcedures += $storedProcedureInfo
+        }
+
     }
-
     return $result
 }
 
