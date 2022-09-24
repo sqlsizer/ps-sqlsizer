@@ -19,7 +19,7 @@ function Restore-ForeignKeys
     {
         foreach ($fk in $table.ForeignKeys)
         {
-            New-ForeignKey -Database $database -ConnectionInfo $connection -DatabaseInfo $DatabaseInfo `
+            New-ForeignKey -Database $Database -ConnectionInfo $connection -DatabaseInfo $DatabaseInfo `
                             -SchemaName $table.SchemaName -TableName $table.TableName -FkName $fk.Name `
                             -Columns $fk.Columns `
                             -FkColumns $fk.FkColumns `
