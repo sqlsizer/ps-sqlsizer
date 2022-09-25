@@ -3,9 +3,8 @@
 
 A PowerShell module for managing data in Microsoft SQL Server and Azure SQL databases.
 
-The core feature is ability to find desired subset from the database.
+The core feature is ability to find desired subset from the database and the feature has following properties:
 
-It has following properties:
  - No database or subset size limitation
  - No primary key size limitation. It can handle any size of primary key (e.g. even with 8 colums and any types)
  - Time complexity related to the size of subset in "most cases" (to be verified and analyzed)
