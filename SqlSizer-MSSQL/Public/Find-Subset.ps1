@@ -136,9 +136,9 @@
 
             $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
             $insert = " INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x "
-            $insert = $insert + " SELECT @count = @@ROWCOUNT "
+            $insert += " SELECT @count = @@ROWCOUNT "
             $result += $insert
-            $result += " IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), $($results.Count),  0, $($tableId), $($depth + 1), GETDATE()) "
+            $result += " IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), @count,  0, $($tableId), $($depth + 1), GETDATE()) "
         }
 
         return $result
@@ -320,9 +320,9 @@
 
                 $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
                 $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
-
-                $insert = $insert + " SELECT @count = @@ROWCOUNT "
+                $insert += " SELECT @count = @@ROWCOUNT "
                 $result += $insert
+                
                 $result += "IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, @count, 0, $($tableId), $($depth + 1), GETDATE())"
             }
         }
