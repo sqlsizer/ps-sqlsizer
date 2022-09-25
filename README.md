@@ -47,7 +47,7 @@ This process continues until there are no unprocessed rows of any color.
 In order to optimize speed the following tricks have been applied:
 
 ## Trick 1
- THe BFS algorithm in visiting the graph nodes in specific, well-known order.
+ The BFS algorithm in visiting the graph nodes in specific, well-known order.
  In SqlSizer the node is the BFS operation which one row that defines set of data rows visited or to visit.
  At every step of BFS, operations are grouped into *slices*.
  Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
