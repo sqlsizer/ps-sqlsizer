@@ -13,6 +13,7 @@ The core feature is ability to find desired subset from the database and the fea
     - on PowerShell side related to length of longest path in database data and number of tables (rather very small, benchark to be provided)
     - on SQL Server or Azure SQL side dependent on server configuration
 
+# Use cases
 **SqlSizer** can help you with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
  - doing comparision of subsets (comparing only data that you are interested in)
