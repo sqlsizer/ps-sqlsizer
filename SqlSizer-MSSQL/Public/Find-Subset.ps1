@@ -25,13 +25,13 @@
     $outgoingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
     $incomingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
 
-    function CreateHandleOutgoingQuery
+
+    function CreateOutgoingQueryPattern
     {
         param
         (
             [TableInfo]$table,
-            [int]$color,
-            [int]$depth
+            [int]$color
         )
         $result = "DECLARE @count INT = 0 
         "
@@ -138,7 +138,7 @@
             $insert = " INSERT INTO $($baseProcessing) SELECT $($baseTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x "
             $insert += " SELECT @count = @@ROWCOUNT "
             $result += $insert
-            $result += " IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), @count,  0, $($tableId), $($depth + 1), GETDATE()) "
+            $result += " IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($baseTableId), $($newColor), @count,  0, $($tableId), ##depth## + 1, GETDATE()) "
         }
 
         return $result
@@ -153,7 +153,7 @@
             [int]$depth
         )
 
-        $key = "$($table.SchemaName)_$($table.TableName)_$($color)_$($depth)"
+        $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
 
         if ($outgoingCache.ContainsKey($key))
         {   
@@ -161,19 +161,21 @@
         }
         else
         {
-            $query = CreateHandleOutgoingQuery -table $table -color $color -depth $depth
+            $query = CreateOutgoingQueryPattern -table $table -color $color
             $outgoingCache[$key] = $query
         }   
+
+        $query = $query.Replace("##depth##", $depth)
+
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
     
-    function CreateIncomingQuery
+    function CreateIncomingQueryPattern
     {
         param
         (
             [TableInfo]$table,
-            [int]$color,
-            [int]$depth
+            [int]$color
         )
         $result = "DECLARE @count INT = 0 
         "
@@ -322,14 +324,14 @@
                 $insert = "INSERT INTO $($fkProcessing) SELECT $($fkTableId), " + $columns + " " + $newColor + ", $($tableId), x.Depth + 1, $($fkId) FROM (" + $sql + ") x"
                 $insert += " SELECT @count = @@ROWCOUNT "
                 $result += $insert
-                
-                $result += "IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, @count, 0, $($tableId), $($depth + 1), GETDATE())"
+
+                $result += "IF (@count > 0) INSERT INTO SqlSizer.Operations VALUES($($fkTableId), $newColor, @count, 0, $($tableId), ##depth## + 1, GETDATE())"
             }
         }
 
         return $result
     }
-
+    
     function HandleIncoming
     {
         param
@@ -338,7 +340,8 @@
             [int]$color,
             [int]$depth
         )
-        $key = "$($table.SchemaName)_$($table.TableName)_$($color)_$($depth)"
+
+        $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
 
         if ($incomingCache.ContainsKey($key))
         {   
@@ -346,9 +349,11 @@
         }
         else
         {
-            $query = CreateIncomingQuery -table $table -color $color -depth $depth
+            $query = CreateIncomingQueryPattern -table $table -color $color
             $incomingCache[$key] = $query
         }   
+
+        $query = $query.Replace("##depth##", $depth)
 
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
