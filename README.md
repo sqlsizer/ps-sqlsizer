@@ -25,15 +25,6 @@ The core feature is ability to find desired subset from the database and the fea
  - disabling/enabling/editing/testing table foreign keys 
  - disabling/enabling triggers
 
-# How to find subset you need
-
-- Step 1: Provide configuration
-    - Queries that define initial data (the table rows with colors)
-    - (Optional) Color map that allow to configure colors for the data and limits
-
-- Step 2: Execute `Find-Subset` cmdlet to find the subset you want
-- Step 3: Copy data to new db or just do your own processing of the subset
-
 # Internals
 The algorithm used in SqlSizer is a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* applied to a relational database.
 
@@ -48,6 +39,16 @@ In order to optimize speed of BFS the following tricks have been applied:
 ## Trick 2
 The SqlSizer is not marking data rows as vistited in order to limit number of SQL updates.
 Instead status of BFS operation is updated which is only one SQL update.
+
+
+# How to find subset you need
+
+- Step 1: Provide configuration
+    - Queries that define initial data (the table rows with colors)
+    - (Optional) Color map that allow to configure colors for the data and limits
+
+- Step 2: Execute `Find-Subset` cmdlet to find the subset you want
+- Step 3: Copy data to new db or just do your own processing of the subset
 
 ## Colors rules
 
@@ -68,7 +69,7 @@ Install-Module Az -Scope CurrentUser
 
 ```
 
-# Install
+# Installation
 Run the following to install SqlSizer-MSSQL from the  [PowerShell Gallery](https://www.powershellgallery.com/packages/SqlSizer-MSSQL).
 
 Please bare in mind that at the moment the SqlSizer-MSSQL is in alpha stage.
