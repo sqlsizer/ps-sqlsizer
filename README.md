@@ -57,7 +57,7 @@ In order to optimize speed the following tricks have been applied:
 The SqlSizer is not marking data rows as vistited in order to limit number of SQL updates.
 Instead status of BFS operation is updated which is only one SQL update.
 
-Colors rules:
+## Colors rules
 
 - Red: find referenced rows (recursively)
 - Green: find dependent and referenced rows (recursively, there is also an option to adjust this behavior)
