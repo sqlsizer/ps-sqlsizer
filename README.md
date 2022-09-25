@@ -7,6 +7,7 @@ The core feature is ability to find desired subset from the database and the fea
 
  - No database or subset size limitation
  - No primary key size limitation. It can handle tables with any size of primary key (e.g. even with 8 columns and any types)
+ - No foreign key size limitation. It can handle tables with any size of foreign key (e.g. even with 8 columns and any types)
  - Time complexity related to the size of subset and database in "most cases" (to be verified and analyzed)
  - Memory complexity:
     - on PowerShell side related to length of longest path in database data and number of tables (rather very small, benchark to be provided)
