@@ -50,12 +50,11 @@ Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $in
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $true
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 # Create a new db with found subset of data
 
@@ -84,18 +83,11 @@ foreach ($table in $info.Tables)
     $sum += $table.Statistics.Rows
 }
 
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 Write-Output "Total rows: $($sum)"
 Write-Output "==================="
 
-Write-Output "Secure CSV for Person.Person:"
-Write-Output $(Get-SubsetTableCsv -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true -SkipHeader $false)
 
-Write-Output "Secure Json for Person.Person:"
-Write-Output $(Get-SubsetTableJson -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true)
-
-Write-Output "Secure Xml for Person.Person:"
-$xml = Get-SubsetTableXml -Database $database -SchemaName "Person" -TableName "Person" -DatabaseInfo $info -ConnectionInfo $connection -Secure $true
-Write-Output $xml.OuterXml
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
