@@ -35,15 +35,9 @@ The core feature is ability to find desired subset from the database and the fea
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
-The algorithm used in SqlSizer is a variation of *Breadth-first search* algorithm with *multiple sources* applied to a relational database.
-At every iteration the algorithm finds the best set of row data based on the number of unprocessed records, color and depth.
+The algorithm used in SqlSizer is a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* applied to a relational database.
 
-The found data rows are fetched into the appropriate slice table.
-The color of slice and color map determines which new rows are added to processing tables.
-
-This process continues until there are no unprocessed rows of any color.
-
-In order to optimize speed the following tricks have been applied:
+In order to optimize speed of BFS the following tricks have been applied:
 
 ## Trick 1
  The BFS algorithm is visiting the graph nodes in specific, well-known order.
