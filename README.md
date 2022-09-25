@@ -11,7 +11,7 @@ It has following properties:
  - No database size limitation
  - Time complexity related to the size of subset in "most cases" (to be verified and analyzed)
  - Memory complexity:
-    - on PowerShell side related to number of longest path in data and number of tables
+    - on PowerShell side related to length of longest path in database data and number of tables
     - on SQL Server or Azure SQL dependent on server configuration
 
 
