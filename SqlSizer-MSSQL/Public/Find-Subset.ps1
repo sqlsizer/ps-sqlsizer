@@ -448,22 +448,23 @@
         }
 
         # Logic
-        $q = "SELECT TOP 1
+        $q = "SELECT TOP 1   
 			   [Table],
-               [ToProcess],
-               [Color],
-               [Depth]
+			   [Depth],
+			   [Color],
+               MAX([ToProcess]) as [ToProcess]
             FROM
                 [SqlSizer].[Operations]
             WHERE
                 [Processed] = 0
             GROUP BY
-                [Table], [ToProcess], [Depth], [Color]
+                [Table], [Depth], [Color]
             ORDER BY
                 [Depth] ASC, [ToProcess] DESC"
-        $first = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
 
-        if ($null -eq $first)
+        $operations = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+
+        if ($null -eq $operations)
         {
             Write-Progress -Activity "Finding subset" -Completed
             break
@@ -471,9 +472,9 @@
         
 
         # load node info 
-        $tableId = $first.Table
-        $color = $first.Color
-        $depth = $first.Depth
+        $tableId = $operations.Table
+        $color = $operations.Color
+        $depth = $operations.Depth
         $tableData = $tablesGroupedById["$($tableId)"]
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
         
