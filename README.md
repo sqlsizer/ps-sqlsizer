@@ -1,7 +1,7 @@
 ![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
 # sqlsizer-mssql
 
-A PowerShell module for Microsoft SQL Server and Azure SQL databases data management. 
+A PowerShell module for managing data in Microsoft SQL Server and Azure SQL databases.
 
 The core feature is ability to find desired subset from the database.
 
