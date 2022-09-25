@@ -30,7 +30,6 @@ function New-EmptyDatabase
     # Clear copy
     Disable-ForeignKeys -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Clear-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    Uninstall-SqlSizer -Database $NewDatabase -ConnectionInfo $ConnectionInfo
     Enable-ForeignKeys -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Format-Indexes -Database $NewDatabase -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     Compress-Database -Database $NewDatabase -ConnectionInfo $ConnectionInfo
