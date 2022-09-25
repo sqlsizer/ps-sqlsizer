@@ -9,7 +9,7 @@ It has following properties:
 
  - No primary key size limitation. It can handle any size of primary key (e.g. even with 8 colums and any types)
  - No database size limitation
- - Time complexity related to the size of subset (to be verified and analyzed)
+ - Time complexity related to the size of subset in "most cases" (to be verified and analyzed)
  - Memory complexity:
     - on PowerShell side related to number of longest path in data and number of tables
     - on SQL Server or Azure SQL dependent on server configuration
