@@ -25,7 +25,6 @@
     $outgoingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
     $incomingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
 
-
     function CreateOutgoingQueryPattern
     {
         param
@@ -457,7 +456,7 @@
 			   [Table],
 			   [Depth],
 			   [Color],
-               MAX([ToProcess]) as [ToProcess]
+               SUM([ToProcess]) as [ToProcess]
             FROM
                 [SqlSizer].[Operations]
             WHERE
