@@ -3,9 +3,19 @@
 
 A PowerShell module for Microsoft SQL Server and Azure SQL databases data management. 
 
-The core feature is ability to find the subset from the database that meets your specification.
+The core feature is ability to find desired subset from the database.
 
-The module can help you with:
+It has following properties:
+
+ - No primary key size limitation. It can handle any size of primary key (e.g. even with 8 colums and any types)
+ - No database size size limitation
+ - Time complexity related to the size of subset (to be verified and analyzed)
+ - Memory complexity:
+    - on PowerShell side related to number of longest path in data and number of tables
+    - on SQL Server or Azure SQL dependent on server configuration
+
+
+**SqlSizer** can help you with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
  - doing comparision of subsets (comparing only data that you are interested in)
  - doing data integrity verifications (making sure that data is not changed using SHA2_512)
@@ -28,16 +38,25 @@ The module can help you with:
 - Step 3: Copy data to new db or just do your own processing of the subset
 
 # Internals
-The algorithm used in SqlSizer is a variation of Breadth-first search algorithm applied to a relational database.
+The algorithm used in SqlSizer is a variation of *Breadth-first search* algorithm with *multiple sources* applied to a relational database.
+At every iteration the algorithm finds the best set of row data based on the number of unprocessed records, color and depth.
 
-All processing is done on Microsoft SQL Server or Azure SQL side. No heavy operations are done in Powershell.
+The found data rows are fetched into the appropriate slice table.
+The color of slice and color map determines which new rows are added to processing tables.
 
-The initial set of table rows needs to be defined before the start of the scripts and added to processing tables 
-which consists of multiple tables with all possible primary key definitions from the database.
-
-At every iteration the algorithm finds the best set of data with a single color to process based on the number of unprocessed records and depth.
-Then data rows are fetched into the appropriate slice table. Later based on the color of the slice and color map the new data rows are added to processing tables.
 This process continues until there are no unprocessed rows of any color.
+
+In order to optimize speed the following tricks have been applied:
+
+## Trick 1
+ THe BFS algorithm in visiting the graph nodes in specific, well-known order.
+ In SqlSizer the node is the BFS operation which one row that defines set of data rows visited or to visit.
+ At every step of BFS operations grouped into *slices*.
+ Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
+
+## Trick 2
+The SqlSizer is not marking data rows as vistited in order to limit number of SQL updates.
+Instead status of BFS operation is updated which is only one SQL update.
 
 Colors rules:
 
