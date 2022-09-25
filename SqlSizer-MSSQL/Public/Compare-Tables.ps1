@@ -1,4 +1,4 @@
-function New-TableCompare
+function Compare-Tables
 {
     [cmdletbinding()]
     param
