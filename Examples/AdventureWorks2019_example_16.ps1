@@ -11,7 +11,7 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-$json = New-DatabaseSchemaJson -Database $database -DatabaseInfo $info -ConnectionInfo $connection
+$json = Get-DatabaseSchemaJson -Database $database -DatabaseInfo $info -ConnectionInfo $connection
 
 $json
 # SIG # Begin signature block

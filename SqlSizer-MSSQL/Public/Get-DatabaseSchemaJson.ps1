@@ -1,4 +1,4 @@
-function New-DatabaseSchemaJson
+function Get-DatabaseSchemaJson
 {
     [cmdletbinding()]
     param
