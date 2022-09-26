@@ -38,7 +38,7 @@ In order to optimize speed of BFS the following tricks have been applied:
 
 ## Trick 2
 The SqlSizer is not marking data rows as vistited in order to limit number of SQL updates.
-Instead status of BFS operation is updated which is only one SQL update.
+Instead status of BFS operation is updated which is only one row SQL update.
 
 
 # How to find subset you need
