@@ -50,7 +50,12 @@ Instead status of BFS operation is updated which is only one row SQL update.
 - Step 2: Execute `Find-Subset` cmdlet to find the subset you want
 - Step 3: Copy data to new db or just do your own processing of the subset
 
-## Colors rules
+## Color map
+
+The colors defines rules which related dat to the rows will be included in the subset.
+The initial data has colors and also you can adjust colors of the data during search using **color map**.
+
+At the moment there are following colors:
 
 - Red: find referenced rows (recursively)
 - Green: find dependent and referenced rows (recursively, there is also an option to adjust this behavior)
