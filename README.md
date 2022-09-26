@@ -16,7 +16,7 @@ The core feature is ability to find desired subset from the database and the fea
 # Use cases
 **SqlSizer** can help you with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
- - doing comparision of subsets (comparing only data that you are interested in)
+ - doing comparison of subsets (comparing only data that you are interested in)
  - copying schemas/tables/data to the same or different database or to Azure BLOB storage
  - getting the database object model that you can use to implement your own data management logic
  - extracting selected data from your database in CSV, JSON format to file
@@ -33,12 +33,12 @@ In order to optimize speed of BFS the following tricks have been applied:
 
 ## Trick 1
  The BFS algorithm is visiting the graph nodes in specific, well-known order.
- In SqlSizer the node is the BFS operation which one row that defines set of data rows visited or to visit.
+ In SqlSizer the node is the BFS operation which is one row that defines a set of data rows visited or to visit.
  Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
 
 ## Trick 2
-The SqlSizer is not marking data rows as vistited in order to limit number of SQL updates.
-Instead status of BFS operation is updated which is only one row SQL update.
+The SqlSizer is not marking data rows as vistited in order to limit the number of SQL updates.
+Instead the status of BFS operation is updated which is only one row SQL update.
 
 
 # How to find subset you need
