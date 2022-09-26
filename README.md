@@ -52,7 +52,8 @@ Instead status of BFS operation is updated which is only one row SQL update.
 
 ## Color map
 
-The colors defines rules which related dat to the rows will be included in the subset.
+The colors defines rules which related data to the rows will be included in the subset.
+
 The initial data has colors and also you can adjust colors of the data during search using **color map**.
 
 At the moment there are following colors:
