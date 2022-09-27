@@ -30,7 +30,7 @@ There are two algorithms used in SqlSizer:
   - a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* 
   - a variation of *Depth-first search (DFS)* algorithm with *multiple sources*
 
-Both are applied to the relational database data to find the desired subset.
+Both can be applied to the relational database data to find the desired subset.
 
 In order to optimize speed of BFS the following tricks have been applied:
 - The BFS algorithm is visiting the graph nodes in specific, well-known order.
