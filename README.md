@@ -32,7 +32,7 @@ There are two algorithms used in SqlSizer:
 
 Both can be applied to the relational database data to find the desired subset.
 
-In order to optimize speed of BFS the following tricks have been applied:
+In order to optimize speed of BFS the following ideas have been applied:
 - The BFS algorithm is visiting the graph nodes in specific, well-known order.
 In SqlSizer the node is the BFS operation which is one row that defines a set of data rows visited or to visit.
 Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
