@@ -33,24 +33,12 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
-# Basic limiting color map (because full search is enabled)
-$colorMap = New-Object -Type ColorMap
-foreach ($table in $info.Tables)
-{
-    $colorMapItem = New-Object -Type ColorItem
-    $colorMapItem.SchemaName = $table.SchemaName
-    $colorMapItem.TableName = $table.TableName
-    $colorMapItem.Condition = New-Object -Type Condition
-    $colorMapItem.Condition.Top = 100 # limit all dependend data for each fk by 100 rows
-    $colorMap.Items += $colorMapItem
-}
-
 Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
@@ -58,7 +46,7 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 # Create a new db with found subset of data
 
-$newDatabase = "AdventureWorks2019_subset_05"
+$newDatabase = "AdventureWorks2019_subset_John"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
 
@@ -66,7 +54,7 @@ $info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -Mea
 
 Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info -UseTruncate $true
+Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info

@@ -35,7 +35,7 @@ Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $in
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -UseDfs $true
 
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -55,7 +55,9 @@ Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -Databa
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Remove all SqlSizer
-Uninstall-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveHistory $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+Uninstall-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
