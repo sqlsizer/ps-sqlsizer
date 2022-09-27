@@ -3,18 +3,17 @@
 
 A PowerShell module for managing data in Microsoft SQL Server and Azure SQL databases.
 
-The core feature is ability to find desired subset from the database and the feature has following properties:
+The core feature is ability to find desired subset from the database and that feature has following properties:
 
- - No database or subset size limitation
- - No primary key size limitation. It can handle tables with any size of primary key (e.g. even with 8 columns and any types)
- - No foreign key size limitation. It can handle tables with any size of foreign key (e.g. even with 8 columns and any types)
- - Time complexity related to the size of subset and database in "most cases" (to be verified and analyzed)
+ - No limitation on database or subset size
+ - No limitation on primary key size. It can handle tables with any size of primary key (e.g. even with 8 columns and any types)
+ - No limitation on foreign key size. It can handle tables with any size of foreign key (e.g. even with 8 columns and any types)
  - Memory complexity:
     - on PowerShell side related to number of tables (rather very small, benchmark to be provided)
     - on SQL Server or Azure SQL side dependent on server configuration
 
 # Use cases
-**SqlSizer** can help you with:
+**SqlSizer** can help with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
  - doing comparison of subsets (comparing only data that you are interested in)
  - copying schemas/tables/data to the same or different database or to Azure BLOB storage
@@ -27,17 +26,17 @@ The core feature is ability to find desired subset from the database and the fea
  - disabling/enabling triggers
 
 # Internals
-The algorithm used in SqlSizer is a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* applied to a relational database.
+There are two algorithms used in SqlSizer:
+  - a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* 
+  - a variation of *Depth-first search (DFS)* algorithm with *multiple sources*
+
+Both are applied to the relational database data to find the desired subset.
 
 In order to optimize speed of BFS the following tricks have been applied:
-
-## Trick 1
- The BFS algorithm is visiting the graph nodes in specific, well-known order.
- In SqlSizer the node is the BFS operation which is one row that defines a set of data rows visited or to visit.
- Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
-
-## Trick 2
-The SqlSizer is not marking data rows as vistited in order to limit the number of SQL updates.
+- The BFS algorithm is visiting the graph nodes in specific, well-known order.
+In SqlSizer the node is the BFS operation which is one row that defines a set of data rows visited or to visit.
+Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
+- The SqlSizer is not marking data rows as vistited in order to limit the number of SQL updates.
 Instead the status of BFS operation is updated which is only one row SQL update.
 
 
