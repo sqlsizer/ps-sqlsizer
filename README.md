@@ -1,14 +1,22 @@
 ![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
 # sqlsizer-mssql
 
-A PowerShell module for Microsoft SQL Server and Azure SQL databases data management. 
+A PowerShell module for managing data in Microsoft SQL Server and Azure SQL databases.
 
-The core feature is ability to find the subset from the database that meets your specification.
+The core feature is ability to find desired subset from the database and the feature has following properties:
 
-The module can help you with:
+ - No database or subset size limitation
+ - No primary key size limitation. It can handle tables with any size of primary key (e.g. even with 8 columns and any types)
+ - No foreign key size limitation. It can handle tables with any size of foreign key (e.g. even with 8 columns and any types)
+ - Time complexity related to the size of subset and database in "most cases" (to be verified and analyzed)
+ - Memory complexity:
+    - on PowerShell side related to number of tables (rather very small, benchmark to be provided)
+    - on SQL Server or Azure SQL side dependent on server configuration
+
+# Use cases
+**SqlSizer** can help you with:
  - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
- - doing comparision of subsets (comparing only data that you are interested in)
- - doing data integrity verifications (making sure that data is not changed using SHA2_512)
+ - doing comparison of subsets (comparing only data that you are interested in)
  - copying schemas/tables/data to the same or different database or to Azure BLOB storage
  - getting the database object model that you can use to implement your own data management logic
  - extracting selected data from your database in CSV, JSON format to file
@@ -17,6 +25,21 @@ The module can help you with:
  - removing large amount of data from database in safe way (with log file that will not grow that much)
  - disabling/enabling/editing/testing table foreign keys 
  - disabling/enabling triggers
+
+# Internals
+The algorithm used in SqlSizer is a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* applied to a relational database.
+
+In order to optimize speed of BFS the following tricks have been applied:
+
+## Trick 1
+ The BFS algorithm is visiting the graph nodes in specific, well-known order.
+ In SqlSizer the node is the BFS operation which is one row that defines a set of data rows visited or to visit.
+ Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
+
+## Trick 2
+The SqlSizer is not marking data rows as vistited in order to limit the number of SQL updates.
+Instead the status of BFS operation is updated which is only one row SQL update.
+
 
 # How to find subset you need
 
@@ -27,19 +50,13 @@ The module can help you with:
 - Step 2: Execute `Find-Subset` cmdlet to find the subset you want
 - Step 3: Copy data to new db or just do your own processing of the subset
 
-# Internals
-The algorithm used in SqlSizer is a variation of Breadth-first search algorithm applied to a relational database.
+## Color map
 
-All processing is done on Microsoft SQL Server or Azure SQL side. No heavy operations are done in Powershell.
+The colors defines rules which related data to the rows will be included in the subset.
 
-The initial set of table rows needs to be defined before the start of the scripts and added to processing tables 
-which consists of multiple tables with all possible primary key definitions from the database.
+The initial data has colors and also you can adjust colors of the data during search using **color map**.
 
-At every iteration the algorithm finds the best set of data with a single color to process based on the number of unprocessed records and depth.
-Then data rows are fetched into the appropriate slice table. Later based on the color of the slice and color map the new data rows are added to processing tables.
-This process continues until there are no unprocessed rows of any color.
-
-Colors rules:
+At the moment there are following colors:
 
 - Red: find referenced rows (recursively)
 - Green: find dependent and referenced rows (recursively, there is also an option to adjust this behavior)
@@ -58,7 +75,7 @@ Install-Module Az -Scope CurrentUser
 
 ```
 
-# Install
+# Installation
 Run the following to install SqlSizer-MSSQL from the  [PowerShell Gallery](https://www.powershellgallery.com/packages/SqlSizer-MSSQL).
 
 Please bare in mind that at the moment the SqlSizer-MSSQL is in alpha stage.
