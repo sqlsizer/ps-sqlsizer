@@ -43,6 +43,12 @@ function Get-SubsetTableStatistics
             }
         }
 
+        if ($allTablesGroupedbyName.ContainsKey($table.SchemaName + ", " + $table.TableName) -eq $false)
+        {
+            # todo remove it someday
+            continue
+        }
+
         $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)) x"
         $count = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
