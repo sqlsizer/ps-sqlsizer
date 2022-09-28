@@ -28,14 +28,128 @@
     $outgoingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
     $incomingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
 
+    function GetIncomingNewColor
+    {
+        param
+        (
+            [TableFk]$fk,
+            [int]$color,
+            [ColorMap]$colorMap
+        )
+        
+        $newColor = $color
+
+        if ($color -eq [int][Color]::Green)
+        {
+            if ($FullSearch -ne $true)
+            {
+                $newColor = [int][Color]::Yellow
+            }
+        }
+
+        if ($color -eq [int][Color]::Purple)
+        {
+            $newColor = [int][Color]::Red
+        }
+
+        if ($null -ne $colorMap)
+        {
+            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+            $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
+
+            if (($null -ne $items) -and ($null -ne $items.ForcedColor))
+            {
+                $newColor = [int]$items.ForcedColor.Color
+            }
+        }
+        return $newColor
+    }
+    
+    function GetMaxDepth
+    {
+        param
+        (
+            [TableFk]$fk,
+            [int]$color,
+            [ColorMap]$colorMap
+        )
+        
+        $maxDepth = $null
+
+        if ($null -ne $colorMap)
+        {
+            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+            $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
+
+            if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.MaxDepth -ne -1))
+            {
+                $maxDepth = [int]$items.Condition.MaxDepth
+            }
+        }
+        return $maxDepth
+    }
+
+    function GetTop
+    {
+        param
+        (
+            [TableFk]$fk,
+            [int]$color,
+            [ColorMap]$colorMap
+        )
+        
+        $top = $null
+
+        if ($null -ne $colorMap)
+        {
+            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
+            $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
+
+            if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.Top -ne -1))
+            {
+                $top = [int]$items.Condition.Top
+            }
+        }
+        return $top
+    }
+    function GetOutgoingColor
+    {
+        param
+        (
+            [TableFk]$fk,
+            [int]$color,
+            [ColorMap]$colorMap
+        )
+
+        if ($color -eq [int][Color]::Green)
+        {
+            $newColor = [int][Color]::Green
+        }
+        else
+        {
+            $newColor = [int][Color]::Red
+        }
+
+        if ($null -ne $colorMap)
+        {
+            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
+            $items = $items | Where-Object { ($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))) }
+            if (($null -ne $items) -and ($null -ne $items.ForcedColor))
+            {
+                $newColor = [int]$items.ForcedColor.Color
+            }
+        }
+        return $newColor
+    }
+
     function CreateOutgoingQueryPattern
     {
         param
         (
-            [TableInfo]$table,
-            [int]$color,
-            [bool]$useDfs = $false
+            [TableFk]$fk,
+            [int]$color
         )
+
         $result = ""
         $signature = $structure.Tables[$table]
         $slice = $structure.GetSliceName($signature)
@@ -60,25 +174,7 @@
                 continue
             }
 
-            # default new color
-            if ($color -eq [int][Color]::Green)
-            {
-                $newColor = [int][Color]::Green
-            }
-            else
-            {
-                $newColor = [int][Color]::Red
-            }
-
-            if ($null -ne $ColorMap)
-            {
-                $items = $ColorMap.Items | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
-                $items = $items | Where-Object { ($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))) }
-                if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-                {
-                    $newColor = [int]$items.ForcedColor.Color
-                }
-            }
+            $newColor = GetOutgoingColor -color $color -fk $fk -colorMap $ColorMap
 
             $baseTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
             $baseTableId = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table].Id
@@ -176,7 +272,7 @@
             $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
     }
-    
+
     function CreateIncomingQueryPattern
     {
         param
@@ -199,50 +295,9 @@
                     continue
                 }
 
-                $top = $null
-                $maxDepth = $null
-                $newColor = $color
-
-                # default new color
-                if ($color -eq [int][Color]::Green)
-                {
-                    if ($FullSearch -ne $true)
-                    {
-                        $newColor = [int][Color]::Yellow
-                    }
-                }
-
-                if ($color -eq [int][Color]::Purple)
-                {
-                    $newColor = [int][Color]::Red
-                }
-
-                # forced color from color map
-                if ($null -ne $ColorMap)
-                {
-                    $items = $ColorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
-                    $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
-
-                    if (($null -ne $items) -and ($null -ne $items.Condition))
-                    {
-                        $top = [int]$items.Condition.Top
-                    }
-
-                    if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.Top -ne -1))
-                    {
-                        $top = [int]$items.Condition.Top
-                    }
-
-                    if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.MaxDepth -ne -1))
-                    {
-                        $maxDepth = [int]$items.Condition.MaxDepth
-                    }
-
-                    if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-                    {
-                        $newColor = [int]$items.ForcedColor.Color
-                    }
-                }
+                $newColor = GetIncomingNewColor -color $color -fk $fk -colorMap $ColorMap
+                $maxDepth = GetMaxDepth -color $color -fk $fk -colorMap $ColorMap
+                $top = GetTop -color $color -fk $fk -colorMap $ColorMap
 
                 $fkTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
                 $fkTableId = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable].Id
@@ -423,6 +478,28 @@
 
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
+
+
+    function ShouldAddOutgoing
+    {
+        param
+        (
+            [int]$color
+        )
+
+        return ($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple)
+    }
+
+    
+    function ShouldAddIncoming
+    {
+        param
+        (
+            [int]$color
+        )
+
+        return ($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue)
+    }
     
     function DoSearch()
     {
@@ -431,6 +508,9 @@
             [bool]$useDfs = $false
         )
 
+        # save start time
+        $start = Get-Date
+    
         $interval = 5
         $percent = 0
         while ($true)
@@ -531,14 +611,14 @@
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
             }
 
-            # Green/Purple/Red color
-            if (($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple))
+            $addOutgoing = ShouldAddOutgoing -color $color
+            if ($true -eq $addOutgoing)
             {
                 HandleOutgoing -table $table -color $color -useDfs $useDfs
             }
 
-            # Green/Purple/Blue Color
-            if (($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue))
+            $addIncoming = ShouldAddIncoming -color $color
+            if ($true -eq $addIncoming)
             {
                 HandleIncoming -table $table -color $color -useDfs $useDfs
             }
@@ -551,10 +631,6 @@
         }
     }
 
-
-    # save start time
-    $start = Get-Date
-    
     # get meta data
     $structure = [Structure]::new($DatabaseInfo)
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
