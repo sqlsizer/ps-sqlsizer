@@ -71,6 +71,9 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 $newDatabase = "AdventureWorks2019_subset_07"
 
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
+
+$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+
 Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 
