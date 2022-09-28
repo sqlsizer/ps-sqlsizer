@@ -16,10 +16,20 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    $schemaExists = Test-SchemaExists -SchemaName $SchemaName -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        Write-Host "Schema $SchemaName doesn't exist"
+        return $false
+    }
+
     # drop tables in schema
     foreach ($table in $DatabaseInfo.Tables)
     {
-        $null = Remove-Table -Database $Database -SchemaName $SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        if ($table.SchemaName -eq $SchemaName)
+        {
+            $null = Remove-Table -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        }
     }
 
     # drop views in schema

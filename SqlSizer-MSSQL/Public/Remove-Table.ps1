@@ -29,6 +29,13 @@
         return $false
     }
 
+    $tableExists = Test-TableExists -SchemaName $SchemaName -TableName $TableName -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($tableExists -eq $false)
+    {
+        Write-Host "Table $SchemaName.$TableName doesn't exist"
+        return $false
+    }
+
     # verify droping foreign keys columns first
     if ($true -eq $RemoveFkColumns)
     {
@@ -53,7 +60,13 @@
 
     # drop foreign keys
     foreach ($table in $DatabaseInfo.Tables)
-    {
+    { 
+        $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
+        if ($tableExists -eq $false)
+        {
+            continue
+        }
+
         foreach ($fk in $table.ForeignKeys)
         {
             if (($fk.Schema -eq $SchemaName) -and ($fk.Table -eq $TableName))
@@ -68,7 +81,13 @@
     if ($true -eq $RemoveFkColumns)
     {
         foreach ($table in $DatabaseInfo.Tables)
-        {  
+        { 
+            $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
+            if ($tableExists -eq $false)
+            {
+                continue
+            }
+            
             foreach ($fk in $table.ForeignKeys)
             {
                 if (($fk.Schema -eq $SchemaName) -and ($fk.Table -eq $TableName))
