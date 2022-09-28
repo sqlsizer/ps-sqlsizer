@@ -25,7 +25,8 @@
     $schemaExists = Test-SchemaExists -SchemaName $SchemaName -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $false)
     {
-        throw "Schema $SchemaName doesn't exist"
+        Write-Host "Schema $SchemaName doesn't exist"
+        return $false
     }
 
     # verify droping foreign keys columns first
@@ -106,6 +107,8 @@
     # drop table
     $sql = "DROP TABLE if exists [$($SchemaName)].[$($TableName)]"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+    return $true
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

@@ -22,13 +22,16 @@
     $schemaExists = Test-SchemaExists -SchemaName $SchemaName -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $false)
     {
-        throw "Schema $SchemaName doesn't exist"
+        Write-Host "Schema $SchemaName doesn't exist"
+        return $false
     }
 
     $view = $DatabaseInfo.Views | Where-Object { ($_.ViewName -eq $ViewName) -and ($_.SchemaName -eq $SchemaName)}
 
     $sql = "$($view.Definition)"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+    return $true
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

@@ -19,7 +19,7 @@
     # drop tables in schema
     foreach ($table in $DatabaseInfo.Tables)
     {
-        Remove-Table -Database $Database -SchemaName $SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        $null = Remove-Table -Database $Database -SchemaName $SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
     # drop views in schema
