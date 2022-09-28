@@ -37,7 +37,7 @@
     {
         if ($view.SchemaName -eq $SchemaName)
         {
-            $sql = "DROP VIEW if exists [$($view.SchemaName)].[$($view.ViewName)]"
+            $sql = "DROP VIEW IF EXISTS [$($view.SchemaName)].[$($view.ViewName)]"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
@@ -53,7 +53,15 @@
     }
 
     # drop schema
-    $sql = "DROP SCHEMA IF EXISTS $SchemaName"
+    if ($false -eq $ConnectionInfo.IsSynapse)
+    {
+        $sql = "DROP SCHEMA IF EXISTS $SchemaName"    
+    }
+    else 
+    {
+        $sql = "DROP SCHEMA $SchemaName"    
+    }
+    
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }
 # SIG # Begin signature block

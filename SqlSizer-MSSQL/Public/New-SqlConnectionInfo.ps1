@@ -8,13 +8,15 @@
         [string]$Username,
         [SecureString]$Password,
         [string]$AccessToken,
-        [bool]$EncryptConnection = $false
+        [bool]$EncryptConnection = $false,
+        [bool]$IsSynapse = $false
     )
 
     $connection = New-Object -TypeName SqlConnectionInfo
     $connection.Server = $Server
     $connection.EncryptConnection = $EncryptConnection
     $connection.Statistics = New-Object -Type SqlConnectionStatistics
+    $connection.IsSynapse = $IsSynapse
 
     if (($Username -ne $null) -and ($Password -ne $null))
     {

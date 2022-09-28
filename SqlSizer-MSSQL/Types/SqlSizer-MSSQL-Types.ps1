@@ -221,6 +221,7 @@ class SqlConnectionInfo
     [string]$AccessToken = $null
     [bool]$EncryptConnection = $false
     [SqlConnectionStatistics]$Statistics
+    [bool]$IsSynapse = $false
 }
 
 class TableFile

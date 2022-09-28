@@ -19,8 +19,20 @@
             OBJECT_DEFINITION(v.object_id) as [definition]
         FROM 
             sys.views v"
+
+        if ($ConnectionInfo.IsSynapse)
+        {
+            return $null
+        }
         
-        return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        try
+        {
+            return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+        catch 
+        {
+            return $null
+        }
     }
 
     function GetTablesRows
@@ -188,6 +200,11 @@
 
     function GetViewAndTableDependenciesInfo
     {
+        if ($ConnectionInfo.IsSynapse)
+        {
+            return $null
+        }
+
         $sql = "WITH Dependencies ([referenced_type], [referenced_id], [referenced_schema_name],[referenced_entity_name], [referencing_type], [referencing_id], [view_schema_name], [view_name])
         AS
         (
@@ -212,13 +229,25 @@
         FROM Dependencies d
         ORDER BY d.referenced_schema_name, d.referenced_entity_name"
     
-        $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        return $depRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
+        try
+        {
+            $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            return $depRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
+        }
+        catch 
+        {
+            return $null
+        }
     }
 
 
     function GetTriggerInfo
     {
+        if ($ConnectionInfo.IsSynapse)
+        {
+            return $null
+        }
+
         $sql = "SELECT
         trig.[Name] as [TriggerName],
         s.name as [SchemaName],
@@ -228,8 +257,15 @@
         INNER JOIN sys.tables t ON t.object_id = trig.parent_id
         INNER JOIN sys.schemas s ON t.schema_id = s.schema_id"
     
-        $triggerRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        return $triggerRows | Group-Object -Property SchemaName, TableName -AsHashTable -AsString      
+        try
+        {
+            $triggerRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            return $triggerRows | Group-Object -Property SchemaName, TableName -AsHashTable -AsString      
+        }
+        catch
+        {
+            return $null
+        }
     }
 
     function GetSchemasRows
@@ -242,8 +278,21 @@
 
     function GetStoredProceduresRows
     {
+        if ($ConnectionInfo.IsSynapse)
+        {
+            return $null
+        }
+        
         $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, object_definition(object_id) as [definition] from sys.objects where type = 'P'"
-        return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        
+        try
+        {
+            return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+        catch 
+        {
+            return $null
+        }
     }
 
     # create result object
@@ -306,19 +355,21 @@
         }
 
         $key = $table.SchemaName + ", " + $table.TableName
-        $tableKey = $primaryKeyInfo[$key]
 
-        foreach ($tableKeyColumn in $tableKey)
+        if ($null -ne $primaryKeyInfo)
         {
-            $pkColumn = New-Object -TypeName ColumnInfo
-            $pkColumn.Name = $tableKeyColumn["column"]
-            $pkColumn.DataType = $tableKeyColumn["dataType"]
-            $pkColumn.Length = $tableKeyColumn["length"]
-            $pkColumn.IsNullable = $false
-            $pkColumn.IsComputed = $false
-            $table.PrimaryKey += $pkColumn
+            $tableKey = $primaryKeyInfo[$key]
+            foreach ($tableKeyColumn in $tableKey)
+            {
+                $pkColumn = New-Object -TypeName ColumnInfo
+                $pkColumn.Name = $tableKeyColumn["column"]
+                $pkColumn.DataType = $tableKeyColumn["dataType"]
+                $pkColumn.Length = $tableKeyColumn["length"]
+                $pkColumn.IsNullable = $false
+                $pkColumn.IsComputed = $false
+                $table.PrimaryKey += $pkColumn
+            }
         }
-
         $tableColumns = $columnsInfo[$key]
 
         foreach ($tableColumn in $tableColumns)

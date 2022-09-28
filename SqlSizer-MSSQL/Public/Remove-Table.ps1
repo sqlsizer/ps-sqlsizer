@@ -119,12 +119,19 @@
     $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName) }
     foreach ($view in $table.Views)
     {
-        $sql = "DROP VIEW if exists [$($view.SchemaName)].[$($view.ViewName)]"
+        $sql = "DROP VIEW IF EXISTS [$($view.SchemaName)].[$($view.ViewName)]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     # drop table
-    $sql = "DROP TABLE if exists [$($SchemaName)].[$($TableName)]"
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $sql = "DROP TABLE [$($SchemaName)].[$($TableName)]"
+    }
+    else
+    {
+        $sql = "DROP TABLE IF EXISTS [$($SchemaName)].[$($TableName)]"
+    }
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     return $true
