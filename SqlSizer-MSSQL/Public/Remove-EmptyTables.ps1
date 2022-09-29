@@ -23,7 +23,7 @@ function Remove-EmptyTables
             continue
         }
 
-        Remove-Table -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo `
+        $null = Remove-Table -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo `
                     -SchemaName $table.SchemaName -TableName $table.TableName
         
         $i += 1

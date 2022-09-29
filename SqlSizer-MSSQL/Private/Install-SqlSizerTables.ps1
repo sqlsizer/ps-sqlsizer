@@ -49,13 +49,23 @@
         Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
-    $pk = "PRIMARY KEY"
     if ($ConnectionInfo.IsSynapse -eq $true)
     {
         $pk = "PRIMARY KEY NONCLUSTERED NOT ENFORCED"
     }
+    else
+    {
+        $pk = "PRIMARY KEY"
+    }
 
-    $tmp = "CREATE TABLE SqlSizer.Files(Id int identity(1,1) $pk, FileId uniqueidentifier, [Index] int, [Content] nvarchar(4000))"
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $tmp = "CREATE TABLE SqlSizer.Files(Id int identity(1,1) $pk, FileId uniqueidentifier, [Index] int, [Content] nvarchar(4000))"
+    }
+    else
+    {
+        $tmp = "CREATE TABLE SqlSizer.Files(Id int identity(1,1) $pk, FileId uniqueidentifier, [Index] int, [Content] nvarchar(max))"
+    }
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "CREATE TABLE SqlSizer.Tables(Id int identity(1,1) $pk, [Schema] varchar(128), [TableName] varchar(128))"

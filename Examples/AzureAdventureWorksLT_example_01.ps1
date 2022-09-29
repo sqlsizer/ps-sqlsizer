@@ -2,7 +2,8 @@
 
 # Connection settings
 $server = "sqlsizer.database.windows.net"
-$database = "test03"
+$database = "test01"
+$storageAccount = "<your storage account>"
 
 Connect-AzAccount
 $accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
@@ -53,7 +54,7 @@ $emptyDb = "test03_empty"
 
 if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
 {
-    New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection
+    New-EmptyAzDatabase -Database $database -NewDatabase $emptyDb -ConnectionInfo $connection -DatabaseInfo $info
 }
 
 # Create a copy of empty db for new subset db
@@ -67,7 +68,6 @@ while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) 
 }
 
 # Connect to storage
-$storageAccount = "<storage-account>"
 $keys = Get-AzStorageAccountKey -Name $storageAccount -ResourceGroupName "SqlSizer"
 $ctx = New-AzStorageContext -StorageAccountName "$storageAccount" -StorageAccountKey "$($keys[0].Value)"
 
@@ -81,7 +81,7 @@ Import-SubsetFromAzStorageContainer -MasterPassword $masterPassword -Database $n
     -ContainerName $container -StorageAccountName $storageAccount -StorageContext $ctx
 
 Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection
+Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 
 Write-Output "Azure SQL database created"
 
