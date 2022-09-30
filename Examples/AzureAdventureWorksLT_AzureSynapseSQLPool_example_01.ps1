@@ -1,10 +1,11 @@
-## Example that shows how to find a subset in Azure Synapse Analytics
+## Example that shows how to find a subset in Azure Synapse Analytics, save them for analysis
+## TODO: Comparing them
 
 # Connection settings
-$server = "#name##.sql.azuresynapse.net"
-$database = "#db#"
-$username = "sqladminuser"
-$password = ConvertTo-SecureString -String "#password#" -AsPlainText -Force
+$server = "#name#.sql.azuresynapse.net"
+$database = ""
+$username = ""
+$password = ConvertTo-SecureString -String "" -AsPlainText -Force
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
@@ -45,6 +46,7 @@ $query.Color = [Color]::Yellow
 $query.Schema = "SalesLT"
 $query.Table = "Customer"
 $query.KeyColumns = @('CustomerID')
+$query.Where =  "[`$table].FirstName = 'John'"
 $query.Top = 1000
 
 # Define ignored tables
@@ -53,11 +55,16 @@ Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $in
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
 
-# Find subset
+# Find some subset
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+$subset1Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "BeforeChangesToData" -DatabaseInfo $info
 
-# Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+# Remove some data from db
+$null = Invoke-SqlcmdEx -Sql "DELETE FROM SalesLT.Customer WHERE FirstName = 'John' AND MiddleName='A.'" -Database $Database -ConnectionInfo $connection
+
+# Find some subset again
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+$subset2Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "AfterChangesToData" -DatabaseInfo $info
 
 # end of script
 # SIG # Begin signature block

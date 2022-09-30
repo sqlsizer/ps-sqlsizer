@@ -177,7 +177,7 @@
     {
         if ($ConnectionInfo.IsSynapse -eq $true)
         {
-            $sql = "CREATE TABLE SqlSizerHistory.Subset ([Id] int identity(1,1) $pk, [Guid] [uniqueidentifier] NOT NULL, [Name] varchar(256), [Created] datetime NULL)"
+            $sql = "CREATE TABLE SqlSizerHistory.Subset ([Guid] [uniqueidentifier] NOT NULL $pk, [Name] varchar(256), [Created] datetime NULL)"
         }
         else
         {
@@ -188,7 +188,14 @@
 
     if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "SubsetTable" -ConnectionInfo $ConnectionInfo) -eq $false)
     {
-        $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Id] int identity(1,1) $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL,  [SubsetId] int NOT NULL)"
+        if ($ConnectionInfo.IsSynapse -eq $true)
+        {
+            $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Guid] [uniqueidentifier] $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL, [SubsetGuid] uniqueidentifier NOT NULL)"
+        }
+        else 
+        {
+            $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Id] int identity(1,1) $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL,  [SubsetId] int NOT NULL)"
+        }
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     
         if ($ConnectionInfo.IsSynapse -eq $false)
