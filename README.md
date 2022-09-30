@@ -1,7 +1,9 @@
 ![logo](https://avatars.githubusercontent.com/u/96390582?s=100&v=4)
 # sqlsizer-mssql
 
-A PowerShell module for managing data in Microsoft SQL Server and Azure SQL databases (note: support for Azure Synapse Analytics is in progress).
+A PowerShell module for managing data in Microsoft SQL Server and Azure SQL databases.
+
+The long-term goal of the project is to create a generic tool for managing data in Microsoft cloud and on-premises data platform and services.
 
 The core feature is ability to find desired subset from the database and that feature has following properties:
 
