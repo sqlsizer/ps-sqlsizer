@@ -237,9 +237,15 @@
             $insert = " SELECT $baseTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId INTO #tmp2 FROM (" + $sql + ") x "
             $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
             $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
-            $insert += " DROP TABLE #tmp2
-            GO
-            "
+            $insert += " DROP TABLE #tmp2"
+
+            if ($ConnectionInfo.IsSynapse -eq $false)
+            {
+                $insert += " 
+                GO
+                "
+            }
+
             $result += $insert
         }
 
@@ -374,11 +380,16 @@
                 $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId INTO #tmp FROM (" + $sql + ") x "
                 $insert += " INSERT INTO $fkProcessing SELECT * FROM #tmp "
                 $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
-                $insert += " DROP TABLE #tmp 
-                GO
-                "
-                $result += $insert
+                $insert += " DROP TABLE #tmp "
 
+                if ($ConnectionInfo.IsSynapse -eq $false)
+                {
+                    $insert += " 
+                    GO 
+                    "
+                }
+
+                $result += $insert
             }
         }
 
@@ -444,23 +455,25 @@
 
         # red
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk INTO #tmp FROM $slice s" + $where
-        $q += " INSERT INTO $processing SELECT * FROM #tmp "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Source, Depth) t "      
-        $q += " DROP TABLE #tmp 
-             GO
-             "
+        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk INTO #tmp1 FROM $slice s" + $where
+        $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
         $result += $q
 
         # green
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk INTO #tmp FROM $slice s" + $where
-        $q += " INSERT INTO $processing SELECT * FROM #tmp "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Source, Depth) t "      
-        $q += " DROP TABLE #tmp 
-             GO
-             "
+        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk INTO #tmp2 FROM $slice s" + $where
+        $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
         $result += $q
+        $result += "DROP TABLE #tmp1 DROP TABLE #tmp2"
+
+        if ($ConnectionInfo.IsSynapse -eq $false)
+        {
+            $result += " 
+            GO 
+            "
+        }
 
         return $result
     }

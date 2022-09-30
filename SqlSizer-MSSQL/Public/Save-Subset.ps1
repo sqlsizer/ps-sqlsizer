@@ -16,6 +16,11 @@ function Save-Subset
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        throw "Saving subsets is currently not supported in Azure Synapse Analytics"
+    }
+
     $guid = (New-Guid).ToString()
 
     $sql = "INSERT INTO SqlSizerHistory.Subset([Guid], [Name]) VALUES('$guid', '$SubsetName') SELECT SCOPE_IDENTITY() as Id"

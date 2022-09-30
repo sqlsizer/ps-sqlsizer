@@ -49,7 +49,7 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 
 
 # Ensure that empty database with the database schema exists
-$emptyDb = "test03_empty"
+$emptyDb = "test03_empty_2"
 
 if ((Test-DatabaseOnline -Database $emptyDb -ConnectionInfo $connection) -eq $false)
 {

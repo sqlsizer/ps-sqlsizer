@@ -7,24 +7,35 @@
         [Parameter(Mandatory = $false)]
         [bool]$MeasureSize,
 
+        [Parameter(Mandatory = $false)]
+        [DatabaseStructureInfo]$AdditonalStructureInfo,
+
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     function GetViewsRows
     {
-        $sql = "SELECT 
-            SCHEMA_NAME(v.schema_id) as [schema],
-            OBJECT_NAME(v.object_id) as [view],
-            OBJECT_DEFINITION(v.object_id) as [definition]
-        FROM 
-            sys.views v"
-
         if ($ConnectionInfo.IsSynapse)
         {
-            return $null
+            $sql = "SELECT 
+                SCHEMA_NAME(v.schema_id) as [schema],
+                OBJECT_NAME(v.object_id) as [view],
+                '' as [definition]
+                FROM 
+            sys.views v"
         }
+        else
+        {
         
+            $sql = "SELECT 
+                SCHEMA_NAME(v.schema_id) as [schema],
+                OBJECT_NAME(v.object_id) as [view],
+                OBJECT_DEFINITION(v.object_id) as [definition]
+                FROM 
+            sys.views v"
+        }
+
         try
         {
             return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -131,6 +142,12 @@
 
     function GetForeignKeysInfo
     {
+        if ($ConnectionInfo.IsSynapse)
+        {
+
+            return $null
+        }
+
         $sql = "SELECT  
         [objects].name AS [fk_name],
         [schemas].name AS [fk_schema],
@@ -367,7 +384,22 @@
                 $pkColumn.Length = $tableKeyColumn["length"]
                 $pkColumn.IsNullable = $false
                 $pkColumn.IsComputed = $false
+                $pkColumn.IsPresent = $true
                 $table.PrimaryKey += $pkColumn
+            }
+        }
+        else
+        {
+            if ($true -eq $ConnectionInfo.IsSynapse)
+            {
+                if ($null -ne $AdditonalStructureInfo)
+                {
+                    $sTable = $AdditonalStructureInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
+                    foreach ($item in $sTable.PrimaryKey)
+                    {
+                        $table.PrimaryKey += $item
+                    }
+                }
             }
         }
         $tableColumns = $columnsInfo[$key]
@@ -419,6 +451,19 @@
                 }
 
                 $table.ForeignKeys += $fk
+            }
+        }
+        else
+        {
+            if ($true -eq $ConnectionInfo.IsSynapse)
+            {
+                if ($null -ne $AdditonalStructureInfo)
+                {
+                    foreach ($item in $AdditonalStructureInfo.Fks | Where-Object { ($_.FkSchema -eq $table.SchemaName) -and ($_.FkTable -eq $table.TableName) })
+                    {
+                        $table.ForeignKeys += $item
+                    }
+                }
             }
         }
         if ($null -ne $indexInfo)

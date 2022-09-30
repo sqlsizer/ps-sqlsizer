@@ -33,13 +33,13 @@ function Install-SqlSizerSecureViews
             continue
         }
 
-        $sql = "CREATE OR ALTER VIEW SqlSizer.Secure_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE VIEW SqlSizer.Secure_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizer.Secure_$($table.SchemaName)_$($table.TableName)"
     }
 
-    $sql = "CREATE OR ALTER VIEW SqlSizer.Secure_Summary AS $([string]::Join(' UNION ALL ', $total))"
+    $sql = "CREATE VIEW SqlSizer.Secure_Summary AS $([string]::Join(' UNION ALL ', $total))"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }
 

@@ -42,7 +42,7 @@
             $params.Credential = $ConnectionInfo.Credential
         }
 
-        if ($true -eq $Statistics)
+        if (($true -eq $Statistics) -and ($ConnectionInfo.IsSynapse -eq $false))
         {
             $params.Query = 'SET STATISTICS IO ON
             ' + $Sql + '

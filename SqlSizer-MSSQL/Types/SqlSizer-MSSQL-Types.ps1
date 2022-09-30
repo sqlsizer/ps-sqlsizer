@@ -133,6 +133,19 @@ class TableStatistics
     }
 }
 
+class DatabaseStructureInfo
+{
+    [TableStructureInfo[]]$Tables
+    [TableFk[]]$Fks
+}
+
+class TableStructureInfo
+{
+    [string]$SchemaName
+    [string]$TableName
+    [ColumnInfo[]]$PrimaryKey
+}
+
 class ViewInfo
 {
     [string]$SchemaName
@@ -185,13 +198,12 @@ class ColumnInfo
     [bool]$IsComputed
     [bool]$IsGenerated
     [string]$ComputedDefinition
-
+    [bool]$IsPresent
     [string] ToString()
     {
         return $this.Name;
     }
 }
-
 
 class TableFk
 {
