@@ -297,10 +297,12 @@
     {
         if ($ConnectionInfo.IsSynapse)
         {
-            return $null
+            $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, '' as [definition] from sys.objects where type = 'P'"
         }
-        
-        $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, object_definition(object_id) as [definition] from sys.objects where type = 'P'"
+        else
+        {
+            $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, object_definition(object_id) as [definition] from sys.objects where type = 'P'"
+        }
         
         try
         {
