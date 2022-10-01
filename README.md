@@ -23,7 +23,7 @@ The core feature is ability to find desired subset from the database and that fe
  - copying databases:
     - without data
     - with subset of data from original database
- - doing comparisons of data:
+ - comparing data:
      - comparing only data that you are interested in
  - extracting data:
      - CSV, JSON format to file
