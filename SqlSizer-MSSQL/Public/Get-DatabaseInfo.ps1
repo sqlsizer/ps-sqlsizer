@@ -391,20 +391,16 @@
                 $table.PrimaryKey += $pkColumn
             }
         }
-        else
-        {
+       
             if ($true -eq $ConnectionInfo.IsSynapse)
             {
-                if ($null -ne $AdditonalStructureInfo)
+                if (($null -ne $AdditonalStructureInfo) -and ($null -eq $table.PrimaryKey))
                 {
                     $sTable = $AdditonalStructureInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
-                    foreach ($item in $sTable.PrimaryKey)
-                    {
-                        $table.PrimaryKey += $item
-                    }
+                    $table.PrimaryKey = $sTable.PrimaryKey
                 }
             }
-        }
+        
         $tableColumns = $columnsInfo[$key]
 
         foreach ($tableColumn in $tableColumns)
