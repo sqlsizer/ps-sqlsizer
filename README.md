@@ -32,7 +32,7 @@ The core feature is ability to find desired subset from the database and that fe
      - schemas
      - tables
  - editing schema of database:
-    - enabling table foreign keys 
+    - enabling/disabling/editing table foreign keys 
     - enabling / disabling triggers
  - testing data consistency
      - testing foreign keys
