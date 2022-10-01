@@ -19,7 +19,7 @@ The core feature is ability to find desired subset from the database and that fe
 **SqlSizer** can help with:
  - getting the database object model that you can use to implement your own data management logic
  - copying data:
-    - schemas/tables/data to the same or different database or to Azure BLOB storage
+    - schemas/tables/subsets to the same or different database or to Azure BLOB storage
  - copying databases:
     - with subset of data from original database
  - doing comparisons of data:
