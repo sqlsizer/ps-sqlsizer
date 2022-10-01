@@ -31,7 +31,7 @@ function Copy-FileToDatabase
     $id = New-Guid
     $fileContent = [System.IO.File]::ReadAllText($FilePath)
 
-    $chunkSize = 64000
+    $chunkSize = 3000
     $chunks = [Math]::Floor($fileContent.Length / $chunkSize)
 
     for ($i = 0; $i -lt $chunks; $i = $i + 1)

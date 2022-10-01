@@ -26,7 +26,14 @@
         return $false
     }
 
-    $sql = "DROP VIEW if exists [$($SchemaName)].[$($ViewName)]"
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $sql = "DROP VIEW [$($SchemaName)].[$($ViewName)]"
+    }
+    else
+    {
+        $sql = "DROP VIEW IF EXISTS [$($SchemaName)].[$($ViewName)]"
+    }
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     return $true

@@ -11,7 +11,12 @@
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
-    )
+    )   
+    
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        throw "Feature not supported in Synapse"
+    }
 
     Write-Progress -Activity "Disabling all triggers on all tables" -PercentComplete 0
 

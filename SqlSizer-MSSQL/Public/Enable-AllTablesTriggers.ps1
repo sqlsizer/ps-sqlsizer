@@ -13,6 +13,11 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        throw "Feature not supported in Synapse"
+    }
+    
     Write-Progress -Activity "Enabling all triggers on all tables" -PercentComplete 0
 
     foreach ($table in $DatabaseInfo.Tables)

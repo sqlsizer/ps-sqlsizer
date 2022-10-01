@@ -37,7 +37,14 @@
     {
         if ($view.SchemaName -eq $SchemaName)
         {
-            $sql = "DROP VIEW IF EXISTS [$($view.SchemaName)].[$($view.ViewName)]"
+            if ($true -eq $ConnectionInfo.IsSynapse)
+            {
+                $sql = "DROP VIEW [$($view.SchemaName)].[$($view.ViewName)]"
+            }
+            else
+            {
+                $sql = "DROP VIEW IF EXISTS [$($view.SchemaName)].[$($view.ViewName)]"   
+            }
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
@@ -53,13 +60,13 @@
     }
 
     # drop schema
-    if ($false -eq $ConnectionInfo.IsSynapse)
+    if ($true -eq $ConnectionInfo.IsSynapse)
     {
-        $sql = "DROP SCHEMA IF EXISTS $SchemaName"    
+        $sql = "DROP SCHEMA $SchemaName"    
     }
     else 
     {
-        $sql = "DROP SCHEMA $SchemaName"    
+        $sql = "DROP SCHEMA IF EXISTS $SchemaName"    
     }
     
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
