@@ -1,5 +1,4 @@
 ## Example that shows how to find a subset in Azure Synapse Analytics, save them for analysis
-## TODO: Comparing them
 
 # Connection settings
 $server = "#name#.sql.azuresynapse.net"

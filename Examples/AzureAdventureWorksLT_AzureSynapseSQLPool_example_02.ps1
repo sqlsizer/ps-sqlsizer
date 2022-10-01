@@ -1,99 +1,70 @@
-﻿function Remove-FoundSubsetFromDatabase
+## Example that shows how to find a subset in Azure Synapse Analytics and remove it
+
+# Connection settings
+$server = "#name#.sql.azuresynapse.net"
+$database = ""
+$username = "sqladminuser"
+$password = ConvertTo-SecureString -String "" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
+
+# Check if database is available
+if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
 {
-    [cmdletbinding()]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [string]$Database,
-        
-        [Parameter(Mandatory = $false)]
-        [int]$Step = 100000,
-
-        [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
-    )
-
-    function GetWhere
-    {
-        param (
-            [string]$Database,
-            [SubsettingTableResult]$TableInfo,
-            [DatabaseInfo]$DatabaseInfo
-        )
-
-        $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName) }
-        $primaryKey = $table.PrimaryKey
-        $where = " WHERE EXISTS(SELECT * FROM SqlSizer.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
-
-        $conditions = @()
-        foreach ($column in $primaryKey)
-        {
-            $conditions += " e." + $column.Name + " = t." + $column.Name
-        }
-
-        $where += [string]::Join(' AND ', $conditions) 
-        $where += ")"
-        
-        $where
-    }
-
-    Write-Progress -Activity "Removing data from database" -PercentComplete 0
-
-    $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    
-    $i = 0
-    foreach ($table in $subsetTables)
-    {
-        $i += 1
-
-        Write-Progress -Activity "Removing data from database" -PercentComplete (100 * ($i / ($subsetTables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
-
-        $schema = $table.SchemaName
-        $tableName = $table.TableName
-
-        if ($table.CanBeDeleted -eq $false)
-        {
-            continue
-        }
-
-        $where = GetWhere -Database $Database -TableInfo $table -DatabaseInfo $DatabaseInfo
-
-
-        if ($ConnectionInfo.IsSynapse -eq $true)
-        {
-            $sql = "DELETE t FROM " + $schema + ".[" + $tableName + "] t " + $where
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        }
-        else
-        {
-            $top = ""
-
-            if ($Step -ne $null)
-            {
-                $top = " TOP ($Step) "
-            }
-
-            do
-            {
-                $sql = "DELETE $top t FROM " + $schema + ".[" + $tableName + "] t " + $where + " SELECT @@ROWCOUNT as Removed"
-                $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-            while ($result.Removed -gt 0)
-        }
-    }
-
-    Write-Progress -Activity "Removing data from database" -Completed
+    Write-Output "Database is not available" 
+    return
 }
 
+$additonalStructure = New-Object DatabaseStructureInfo
 
+$fk1 = New-Object TableFk
+$fk1.Name = "AC"
+$fk1.FkSchema = "SalesLT"
+$fk1.FkTable = "CustomerAddress"
+$fk1.Schema = "SalesLT"
+$fk1.Table = "Customer"
+$c1 = New-Object ColumnInfo
+$c1.Name = "CustomerID"
+$c1.DataType = "int"
+$fk1.FkColumns += $c1
+$fk1.Columns += $c1
+$additonalStructure.Fks += $fk1
+
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
+
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Define start set
+
+# Query 1: 10 persons with first name = 'John'
+$query = New-Object -TypeName Query
+$query.Color = [Color]::Yellow
+$query.Schema = "SalesLT"
+$query.Table = "Customer"
+$query.KeyColumns = @('CustomerID')
+$query.Where =  "[`$table].FirstName = 'James'"
+$query.Top = 1000
+
+# Define ignored tables
+
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+
+# Find some subset
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info 
+
+
+# end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCChICVMNeVIKcPH
-# t2MQMA88mDnNjDLiItr6206TVBXC9qCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAI180Rrf0SAVug
+# ORyxVIXioApXE4+/6COYi3r/TBZS8qCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -273,38 +244,38 @@
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCCbs1dykqI4SlyCQ0Ot1hkxySMPyIFH+Ro1I9ANy6EqmTANBgkqhkiG9w0B
-# AQEFAASCAgCCY3iMZc5O/UpfBDdPDG1fuCR4ioiSb1TDczWATP2VUYAEU3D1+BZ0
-# iEMcSm4ei99w/ySQ9k4f73jYeM4m6kTpAr9xZKWITJP1IE1jFoK1MChzuuWvzWjx
-# 42ROo9jQb0LNfKl3oQJ7Gz+S+NWWahYJKTzi/cVbTPHDFEa494usIGYo350mHOc7
-# xZfG3cSmIMbBmZ1z9MKDEMLyL2ZgF4c4zK/4r4291CNEo2E/1R7+10K11cLxfLhk
-# o4ANcDDHarX+tghoVu2hii7hHbhcSW3P+hROV2bw0iWyPPWrxioNUCTLHzMGF7io
-# SVvSdGvpUFIADHWJfHKjxsraQ3gs+xZjX8v4EEhmYhV88vPLAJ53fUSpiH6qIpO/
-# Yz2hFFPdNYwfXYBH9o1gDY23U6SfzkmQ8QskHjaklQhhRhmjUTSgdcJi3YCqtZg/
-# dB760Mo8C9CLhdXloNfduwxZaU1tM6qTfC39WDX/vcEXdSgfhBCEJggW7z/tZzsG
-# /pz7M/TQ/K8UkI7wpLMdBKxY//ZfDGTLS1kxmFufQrRH0OqjU5ojQO5bvlpJTJPR
-# bd92oSPJE/c2kn3KSkn2h5rvYmQNp6tgSrPNIDV15qSyit3CTSZV7J70Jcz+3MXo
-# fY82/MGN/yd6UaxxHWXdKFfUzAq97uOSdANpENJx5ZlcyUA9RruVsaGCBAIwggP+
+# BDEiBCAU/Q6Eb+yx5HT2ndmuIWa1UlZiR5Wg5zQ5Al8tlLu/njANBgkqhkiG9w0B
+# AQEFAASCAgCO8VbKPhvNgurNdOkSQN72suEkeCpC+q77PcEl2g9TP22Id2xc40Zz
+# jt66vaGgjCXKFqJl7+W0oy6tqV9bCTH+Gfw/VrkUhNcjbqHfvAjeHwbzFot6fMDU
+# XM8B9GflOv8qUhzAvTWJKfoIC9ZvNJaxpXxHHJk8t7RMpjyuMGA0Ph/MHDWtDWUJ
+# s2dzMs6ED3koDBtv8kd6Snp+a7fBxBXhUphq+KzWLK+AwysxIWvlUUEJGVVgXK9G
+# 2En/RauX4zbh/3MC71efeE+SVLU2QI6QCstEsqXsHi8OqrY/hgjffWMZCP7XDpaB
+# omjuv3ivGyTD+ZTdfDWTl2SwHlnPaoAXgsS1KsXz1C2rXVrQCleORNgNp6AN3L7A
+# nghZD+adfRvVf+Pkz0VVr0FsmiqGV6XyAbP9ZKFdlZZ3x3/T3p8+fMrnq4pRL7rf
+# t+f71T/j7oLYLpHQZsOsP0UFdv8VWML44zXnghL3qU6FDiwcZNQLgzX0rnJfC9gz
+# gzQyo2V2VleEBIEa41wdbrWnjtLMPNNcwS0kKRn7EKxGSrbqtXf4yGRZp0RJvsZS
+# 46t0EbzI5qJgEtTSItiVF6wyki77NQCXiTJUeGq+hTsY3mpRP3HbUbNVDeaPDm5o
+# mjh53+zof2+8LudJLwfyTA8bfmTNrXEvjxviMyIQMkfTh8fbb/x/eqGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MjgyMTMwMjFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDT20Ws1RiO
-# VIQeLGyzPal99JxmNxGcuuSnh8Oi60wAjUVzQmmdF6YO8JAnhyZfoEAwgZ8GCyqG
+# Fw0yMjA5MjgyMTI0MTZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCyiyKfFvuk
+# iu/vNsbLw8juBFZ5l3Vyl0zYfArD3AhicfXKfzES3IAXIHbrpFsGDkowgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAkLBgWjnTdtfwv82RJjW98r4G
-# 20O08eNRWcyLEZXODJRlbIdQ0QV3I+ZrJUYn8ncSjPbMV5605N+dzDaLltIJ36dV
-# TOlh4RBDtDycbBklRNsD5gqTOGj2atvCqOA+Rh8ZUvVdz7LARO08FZXBvVyBlIkS
-# A5Ryh/CZe+xTt6Gi7ENVRfU36xL4LeF2cPbETeyh4cGN40OI3BZsf5VvSj2Nc20A
-# W6a0tsWlCQUutwR9rComWmOfbiP49L4Y0mL+SsXINBeGjBwE+cIgvllq5wZCJyaw
-# jeYggVpDhKXNZltqLQ/v0kB/gHlHOGJ46rYXzxwBjDvRJappxWnZq29Y5LGMm5h9
-# 4m63ISkytZtMxCD5AsZwCtEQkJ58Y+GTjftsVYYXgfs6ilkWFlbJ1WXE3RdJwklg
-# TTPyDHdTob6RnQmPMPRstomfKDp78MXgaULsAHTw6vaaed0gcq1xLDG7JiqnpVOV
-# 8+ZxFRUrKw8qvwsBGU+gfhTY5c20CyV5ntjPKnvc43ZkD0yRrAIH5D3za62f/uav
-# wRSkV/2vvd6dRB111hHbLOQcXJLIfSZzT+pGdOr5fsCiLGA58roIvYa6cW13nVtL
-# fE602cqJaqIJWo6A33sT0+QdjJmamBLjCFr2FVJrhIIyE8lqnDK2uoddNlwZg+YP
-# QunZIwpqoz+gWnA4Q+o=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAcZnIS7eSh5C+N+s8477x9QFA
+# Uom/CPZTc2MGDYnvfFMTW0zia58XTe+9Ny6+zz8wfjiueADXPfV4hmzjm1C394fd
+# N85j2kHmm/zPT5KO+7/9Y7bf5yJhKR2sDrG7jYKYFnswpttArMwJ8jPH9TPqS9CO
+# 4gs/EI74b5etot92G608yygKFBaFxxnoxBI+liwZWJ/yDjP1a6dCXz1NDE/db7ZT
+# JWgj/7/ncagpoyKUTPggHBPeiWpoLGyT2cY+a+IuW0gCeLdw5lVGrxeFBdE4aoeA
+# WyJv8geDGb30ct1JauTgl5skbi5QDVXRTgQR9zdrVn2UtN6P+NZc9dD7cajvEQxC
+# RD3FLmV/Ol9hgWyT9nTw+q4MSNl948FzugK05TL7fmKNsB92ZKleF/AVMK0Lpd/J
+# cp8p8pajEfZVbEBFxGY2/0RknTQ5yv5Gc+wAc28ACQuDsC2yCfk5w6IlA2ShQyBJ
+# LrxPvJKkov6y87IDsRzea4wg0xVNBwIjxA3dDdeGXyBCJwM7p6EkpU3HuGRueC4O
+# dQsYcZ9IiWoyidjD9kI60lKvcUQA15rbfIcUr8fZmLUeaj3Umb+tuGcF1MUl2DBl
+# RSBrSu81IqVhr/O6pAT7cxGjYS6sXa3PW+5ZEVAv3TPNkO6lyYCDnmEoxLMPQJjS
+# YSbH93YBuS3wSM9HqmY=
 # SIG # End signature block
