@@ -21,6 +21,7 @@ The core feature is ability to find desired subset from the database and that fe
  - copying data:
     - schemas/tables/subsets to the same or different database or to Azure BLOB storage
  - copying databases:
+    - without data
     - with subset of data from original database
  - doing comparisons of data:
      - comparing only data that you are interested in
