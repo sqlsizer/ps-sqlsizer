@@ -17,17 +17,27 @@ The core feature is ability to find desired subset from the database and that fe
 
 # Use cases
 **SqlSizer** can help with:
- - making copies of Microsoft SQL Server or Azure SQL databases with a subset of data from the original database
- - doing comparison of subsets (comparing only data that you are interested in)
- - copying schemas/tables/data to the same or different database or to Azure BLOB storage
  - getting the database object model that you can use to implement your own data management logic
- - extracting selected data from your database in CSV, JSON format to file
- - importing previously extracted subset data from Azure BLOB storage
- - removing unwanted data, tables or schemas from database  
- - removing large amount of data from database in safe way (with log file that will not grow that much)
- - disabling/enabling/editing/testing table foreign keys 
- - disabling/enabling triggers
-
+ - copying data:
+    - schemas/tables/data to the same or different database or to Azure BLOB storage
+ - copying databases:
+    - with subset of data from original database
+ - doing comparisons of data:
+     - comparing only data that you are interested in
+ - extracting data:
+     - CSV, JSON format to file
+ - importing data:
+     - previously extracted subset data from Azure BLOB storage
+ - removing:
+     - subsets
+     - schemas
+     - tables
+ - editing schema of database:
+    - enabling table foreign keys 
+    - enabling / disabling triggers
+ - testing data consistency
+     - testing foreign keys
+    
 # Internals
 There are two algorithms used in SqlSizer:
   - a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* 
