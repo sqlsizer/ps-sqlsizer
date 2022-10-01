@@ -1,62 +1,73 @@
-function New-DataTableFromSubsetTable
+## Example that shows how to find a subset in Azure Synapse Analytics, save it to new schema in order to execute later built-in dynamic data masking feature
+
+# Connection settings
+$server = ".sql.azuresynapse.net"
+$database = ""
+$username = "sqladminuser"
+$password = ConvertTo-SecureString -String "" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
+
+# Check if database is available
+if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
 {
-    [cmdletbinding()]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [string]$Database,
-
-        [Parameter(Mandatory = $true)]
-        [string]$NewSchemaName,
-
-        [Parameter(Mandatory = $true)]
-        [string]$NewTableName,
-
-        [Parameter(Mandatory = $true)]
-        [string]$SchemaName,
-
-        [Parameter(Mandatory = $true)]
-        [string]$TableName,
-
-        [Parameter(Mandatory = $true)]
-        [bool]$CopyData,
-
-        [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
-    )
-
-    $null = New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
-        -ViewSchemaName "SqlSizer" -ViewName "Result_$($SchemaName)_$($TableName)" `
-        -CopyData $CopyData -ConnectionInfo $ConnectionInfo
-
-    # setup primary key
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
-        {
-            if ($ConnectionInfo.IsSynapse -eq $true)
-            {
-                $guid = New-Guid
-                $guidString = $guid.ToString().Replace("-", "")
-
-                $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ADD CONSTRAINT PK_$guidString PRIMARY KEY NONCLUSTERED ($([string]::Join(',', $table.PrimaryKey))) NOT ENFORCED"
-            }
-            else
-            {
-                $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ADD PRIMARY KEY ($([string]::Join(',', $table.PrimaryKey)))"
-            }
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        }
-    }
+    Write-Output "Database is not available" 
+    return
 }
+
+$additonalStructure = New-Object DatabaseStructureInfo
+
+$fk1 = New-Object TableFk
+$fk1.Name = "AC"
+$fk1.FkSchema = "SalesLT"
+$fk1.FkTable = "CustomerAddress"
+$fk1.Schema = "SalesLT"
+$fk1.Table = "Customer"
+$c1 = New-Object ColumnInfo
+$c1.Name = "CustomerID"
+$c1.DataType = "int"
+$fk1.FkColumns += $c1
+$fk1.Columns += $c1
+$additonalStructure.Fks += $fk1
+
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
+
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Define start set
+
+# Query 1: 10 persons with first name = 'John'
+$query = New-Object -TypeName Query
+$query.Color = [Color]::Yellow
+$query.Schema = "SalesLT"
+$query.Table = "Customer"
+$query.KeyColumns = @('CustomerID')
+$query.Where =  "[`$table].FirstName = 'Raja'"
+$query.Top = 1000
+
+# Define ignored tables
+
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+
+# Find some subset
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Create new schema with  the data for data masking
+New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
+                     -NewSchemaPrefix "SqlSizer_subset_tomask"
+
+
+# end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCRG41yTL+TAwgD
-# PFZXBHY2BdQRCdFyPGboSoN+rJmDh6CCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAI180Rrf0SAVug
+# ORyxVIXioApXE4+/6COYi3r/TBZS8qCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -236,38 +247,38 @@ function New-DataTableFromSubsetTable
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDxmaNKij9sQQbFRKMul/ivODogykhiCbpySOp2BJjWLjANBgkqhkiG9w0B
-# AQEFAASCAgAyg8dPIhdI6Q3yawgWMp0F2+kmt3nXmZEYjMkHB9604eE8b4EfDdhH
-# 5qzvllWgDDTBu0Sa8gZaJgl4k6N/2OlD2+N+iLDnzzLUlV5ytS43JZ8kGIpegbev
-# u8GfuWM1YQsb/OLXUynZngt7w9kmPb0WvcyQo7PMyl3h5w6FHu9s5SFpA+3jZvTN
-# LEah12aY0ofMWBnejqD1EBiBTXHqYbQYpgepNt8Qequmedj8Vz3bqSktNzFWRfqt
-# uKM8IC+S5ajJsnw09XRJ4iEZlzK9d7d3lehhSfPUEs3J5QCmhJPGaSTR1B+kmjxT
-# 1xt67MZ2ziAxyelaysMcTN9OVHxxvh5XzhmjGFtXKYhM4qP0j4hjXe8IPrcsH0Fh
-# nqoG90f7woxhU+Dar136PUHIEpJmpijR0NR+K/+qdM290B+T/O2IdHJzvMOq5djG
-# HLmMZ3bnztKdzREiM1WaVtQu7anAVwjk43h/f1NqB0FK4Ru1TwPTap1px8fItxh4
-# MMYpGtj+NyeJfgvzzZYl/RWDbCBDl5n46Q7bAJl5SxIDB4+nXg8wPdPQ5hVqsLyM
-# XHMefZ/yEBJ9EKtxaewQxXh6Xr99dj0LlfMHgwzNe5JfnSeg92PcD+kybz2Zq2jJ
-# rJIUP3hd6sToUWGwrvbYxhHTuhO/pdMvV2sSMjerN4jrf89OcW7P1KGCBAIwggP+
+# BDEiBCAU/Q6Eb+yx5HT2ndmuIWa1UlZiR5Wg5zQ5Al8tlLu/njANBgkqhkiG9w0B
+# AQEFAASCAgCO8VbKPhvNgurNdOkSQN72suEkeCpC+q77PcEl2g9TP22Id2xc40Zz
+# jt66vaGgjCXKFqJl7+W0oy6tqV9bCTH+Gfw/VrkUhNcjbqHfvAjeHwbzFot6fMDU
+# XM8B9GflOv8qUhzAvTWJKfoIC9ZvNJaxpXxHHJk8t7RMpjyuMGA0Ph/MHDWtDWUJ
+# s2dzMs6ED3koDBtv8kd6Snp+a7fBxBXhUphq+KzWLK+AwysxIWvlUUEJGVVgXK9G
+# 2En/RauX4zbh/3MC71efeE+SVLU2QI6QCstEsqXsHi8OqrY/hgjffWMZCP7XDpaB
+# omjuv3ivGyTD+ZTdfDWTl2SwHlnPaoAXgsS1KsXz1C2rXVrQCleORNgNp6AN3L7A
+# nghZD+adfRvVf+Pkz0VVr0FsmiqGV6XyAbP9ZKFdlZZ3x3/T3p8+fMrnq4pRL7rf
+# t+f71T/j7oLYLpHQZsOsP0UFdv8VWML44zXnghL3qU6FDiwcZNQLgzX0rnJfC9gz
+# gzQyo2V2VleEBIEa41wdbrWnjtLMPNNcwS0kKRn7EKxGSrbqtXf4yGRZp0RJvsZS
+# 46t0EbzI5qJgEtTSItiVF6wyki77NQCXiTJUeGq+hTsY3mpRP3HbUbNVDeaPDm5o
+# mjh53+zof2+8LudJLwfyTA8bfmTNrXEvjxviMyIQMkfTh8fbb/x/eqGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjA5MjgyMTI5MjFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDB2cav93OJb
-# bTjgYmdt7QDtOaiyqMHhrBnF3gSCJgmh/rsnHfP5A6R+rYK9dJWxKScwgZ8GCyqG
+# Fw0yMjA5MjgyMTI0MTZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCyiyKfFvuk
+# iu/vNsbLw8juBFZ5l3Vyl0zYfArD3AhicfXKfzES3IAXIHbrpFsGDkowgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAS0SIzpTlhnNT7eyuLtRlxzrj
-# gb0rksSXfm+W7kYjDWEE9wXqTSU4Fpo90srUaIDWLNPzzNTsEKZ8H4GG70S9YcZc
-# FDHToqj3rSqjiWWMUltIeKQT1GqCoYv7PoUmjmeIRL0B/oMZiFPoaMefM2clm0hh
-# iBO5tTiHS6LkFmuZpZVCTz0W+1KLdQyWLZoWoLUehQstz3L65kURqBsQ7orpSJzJ
-# CBoZOzoNZgeZaeAqDtWUYbR5H9WanciX2XdCSMk/umKY3hZF72MBzSwteHDeXijg
-# 90QnGMO/xQ3e4Ihqdl3TLWT1MlXTgWCOsxHowD+Bmlovw5tyPrungQT8ZvToqJM+
-# mVojY8eFeRDGzA36RIUHzAA0QQFRiahMHsfg2+jtbnaKFe4JVx0/NkFHeBBxkC0g
-# 9xIrT2bQRJJnChr3MbfbSmtJZhuVIBVDnMp3DvL+7t5fYamwT7jwvZHkyHWTJQ+8
-# 17YRlOYZIjGLKnflmZBJfqs/oYjbVpR17HYKDq9FwOMthlWbi3t7jUkG0gNZkczz
-# 0ijrncUn5RcQB1FPJIwJyfIyIdaSNUjRVOnx96HVDGlRbkNF2NP0Q8zoaW/BrzHV
-# Vhd88NhdJg5/tBxeGNhSMocPbU+OPqxucQZz8x0WAKJQoMeP45rRjHRSIC7j3qsl
-# 5fO9Rg7rmL9NQjh3iqg=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAcZnIS7eSh5C+N+s8477x9QFA
+# Uom/CPZTc2MGDYnvfFMTW0zia58XTe+9Ny6+zz8wfjiueADXPfV4hmzjm1C394fd
+# N85j2kHmm/zPT5KO+7/9Y7bf5yJhKR2sDrG7jYKYFnswpttArMwJ8jPH9TPqS9CO
+# 4gs/EI74b5etot92G608yygKFBaFxxnoxBI+liwZWJ/yDjP1a6dCXz1NDE/db7ZT
+# JWgj/7/ncagpoyKUTPggHBPeiWpoLGyT2cY+a+IuW0gCeLdw5lVGrxeFBdE4aoeA
+# WyJv8geDGb30ct1JauTgl5skbi5QDVXRTgQR9zdrVn2UtN6P+NZc9dD7cajvEQxC
+# RD3FLmV/Ol9hgWyT9nTw+q4MSNl948FzugK05TL7fmKNsB92ZKleF/AVMK0Lpd/J
+# cp8p8pajEfZVbEBFxGY2/0RknTQ5yv5Gc+wAc28ACQuDsC2yCfk5w6IlA2ShQyBJ
+# LrxPvJKkov6y87IDsRzea4wg0xVNBwIjxA3dDdeGXyBCJwM7p6EkpU3HuGRueC4O
+# dQsYcZ9IiWoyidjD9kI60lKvcUQA15rbfIcUr8fZmLUeaj3Umb+tuGcF1MUl2DBl
+# RSBrSu81IqVhr/O6pAT7cxGjYS6sXa3PW+5ZEVAv3TPNkO6lyYCDnmEoxLMPQJjS
+# YSbH93YBuS3wSM9HqmY=
 # SIG # End signature block
