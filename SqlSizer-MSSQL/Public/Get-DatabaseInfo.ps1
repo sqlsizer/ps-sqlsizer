@@ -19,11 +19,12 @@
         if ($ConnectionInfo.IsSynapse)
         {
             $sql = "SELECT 
-                SCHEMA_NAME(v.schema_id) as [schema],
-                OBJECT_NAME(v.object_id) as [view],
-                '' as [definition]
+					SCHEMA_NAME(v.schema_id) as [schema],
+					OBJECT_NAME(v.object_id) as [view],
+					m.definition as [definition]
                 FROM 
-            sys.views v"
+					sys.views v
+				    INNER JOIN sys.sql_modules m ON v.object_id = m.object_id"
         }
         else
         {
@@ -297,7 +298,7 @@
     {
         if ($ConnectionInfo.IsSynapse)
         {
-            $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, '' as [definition] from sys.objects where type = 'P'"
+            $sql = "select schema_name(o.schema_id) AS [schema], o.name, s.definition as [definition] from sys.objects o inner join sys.sql_modules s ON s.object_id = o.object_id where type = 'P'"
         }
         else
         {
