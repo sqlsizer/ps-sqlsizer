@@ -3,9 +3,9 @@
 
 # Connection settings
 $server = "#name#.sql.azuresynapse.net"
-$database = ""
-$username = ""
-$password = ConvertTo-SecureString -String "" -AsPlainText -Force
+$database = "#db#"
+$username = "sqladminuser"
+$password = ConvertTo-SecureString -String "#pass#" -AsPlainText -Force
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
@@ -46,7 +46,7 @@ $query.Color = [Color]::Yellow
 $query.Schema = "SalesLT"
 $query.Table = "Customer"
 $query.KeyColumns = @('CustomerID')
-$query.Where =  "[`$table].FirstName = 'John'"
+$query.Where =  "[`$table].FirstName = 'Brian'"
 $query.Top = 1000
 
 # Define ignored tables
@@ -60,11 +60,21 @@ Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 $subset1Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "BeforeChangesToData" -DatabaseInfo $info
 
 # Remove some data from db
-$null = Invoke-SqlcmdEx -Sql "DELETE FROM SalesLT.Customer WHERE FirstName = 'John' AND MiddleName='A.'" -Database $Database -ConnectionInfo $connection
+$null = Invoke-SqlcmdEx -Sql "DELETE FROM SalesLT.Customer WHERE FirstName = 'Brian' AND LastName = 'Goldstein'" -Database $Database -ConnectionInfo $connection
+
+# Update some data from db
+$null = Invoke-SqlcmdEx -Sql "UPDATE SalesLT.Customer SET Title = 'MR2.' WHERE FirstName = 'Brian'" -Database $Database -ConnectionInfo $connection
 
 # Find some subset again
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 $subset2Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "AfterChangesToData" -DatabaseInfo $info
+
+
+$compareResult = Compare-SavedSubsets -SourceDatabase $database -TargetDatabase $database `
+                                    -SourceSubsetGuid $subset1Guid -TargetSubsetGuid $subset2Guid -ConnectionInfo $connection `
+
+$compareResult
+
 
 # end of script
 # SIG # Begin signature block

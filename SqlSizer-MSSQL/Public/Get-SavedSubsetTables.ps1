@@ -12,11 +12,20 @@ function Get-SavedSubsetTables
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-
-    $sql = "SELECT st.Id as [TableId], st.PrimaryKeySize as [PrimaryKeySize], st.SchemaName as [SchemaName], st.TableName as [TableName], st.[RowCount] as [RowCount]
-        FROM [SqlSizerHistory].[Subset] s
-        INNER JOIN [SqlSizerHistory].[SubsetTable] st ON s.Id = st.SubsetId
-        WHERE s.[Guid] = '{0}'"
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $sql = "SELECT st.Guid as [TableId], st.PrimaryKeySize as [PrimaryKeySize], st.SchemaName as [SchemaName], st.TableName as [TableName], st.[RowCount] as [RowCount]
+            FROM [SqlSizerHistory].[Subset] s
+            INNER JOIN [SqlSizerHistory].[SubsetTable] st ON s.Guid = st.SubsetGuid
+            WHERE s.[Guid] = '{0}'"
+    }
+    else
+    {
+        $sql = "SELECT st.Id as [TableId], st.PrimaryKeySize as [PrimaryKeySize], st.SchemaName as [SchemaName], st.TableName as [TableName], st.[RowCount] as [RowCount]
+            FROM [SqlSizerHistory].[Subset] s
+            INNER JOIN [SqlSizerHistory].[SubsetTable] st ON s.Id = st.SubsetId
+            WHERE s.[Guid] = '{0}'"  
+    }
 
     $rows = Invoke-SqlcmdEx -Sql $([String]::Format($sql, $SubsetGuid)) -Database $Database -ConnectionInfo $ConnectionInfo     
     $tables = @()

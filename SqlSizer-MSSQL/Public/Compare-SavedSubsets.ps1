@@ -51,10 +51,21 @@ function Compare-SavedSubsets
             }
 
             #query database to find changed data based on HASH
-            $sql = "SELECT $([string]::Join(',', $keys))
-                    FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] t
-                    INNER JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON $([string]::Join(' AND ', $conds))
-                    WHERE t.Hash <> s.Hash AND t.TableId = $($targetTable.TableId) AND s.TableId = $($sourceTable.TableId)"
+
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                        FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+                        INNER JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON $([string]::Join(' AND ', $conds))
+                        WHERE t.Hash <> s.Hash AND t.TableGuid = '$($targetTable.TableId)' AND s.TableGuid = '$($sourceTable.TableId)'"
+            }
+            else
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                        FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+                        INNER JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON $([string]::Join(' AND ', $conds))
+                        WHERE t.Hash <> s.Hash AND t.TableId = $($targetTable.TableId) AND s.TableId = $($sourceTable.TableId)"
+            }
             
             $changeRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
@@ -78,11 +89,21 @@ function Compare-SavedSubsets
             {
                 $keys += "s.Key$i as Key$i"
             }
-            
-            $sql = "SELECT $([string]::Join(',', $keys))
+
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
                     FROM $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s
-                    LEFT JOIN $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] t ON t.TableId = $($targetTable.TableId) AND $([string]::Join(' AND ', $conds))
+                    LEFT JOIN $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t ON t.TableGuid = '$($targetTable.TableId)' AND $([string]::Join(' AND ', $conds))
+                    WHERE t.Key0 IS NULL AND s.TableGuid = '$($sourceTable.TableId)'"
+            }
+            else
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                    FROM $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s
+                    LEFT JOIN $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t ON t.TableId = $($targetTable.TableId) AND $([string]::Join(' AND ', $conds))
                     WHERE t.Key0 IS NULL AND s.TableId = $($sourceTable.TableId)"
+            }
             $removedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
             foreach ($removedRow in $removedRows)
@@ -102,9 +123,19 @@ function Compare-SavedSubsets
         }
         else
         {
-            $sql = "SELECT $([string]::Join(',', $keys))
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                FROM $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s
+                WHERE s.TableGuid = '$($sourceTable.TableId)'"
+            }
+            else
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
                     FROM $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s
                     WHERE s.TableId = $($sourceTable.TableId)"
+            }
+
             $removedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
             foreach ($removedRow in $removedRows)
@@ -147,10 +178,20 @@ function Compare-SavedSubsets
 
         if ($found -eq $true)
         {
-            $sql = "SELECT $([string]::Join(',', $keys))
-            FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
-            LEFT JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] s ON s.TableId = $($sourceTable.TableId) AND $([string]::Join(' AND ', $conds))
-            WHERE s.Key0 IS NULL AND t.TableId = $($targetTable.TableId)"
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+                LEFT JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON s.TableGuid = '$($targetTable.TableId)' AND $([string]::Join(' AND ', $conds))
+                WHERE s.Key0 IS NULL AND t.TableGuid = '$($targetTable.TableId)'"
+            }
+            else
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+                LEFT JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON s.TableId = $($targetTable.TableId) AND $([string]::Join(' AND ', $conds))
+                WHERE s.Key0 IS NULL AND t.TableId = $($targetTable.TableId)"
+            }
 
             $addedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
@@ -171,9 +212,18 @@ function Compare-SavedSubsets
         }
         else
         {
-            $sql = "SELECT $([string]::Join(',', $keys))
-            FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
-            WHERE t.TableId = $($targetTable.TableId)"
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+                WHERE t.TableGuid = '$($targetTable.Id)'"
+            }
+            else
+            {
+                $sql = "SELECT $([string]::Join(',', $keys))
+                FROM $($TargetDatabase).[SqlSizerHistory].[SubsetTableRow_$($targetTable.PrimaryKeySize)] t
+                WHERE t.TableId = $($targetTable.TableId)"
+            }
 
             $addedRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
