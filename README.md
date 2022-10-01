@@ -20,9 +20,9 @@ The core feature is ability to find desired subset from the database and that fe
  - getting the database object model that you can use to implement your own data management logic
  - copying data:
     - schemas/tables/subsets to the same or different database or to Azure BLOB storage
- - copying databases:
+ - creating databases:
     - without data
-    - with subset of data from original database
+    - with a subset of data from the original database
  - comparing data:
      - comparing only data that you are interested in
  - extracting data:
