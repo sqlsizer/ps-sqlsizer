@@ -3,8 +3,6 @@
 
 A PowerShell module for managing data in Microsoft SQL Server, Azure SQL databases and Azure Synapse Analytics SQL Pool.
 
-Currently there is only limited support for **Azure Synapse Analytics SQL Pool** (work in progress). The long-term goal of the project is to create a generic tool for managing data in Microsoft cloud and on-premises data platforms.
-
 The core feature is ability to find desired subset from the database and that feature has following properties:
 
  - No limitation on database or subset size
