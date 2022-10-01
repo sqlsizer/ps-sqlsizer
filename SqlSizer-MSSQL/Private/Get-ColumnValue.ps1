@@ -6,7 +6,8 @@
         [string]$DataType,
         [string]$Prefix,
         [bool]$Conversion,
-        [bool]$OnlyXml
+        [bool]$OnlyXml,
+        [string]$MaxLength = $null
     )
 
     if ($Conversion -eq $false)
@@ -18,14 +19,28 @@
     {
         if ($DataType -in @('xml'))
         {
-            return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+            if (($null -ne $MaxLength) -and ($MaxLength -ne ""))
+            {
+                return "CONVERT(nvarchar($MaxLength), " + $Prefix + $ColumnName + ")"
+            }
+            else
+            {
+                return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+            }
         }
     }
     else
     {
         if ($DataType -in @('hierarchyid', 'geography', 'xml'))
         {
-            return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+            if (($null -ne $MaxLength) -and ($MaxLength -ne ""))
+            {
+                return "CONVERT(nvarchar($MaxLength), " + $Prefix + $ColumnName + ")"
+            }
+            else
+            {
+                return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
+            }
         }
     
         if ($DataType -eq 'bit')
@@ -33,6 +48,17 @@
             return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"
         }
     }
+
+    if (($null -ne $MaxLength) -and ($MaxLength -ne "") -and ($DataType -eq 'varchar'))
+    {
+        return "CONVERT(varchar($MaxLength), " + $Prefix + $ColumnName + ")"
+    }
+
+    if (($null -ne $MaxLength) -and ($MaxLength -ne "")  -and ($DataType -eq 'nvarchar'))
+    {
+        return "CONVERT(nvarchar($MaxLength), " + $Prefix + $ColumnName + ")"
+    }
+
     return "$($Prefix)[" + $ColumnName + "]"
 }
 # SIG # Begin signature block

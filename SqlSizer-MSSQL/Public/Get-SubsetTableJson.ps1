@@ -22,12 +22,6 @@ function Get-SubsetTableJson
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    
-    if ($ConnectionInfo.IsSynapse -eq $true)
-    {
-        throw "CSV is currently not supported in Azure Synapse Analytics"
-    }
-
     $schema = "Export"
     if ($Secure -eq $true)
     {
@@ -38,7 +32,15 @@ function Get-SubsetTableJson
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH"
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "EXEC SqlSizer.CreateJSON @SchemaName = 'SqlSizer', @ViewName = '$($schema)_$($SchemaName)_$($TableName)'"
+            }
+            else
+            {
+                $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH"
+            }
+            
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $json = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join ""
             return $json

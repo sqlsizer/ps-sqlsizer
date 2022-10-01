@@ -1,82 +1,70 @@
-function Install-SqlSizerResultViews
+## Example that shows how to find a subset in Azure Synapse Analytics and export JSON
+
+# Connection settings
+$server = ".sql.azuresynapse.net"
+$database = ""
+$username = "sqladminuser"
+$password = ConvertTo-SecureString -String "" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
+
+# Check if database is available
+if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
 {
-    [cmdletbinding()]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [string]$Database,
-
-        [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo,
-
-        [Parameter(Mandatory = $false)]
-        [TableInfo2[]]$IgnoredTables
-    )
-
-    $structure = [Structure]::new($DatabaseInfo)
-
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if ($table.SchemaName.StartsWith('SqlSizer'))
-        {
-            continue
-        }
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $false -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false -MaxLength $null
-        $join = GetResultViewsTableJoin -TableInfo $table -Structure $structure
-
-        if ($null -eq $join)
-        {
-            continue
-        }
-
-        $sql = "CREATE VIEW SqlSizer.Result_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    }
+    Write-Output "Database is not available" 
+    return
 }
 
-function GetResultViewsTableJoin
-{
-    param (
-        [TableInfo]$TableInfo,
-        [Structure]$Structure
-    )
+$additonalStructure = New-Object DatabaseStructureInfo
 
-    $primaryKey = $TableInfo.PrimaryKey
-    $signature = $Structure.Tables[$TableInfo]
+$fk1 = New-Object TableFk
+$fk1.Name = "AC"
+$fk1.FkSchema = "SalesLT"
+$fk1.FkTable = "CustomerAddress"
+$fk1.Schema = "SalesLT"
+$fk1.Table = "Customer"
+$c1 = New-Object ColumnInfo
+$c1.Name = "CustomerID"
+$c1.DataType = "int"
+$fk1.FkColumns += $c1
+$fk1.Columns += $c1
+$additonalStructure.Fks += $fk1
 
-    if (($null -eq $signature) -or ($signature -eq ""))
-    {
-        return $null
-    }
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
 
-    $processing = $Structure.GetProcessingName($signature)
+# Install SqlSizer
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-    $select = @()
-    $join = @()
+# Define start set
 
-    $i = 0
-    foreach ($column in $primaryKey)
-    {
-        $select += "p.Key$i"
-        $join += "t.$column = rr.Key$i"
-        $i = $i + 1
-    }
+# Query 1: 10 persons with first name = 'John'
+$query = New-Object -TypeName Query
+$query.Color = [Color]::Yellow
+$query.Schema = "SalesLT"
+$query.Table = "Customer"
+$query.KeyColumns = @('CustomerID')
+$query.Where =  "[`$table].FirstName = 'Brian'"
+$query.Top = 1000
 
-    $sql = " (SELECT DISTINCT $([string]::Join(',', $select))
-               FROM $($processing) p
-               INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id]) rr ON $([string]::Join(' and ', $join))"
+# Define ignored tables
 
-    return $sql
-}
+Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+
+# Find some subset
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Get-SubsetTableJson -Database $database -ConnectionInfo $connection -SchemaName "SalesLT" -TableName "Customer" -DatabaseInfo $info -Secure $false
+
+# end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCC/GQ43lJn3msuh
-# z/NNdFlYo2gJLD4Tukr0m7y70LaixqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCD3o/kM1QpgHtpn
+# udDn6dmGFLdwl2VfZ/Wbv/Gw6UcCTqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -256,38 +244,38 @@ function GetResultViewsTableJoin
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCAz7l6+EMZxxar3x9zAHyBzKleL4YhE2OviRabhxVROAjANBgkqhkiG9w0B
-# AQEFAASCAgAYKZE/W+3Ba9rk7o4wMCA5hcZs3yaqHQ3S+SjPLMx9DK+YGasZTZiA
-# q5owH+GF4l9ErwDeWX6lBpr44bPyK/67ak+S2ULBaj1mUQdPyFiKnKWfhftLC/RK
-# Io3IQDWHkMfQ1FrHXvcUnUCzpwPMqkmhPFywZOnT5InPQ0drKXkFc4AhRfaJyOUH
-# lFH5peKg2YGZjElIFKhEhIKMjxzWw6lTCOnYsPcN0T1NWY6mA/p0Vrycp+a7Clxg
-# zXuv/aAUxEUXDPRkq1729xpMir8VVyvUYTk7kLmnn+ffQ8gyT6Jx/8g4eqgqTu8h
-# rg6gsTQ74n5cfPp+O1or55kW0fTxF4CenYylVfayk7OXlhyFDtneOIfA3haXwRzd
-# RuhjIcAJIaoTmgTPXmIvt34vmJx/pbvkCNzkAcIPw7PYwcCAQnfZ0R0C8xLc3pvo
-# jFNLJz6HxaOBdaUsZiSp2zsW5HhyUczXsYN8TKDDAkUojPPMZHycg9RCkDp1d9QL
-# /iBkwjrQUlr6txsNldDfCK3lVHWco5xqoa9hn3LjXd+R9RcAXVhiRJsROIXWwYmY
-# Etk+V6eKG7gZS/HbxxiVu59sXL6Y8h2wiDCHD6p4gHRoJLJuOtJZYIOLncrNjdUa
-# zDG6Hv+4u3zoqgInBXK2jhvBRYLU+aem/YKuadz8Q75TvPvoT+DC0KGCBAIwggP+
+# BDEiBCBYTliGCp8V7FEfie+2wJrQTJMmaieQH3gmv26n9z1URTANBgkqhkiG9w0B
+# AQEFAASCAgAakIo/RWbJ+LF2I/mE5lsgI/xxvcMTYfNtr4GoM3nwwBv6LhcByxYU
+# pq9YphyFB06yJUopdsA0FFNCPPLmxEU2Attw1DRVLWubyvmJIKNWmUJaL0KSi77Z
+# G88snOvvrGKo2OeNCFC7lNf7HttWSM8Wf5gtXOqlqe/7SXnRC1Ry9UUoqhMxJO8Q
+# BxFP7GIimX8kUl/CE6TH/cZr+1b2P0yjRLFB/URuSMbTXU/fvmfOHCwrKbZ7+a/e
+# JMZKRV9+u9B2ZFasFKFFCMeWcC9VUzHImqRobzVQ2up24HW7gCTErAjEnszdIwUq
+# W33rvP4Gqf80Ch8jNVJjjQNuZAVxh5pjF6m/hAFB8BmtTZWVbetS1b7Zftt6VDnU
+# BSd8kV2pnh+ZE9TspGvRwPGeD4s2rq0fAFr+C9LZvXMAitWD3f/oOWowIS0BdSnA
+# BAZvaQcJYkdTu+6dC49jY0Vw1RNjbZMeqQB0KMJvrDXbBMkjzQlTQdcweBOZC5tC
+# f6EKKpXMlKXTZUZCGWiZFCF30H+2dKhfqxhObBr4lXQHVa8DSKjxAyCN4YpqnIOk
+# bzoN7Y4wk8oMjUZm2fHorKXOyEaTVhVmpAuRkfRPqRAxZtE1/21HhLPQWoMe8Mm2
+# wIefVaRcqxlDEHlzlwl7/jW3Y5IyFTm2eH5BOuYiw2DRBDyz1FiPvKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDExMjEzNTVaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDAMmSTWk6Ic
-# NuYxFMLiiqvSO7J4XSD6+17MtlQ7jBeCEK6WmmcYEo9FVRAQXyFAEkAwgZ8GCyqG
+# Fw0yMjEwMDExMjEyNTVaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDId2cOBuBo
+# qUsDdoVntP8M3ss0TC3Tqin67amtpxOSe60kE5qwViYx1tnMgN9RXTowgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAJZS6A88TEU/IHusY+/ovpZw/
-# 21afF2skn0xLQKHxhgZeo/vaBjv4nDBqpznqfzHpdOXIFf7qIrAr3AJu3JlDrt/L
-# I/bb6zybE2GFO9xEHuv5N7lmWTwlQ2BnnR647UpS+BsqA3jJ2Ro5yMayB95vUQh6
-# jxn81nlVHYnxy8v06TEhRa6YyRIgdhvjIOAte2EyPZTfKEzPu1c4+twDf8oJVXaG
-# uZhUDOqto5hj/HtEv4haVMqUPX8nOLNKxjYmTjdrru8ZIInly7PF1MtDTLAMsxA3
-# xc1YXhI1bvtyGwTb1nEZKV9ScDoKOwQEYTPl8yh9RWkN21by1tCPIGlNlqzYDXCC
-# 3DyYzgqjN61XLeuxAHGwoO/tLeBG6g+71H08amXPpHmYZXlhJvpliZQ0xdiLP6ud
-# cMs9kGNbjDOrgn3UUKsDhTlN3zq/+xnhGtEgNqqTHwYsuveAIRiq57+yAsk0XzMr
-# 8fIv1RGzRKmYeY9epo0gpwWeS1FxfXwUbraCdGbewiE7l9pUu270u3khvT/jMbJ/
-# Uf2CrOlqeqDs1MAJqTiL2PflXBYL2xi7v+QOxJ8GfQwcxmqV33EAMUKlzsLt5QSr
-# k41Pi099xIX0oODldSHHVEiBHiTSlmSnyTHHsEVVJ6dsnkkzPh4M/OOpjZH4AmnZ
-# J8gK/OU2JCgzOCDgQ5o=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIACguclpP9HtkLZxnC2otbQuCC
+# kjpco9TD/OgAPA055lSgOsXWuW94WhckoIivUSk9Xunzj2h7kn/cVqWNN8mwY+Fr
+# 8r2vkaSUXZ2JqOPfxr8k0JlnwT+4I1X+1M/5DPds/fUKEWN/P6l9y/n/4x96xzyc
+# JuoTpeBu9hjcVTfaN7j7UckRJf9DBgOodB1l4WXsOZRFsecZ1mrtsTGbRtQJa6Gr
+# WzORUtfzlbSf8OiqTdDAerLSGz8cfd++s51nbDmijRXpp5guXyCaCAe2lax3jL9C
+# m9sJARvC6t9Rswy2couHt33/uHzoLSMn+xPkw/WRBw+EGBGsPojkRx3p4ToFzJ6h
+# p0DqJvVGf8ZrcxTN3HLaGFQbFv6YIdUT+wHQx2QggErrim20q7stUAU8lijuAXMO
+# B5ac0BGmxAde+uAiTRaaCuvra5NdjZU7crnxf1NRl8i6xiVhqNEQiV9B3rzrkRrx
+# 9ZvAfdHMgBEez9j4Ey7KOqYtHZ6uZGnQ3erzhLOuQ2iJQ/L0x/VoZq1jE6C9qzV1
+# Dob6U4aHyaePEgYF/JMic7Zh8Z4mVYOf+pK03nstjxMNGSx900q8PDDPYC4gTxiS
+# FRM/nWNOx6QLV3Vaf4Dz4rNa0X+vJpOvkRMGcDqnPUPfwn4I9ISL4D0jnx1GEZ4r
+# 1u49U/u2apqdiEdmbkI=
 # SIG # End signature block

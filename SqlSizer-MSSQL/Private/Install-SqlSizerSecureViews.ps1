@@ -17,6 +17,15 @@ function Install-SqlSizerSecureViews
     )
     $structure = [Structure]::new($DatabaseInfo)
 
+    if ($ConnectionInfo.IsSynapse)
+    {
+        $max = 4000
+    }
+    else
+    {
+        $max = $null
+    }
+
     $total = @()
     foreach ($table in $DatabaseInfo.Tables)
     {
@@ -24,8 +33,10 @@ function Install-SqlSizerSecureViews
         {
             continue
         }
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false
-        $hashSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $false -Array $true -SkipGenerated $false
+
+
+        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false -MaxLength $max
+        $hashSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $false -Array $true -SkipGenerated $false -MaxLength $max
         $join = GetSecureViewsTableJoin -TableInfo $table -Structure $structure
 
         if ($null -eq $join)
@@ -36,7 +47,7 @@ function Install-SqlSizerSecureViews
         $sql = "CREATE VIEW SqlSizer.Secure_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizer.Secure_$($table.SchemaName)_$($table.TableName)"
+        $total += "SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizer.Secure_$($table.SchemaName)_$($table.TableName)"
     }
 
     $sql = "CREATE VIEW SqlSizer.Secure_Summary AS $([string]::Join(' UNION ALL ', $total))"

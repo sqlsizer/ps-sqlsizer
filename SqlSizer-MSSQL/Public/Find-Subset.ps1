@@ -312,6 +312,11 @@
                 $primaryKey = $referencedByTable.PrimaryKey
                 $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
 
+                if (($null -eq $primaryKey) -or ($primaryKey.Count -eq 0))
+                {
+                    continue
+                }
+
                 #where
                 $columns = ""
                 $i = 0

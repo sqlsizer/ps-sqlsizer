@@ -24,8 +24,17 @@ function Install-SqlSizerExportViews
         {
             continue
         }
+
+        if ($ConnectionInfo.IsSynapse)
+        {
+            $max = 4000
+        }
+        else
+        {
+            $max = $null
+        }
         
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $true
+        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $true -MaxLength $max
         $join = GetExportViewsTableJoin -TableInfo $table -Structure $structure
 
         if ($null -eq $join)
@@ -33,7 +42,7 @@ function Install-SqlSizerExportViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizer.Export_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE VIEW SqlSizer.Export_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
