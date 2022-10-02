@@ -32,6 +32,11 @@
         {
             continue
         }
+
+        if ($table.SchemaName.StartsWith('SqlSizer'))
+        {
+            continue
+        }
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature)
 

@@ -1,8 +1,8 @@
-﻿function Install-SqlSizerTables
+﻿function Install-SqlSizerCoreTables
 {
     [cmdletbinding()]
     param
-    (
+    (   
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -33,14 +33,6 @@
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $structure = [Structure]::new($DatabaseInfo)
-    foreach ($signature in $structure.Signatures.Keys)
-    {
-        $slice = $structure.GetSliceName($signature)
-        $tmp = "IF OBJECT_ID('$($slice)') IS NOT NULL
-            Drop Table $($slice)"
-        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-
     foreach ($signature in $structure.Signatures.Keys)
     {
         $processing = $structure.GetProcessingName($signature)
@@ -120,7 +112,6 @@
 
     foreach ($signature in $structure.Signatures.Keys)
     {
-        $slice = $structure.GetSliceName($signature)
         $processing = $structure.GetProcessingName($signature)
 
         $keys = ""
@@ -156,9 +147,6 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($slice) ([Id] int identity(1,1) $pk, $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [SessionId] varchar(256) NOT NULL)"
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
             $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, [Table] smallint NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [SessionId] varchar(256) NOT NULL)"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 

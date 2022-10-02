@@ -1,8 +1,11 @@
-function Clear-SqlSizer
+﻿function Install-SqlSizerSessionTables
 {
     [cmdletbinding()]
     param
-    (
+    (   
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -13,24 +16,69 @@ function Clear-SqlSizer
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
-        TRUNCATE TABLE SqlSizer.Operations"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $pk = "PRIMARY KEY NONCLUSTERED NOT ENFORCED"
+    }
+    else
+    {
+        $pk = "PRIMARY KEY"
+    }
     $structure = [Structure]::new($DatabaseInfo)
+
     foreach ($signature in $structure.Signatures.Keys)
     {
-        $processing = $structure.GetProcessingName($signature)
-        $tmp = "IF OBJECT_ID('$($processing)') IS NOT NULL
-            TRUNCATE TABLE $($processing)"
-        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $slice = $structure.GetSliceName($signature, $SessionId)
+
+        $keys = ""
+        $columns = ""
+        $keysIndex = ""
+        $i = 0
+        $len = $structure.Signatures[$signature].Count
+
+        foreach ($column in $structure.Signatures[$signature])
+        {
+            $keys += " Key$($i) "
+            $columns += " Key$($i) "
+            $keysIndex += " Key$($i) ASC "
+
+            if ($column.DataType -in @('varchar', 'nvarchar', 'char', 'nchar'))
+            {
+                $columns += $column.DataType + "(" + $column.Length + ") NOT NULL "
+            }
+            else
+            {
+                $columns += $column.DataType + " NOT NULL "
+            }
+
+            if ($i -lt ($len - 1))
+            {
+                $keysIndex += ", "
+                $keys += ", "
+                $columns += ", "
+            }
+
+            $i += 1
+        }
+
+        if ($len -gt 0)
+        {
+            $sql = "CREATE TABLE $($slice) ([Id] int identity(1,1) $pk, $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
     }
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDSTESgjbsx+BY4
-# s0ZK5DcXa1wew5tBxalCaRsCGpwBlKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBCeI6eAUf51VcQ
+# 4LwfTHrniMP8IC0Lz8q8ljlCXV/r0qCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -210,38 +258,38 @@ function Clear-SqlSizer
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDrlj1xLnAOPPBRYiH79XAmu4o2ACxIVODVEmTCOcs3mzANBgkqhkiG9w0B
-# AQEFAASCAgARVBBRn4JIaaInZYWrHYy4CD1ciJNk5MnFA7UvYvEigP01xk0LTT11
-# h3fPahNj0ifrlYInA353bhKMAMYgHFGqarXtAIr63ocXTAZ4OQ9CiKPAVPMYFLKh
-# FdlEos8qTHxXnzhog7kdK+m00U6/ttf8GwBGLZtnu9Cka0XohJwqkL3U1j+rHRF3
-# 3k9xy99BHs4SxuduMWTY+sch75LzmE9jXVh+q5xCfT5EorvY8bFDg5YA/jOAhh2B
-# HGh92gf4IDacRbJEFb9oi9J6N+VTM64GYsvFsvJ5znHiIYgZ5f4214HPHwSrKnaX
-# kR9392fiw37XCoFDeA2c5g4DcHb69cDJrhrJnjEzQlBR5gyLjLRaNuldnggKFU83
-# 9jntWUHsJGXyJyKHYZrUI6UixgOIkYOi3hhPFuUCzNwyEVfrp3K+gEjAUb1s20Ak
-# PzagymUhqO1ewzRMpcZ8b+bJOBLUIR5I8P/QelpiWE7JZSFDb1wfTaREnDA8eUVk
-# tJWBnULYRwGoZIF2OdkZjh01Sm1VN5GLfaajutzm84kDRvz9Mfgpe9+am4Dxcfiu
-# t2fB//2CwyIkJNHYc/Elg2Ebhqzf+NVFjqPVzrY8mt7IOWVIobsyLp/VV0/Olxmn
-# +xeSewk/N0OSxOspwycXwDTbDwhI2QGXhmPX7G8BmlMbwqx1DviANKGCBAIwggP+
+# BDEiBCDWKnhe2Njm09DmNkcJMtTk1Vq4UXlGcLvzzYjQVBT0NDANBgkqhkiG9w0B
+# AQEFAASCAgCHV5keLC638+GWapqkvYct7Q9wZgmkf3sI0HLJpDKd3qnZqc1sORgh
+# 7iEZy8W5JOF/p9yoU4HeJEdZG2sZVlVE7fMakeVCuExf+aiGvai+W18NRy5rPY8X
+# qpc8rMHLSTgN8AJal1LuFCzxOVXF5pNTIUO3MmlOrsbTh/YzbOfsNexPkcdaBavY
+# I3W3L42KguHpBEL3NYdZrGxBZYQJ7Ug3uskj4q68xp69NShH/z1gWkPuwWapg0Fi
+# E5nI4LupA3AlEDw+kV5ZP3Jh1UI/qQM2wm3z7zNhN1v6ngZbLCO4y6DfVe1O06jz
+# kCGapBZyBC6AezgJvfAZApPH9ZWdnAXqoB54GCBvCXxQZoDfo1vSPN3NSjEUihTp
+# B7Os+M1RnkpHRNujV5sBP1I7rjM9WHvMGVn++YWBoM39lN2zXya3aMALwVjeXQT8
+# 27kqHfrcvCHWmk2P8VjYLXUkLJwPCqPyyIPlfsiz5TUs8P7LlUMmHkIUHJ1VxJZl
+# 3PMwgQOHlOgfAb3ECHzYZ74BnShpKVoGQjBZ4SVJZa0v5CtSXwPx7mqLWdA/38kM
+# zpwkM5tAS46AHhaMF1Fh+daRRG+4BecRDtisAr+5KY6R/2udv/XDAe6s8eKQ57La
+# elozk0uNqCDbNrOU8h7fKJ5R5bnjdXj9kI1k/KZ6t3Pz0ujk/LgU66GCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDIxMjM2NTFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDjXS1Xm+ti
-# MswE5Ze65jd3JZM7VC3Hye7+XwgNHb87kpOn9XbhUp3kGnEb8Gh/wIQwgZ8GCyqG
+# Fw0yMjEwMDIxMjM2NDJaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDeA3Q6iEV4
+# C77idK2tBUaRLkDCgghA+Goq/M4EOWQbYUqj4tl6zmOrocga+YnpPAwwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAgcstMhqwPg5Mfqniy+sM0OeI
-# oIe32KTAMGdsGsc3W8JLImFQctHHU5UXtSRKmmYxvxa31E/wl1yuv4/nItKwucKq
-# 8srqMQmjexxrHEhJpbpwS5Dt7rViGSs9ICkmf8iUEzszZP7aQmKhYvFQ4ZlnY21G
-# QTsMdcukyaSJNDiUJ1hh/K1nVN1pBsu0mwdhgsQBr3kcPCt7xBRmcTaA6MZ+d+Xf
-# ncgK0Ubtwn9FVkHIjy3ovpuOJiYFFaUVzJH5UOAnYh445nH6BiM8Q7TIiClxhDsR
-# uPiL4Ju4Crazuzeent0FVCEcSABomY7MoPwsih6pIXoPx45xobXx0F88nLMzzoUK
-# IzkZh4CPfevFUXScR6ijwgn2vI1jwa7guOEZ6cX95XCkhsdEJvSplR3TfAQttz6C
-# GuYBLxpMHuKIF3PZZxnFd1LFuHFv2kM5wJWTlglMcNk+i97c2bsAIuk5yYLNCRJe
-# 5i5NVhpxl9pbwTBJ/ItwMGGwGYLrqq+qwIorcW582CfLclU+dRiBZ1Znm9BKjEIO
-# GadxL6yNasI60w0zeBUyhai6jx7AVkhJDKrhx1zzTbARNz2kCsmFxgDKh3NrG3o8
-# 6CWRz9hToRP1QqooqeCcMAhon6TylYEi6CbcSNaZpZhpUcvAtz1/17ei0eAmJ+aO
-# lvQvjXPS6sdiUCn+F0c=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAV6B34lbiW+NnN3JrdGzo5i9p
+# oLTgVaWdtQCQxhF3wqBeNIfgnbd7CRhyhsxqUYp0RBgDLrS8aLqKV3Er43n9AL6b
+# Zv5buhBKTDD5e4bswJ9Qb0/+avT7QDgZRMb36UDK6wXcXmK1K80VBErEzBZK3N2z
+# xrvqt+HEfZHkAO04lY1lVy3zYNDjyrPTgcIpy80R+DJ5ep3EvrgAP91a8n9eqpNV
+# xZd+jxx4f9I2SLe8j+Pt/Xb1qiyHnVD9R3hx4gzINEy/NFW+PhJFj/U9q/n9X4HW
+# El6wUtF7MIQSF+5UoD55lNmVDGeNAjdtJjs4VLEV6OjiFJ/cO69FOoUpx0doR9Vc
+# RcvlZtJqAZ2BNJ+hIPVykXM6cfrTZ/wA1a6zeboIwFkhN3a8x+Nr67tXkqAfLpML
+# V5w+dGZFdLvlgZMkAPYJ6viBCuQTzWi7c7oe09fCVKgzSynScQkByyjuEBDJm6yt
+# tEPGy++qD7xCe5mLK3xSTJatk0gkqok9Ib1t6yuuBLmS7rBMHQBKdGYL/NbvwHkd
+# CDFBu7Qu5INLt6f6BUv0qW1eM0lMvxh56tl9TTCrP+pXpM3m+1UChd4k+D/0GdkC
+# PsW1QAd9wiS1WbUK6bUcerdpknfg1LnAa2iXBTuiqV7/bsRLRhUNCrU2qij2W2Lv
+# EPToDbxnB2n2BKmrMQw=
 # SIG # End signature block

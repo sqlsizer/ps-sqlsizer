@@ -155,7 +155,7 @@
 
         $result = ""
         $signature = $structure.Tables[$table]
-        $slice = $structure.GetSliceName($signature)
+        $slice = $structure.GetSliceName($signature, $SessionId)
         $primaryKey = $table.PrimaryKey
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
 
@@ -292,7 +292,7 @@
         )
         $result = ""
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
-        $slice = $structure.GetSliceName($structure.Tables[$table])
+        $slice = $structure.GetSliceName($structure.Tables[$table], $SessionId)
 
         foreach ($referencedByTable in $table.IsReferencedBy)
         {
@@ -594,7 +594,7 @@
             $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
         
             $signature = $structure.Tables[$table]
-            $slice = $structure.GetSliceName($signature)
+            $slice = $structure.GetSliceName($signature, $SessionId)
             $processing = $structure.GetProcessingName($signature)
         
             Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
@@ -605,18 +605,18 @@
                 $keys = $keys + "Key" + $i + ","
             }
 
-            $q = "DELETE FROM $slice WHERE SessionId = '$SessionId'"
+            $q = "TRUNCATE TABLE $slice"
             $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
             # slicing
             if ($false -eq $useDfs)
             {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " [Source], [Depth], [Fk], [SessionId] FROM $processing WHERE [Depth] = $depth AND [Color] = $color AND [Table] = $tableId AND [SessionId] = '$SessionId'"
+                $q = "INSERT INTO $slice " + "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $processing WHERE [Depth] = $depth AND [Color] = $color AND [Table] = $tableId AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
             else 
             {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], [SessionId] FROM $processing p INNER JOIN [SqlSizer].[Operations] o ON o.[Color] = p.[Color] and o.[Depth] = p.[Depth] and o.[Table] = p.[Table] WHERE o.[Processed] = 0 AND p.[Color] = $color AND p.[Table] = $tableId AND [SessionId] = '$SessionId'"
+                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p INNER JOIN [SqlSizer].[Operations] o ON o.[Color] = p.[Color] and o.[Depth] = p.[Depth] and o.[Table] = p.[Table] WHERE o.[Processed] = 0 AND p.[Color] = $color AND p.[Table] = $tableId AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
             
