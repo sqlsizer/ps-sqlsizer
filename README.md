@@ -32,7 +32,7 @@ The core feature is ability to find desired subset from the database and that fe
      - schemas
      - tables
  - editing schema of database:
-    - enabling table foreign keys 
+    - enabling/disabling/editing table foreign keys 
     - enabling / disabling triggers
  - testing data consistency
      - testing foreign keys
@@ -43,14 +43,6 @@ There are two algorithms used in SqlSizer:
   - a variation of *Depth-first search (DFS)* algorithm with *multiple sources*
 
 Both can be applied to the relational database data to find the desired subset.
-
-In order to optimize speed of BFS the following ideas have been applied:
-- The BFS algorithm is visiting the graph nodes in specific, well-known order.
-In SqlSizer the node is the BFS operation which is one row that defines a set of data rows visited or to visit.
-Thanks to this, it's more efficient to find next nodes (data rows) in the graph during BFS search.
-- The SqlSizer is not marking data rows as vistited in order to limit the number of SQL updates.
-Instead the status of BFS operation is updated which is only one row SQL update.
-
 
 # How to find subset you need
 
