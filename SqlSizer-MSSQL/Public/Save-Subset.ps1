@@ -4,6 +4,9 @@ function Save-Subset
     param
     ( 
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$SubsetName,
 
         [Parameter(Mandatory = $true)]
@@ -60,7 +63,7 @@ function Save-Subset
     
             $sql = "INSERT INTO SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize)([Guid], $([string]::Join(',', $keys)), TableGuid, [Hash])
             SELECT NEWID(), $([string]::Join(',', $columns)), '$tableGuid', row_sha2_512
-            FROM SqlSizer.Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
+            FROM SqlSizer_$SessionId.Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
             
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }

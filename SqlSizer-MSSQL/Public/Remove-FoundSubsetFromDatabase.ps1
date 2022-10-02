@@ -4,6 +4,9 @@
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
         
         [Parameter(Mandatory = $false)]
@@ -26,7 +29,7 @@
 
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName) }
         $primaryKey = $table.PrimaryKey
-        $where = " WHERE EXISTS(SELECT * FROM SqlSizer.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
+        $where = " WHERE EXISTS(SELECT * FROM SqlSizer_$SessionId.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e"
 
         $conditions = @()
         foreach ($column in $primaryKey)

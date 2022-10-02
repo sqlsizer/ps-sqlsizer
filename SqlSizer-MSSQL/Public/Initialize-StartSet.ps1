@@ -4,6 +4,9 @@
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -61,7 +64,7 @@
         {
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, '$SessionId' FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
 
         if ($null -ne $query.Where)
         {

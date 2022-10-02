@@ -1,4 +1,4 @@
-function Install-SqlSizerExportViews
+function Clear-Session
 {
     [cmdletbinding()]
     param
@@ -13,89 +13,16 @@ function Install-SqlSizerExportViews
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo,
-
-        [Parameter(Mandatory = $false)]
-        [TableInfo2[]]$IgnoredTables
-    )
-    
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
-    if ($schemaExists -eq $false)
-    {
-        $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-
-    $structure = [Structure]::new($DatabaseInfo)
-
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if ($table.SchemaName.StartsWith('SqlSizer'))
-        {
-            continue
-        }
-
-        if ($ConnectionInfo.IsSynapse)
-        {
-            $max = 4000
-        }
-        else
-        {
-            $max = $null
-        }
-        
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $true -MaxLength $max
-        $join = GetExportViewsTableJoin -TableInfo $table -Structure $structure
-
-        if ($null -eq $join)
-        {
-            continue
-        }
-
-        $sql = "CREATE VIEW SqlSizer_$($SessionId).Export_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, SessionId, $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-}
-
-function GetExportViewsTableJoin
-{
-    param (
-        [TableInfo]$TableInfo,
-        [Structure]$Structure
+        [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $primaryKey = $TableInfo.PrimaryKey
-    $signature = $Structure.Tables[$TableInfo]
-
-    if (($null -eq $signature) -or ($signature -eq ""))
-    {
-        return $null
-    }
-
-    $processing = $Structure.GetProcessingName($signature)
-    $select = @()
-    $join = @()
-
-    $i = 0
-    foreach ($column in $primaryKey)
-    {
-        $select += "p.Key$i"
-        $join += "t.$column = rr.Key$i"
-        $i = $i + 1
-    }
-
-    $sql = " (SELECT DISTINCT $([string]::Join(',', $select)), SessionId
-               FROM $($processing) p
-               INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id]) rr ON $([string]::Join(' and ', $join))"
-
-    return $sql
+    Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -KeepTables $tablesToKeep
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBW6iSezAgDOlaJ
-# CwRHVyMzddGNxpAhb4wnHSgsPF8/vqCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDSTESgjbsx+BY4
+# s0ZK5DcXa1wew5tBxalCaRsCGpwBlKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -275,38 +202,38 @@ function GetExportViewsTableJoin
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCA9EBBkzCViXP2nNcoG1LYXhMhWPplrGBVZRMp1pXyqjjANBgkqhkiG9w0B
-# AQEFAASCAgBvjgozpJledhVKcSKqzKIxhP7UDEWJkopZ5BRCcnMzOD7EOx8SL5dO
-# DEeKuRez8pDVzo/oqSnStLM9ncLR6QFHJj4RTbwwJsSqGj8KihEOWXUFvAzIB+aP
-# 0BLT/bYDbqaDqwDQNOCbqT0x6MaogiafsHyACATsJrQE3rj/gKvQS5yFsJnxPh1v
-# QCV+gaUXGL0oP0CI3qMF2C9DyPBs+IRoTCIYQs6goGw9TYtbkaX4iCYMcV895451
-# TA1kxZsEUfALTaW1GXiog9rpERV9RXlaLrf0xERH8Ec+/MzvFDZxmI/sf7gEyUZe
-# FHn+MTObRQGQyRtUea5UZKQ9g1zRdy2mfFc8TTExSc6SSbZLH68tEy14woE9xO/k
-# I6/e85QJRomPUTn/Z5GN3vOLfXtSYlPurPbVWrdwlJDblYrmYYO55GtkVsaCL4U/
-# yHl7XLm25EANnEWBvONBdJUNrx3dIEyEt4XapP9KALLPqeCa6kYM3OM4B1CuZsB3
-# SuSRYCw60iJK1dXGzrrXqzM4ZvYuGgkiFrOPJimVA5/G0X6XXK1zCVMzbIILsKZS
-# Ib5pRp0+XGloJ+3fpvYFSep3UcH16geO6chGwJZnr2or1xPwxivx6Cj+Li1gFmyR
-# ki9HNEg4tn2W2mUcV4NjFjhD24KT6pNEqwTXMkAc1nZhNbbJgnEO6KGCBAIwggP+
+# BDEiBCDrlj1xLnAOPPBRYiH79XAmu4o2ACxIVODVEmTCOcs3mzANBgkqhkiG9w0B
+# AQEFAASCAgARVBBRn4JIaaInZYWrHYy4CD1ciJNk5MnFA7UvYvEigP01xk0LTT11
+# h3fPahNj0ifrlYInA353bhKMAMYgHFGqarXtAIr63ocXTAZ4OQ9CiKPAVPMYFLKh
+# FdlEos8qTHxXnzhog7kdK+m00U6/ttf8GwBGLZtnu9Cka0XohJwqkL3U1j+rHRF3
+# 3k9xy99BHs4SxuduMWTY+sch75LzmE9jXVh+q5xCfT5EorvY8bFDg5YA/jOAhh2B
+# HGh92gf4IDacRbJEFb9oi9J6N+VTM64GYsvFsvJ5znHiIYgZ5f4214HPHwSrKnaX
+# kR9392fiw37XCoFDeA2c5g4DcHb69cDJrhrJnjEzQlBR5gyLjLRaNuldnggKFU83
+# 9jntWUHsJGXyJyKHYZrUI6UixgOIkYOi3hhPFuUCzNwyEVfrp3K+gEjAUb1s20Ak
+# PzagymUhqO1ewzRMpcZ8b+bJOBLUIR5I8P/QelpiWE7JZSFDb1wfTaREnDA8eUVk
+# tJWBnULYRwGoZIF2OdkZjh01Sm1VN5GLfaajutzm84kDRvz9Mfgpe9+am4Dxcfiu
+# t2fB//2CwyIkJNHYc/Elg2Ebhqzf+NVFjqPVzrY8mt7IOWVIobsyLp/VV0/Olxmn
+# +xeSewk/N0OSxOspwycXwDTbDwhI2QGXhmPX7G8BmlMbwqx1DviANKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDIxMjM2MjhaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDxe+KfjFMH
-# u0RJ00yUR/0VRl1jpGDRA3nQ+d911/O+b0gDum6nLG6voGKP7BuAdWswgZ8GCyqG
+# Fw0yMjEwMDIxMjM2NTFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDjXS1Xm+ti
+# MswE5Ze65jd3JZM7VC3Hye7+XwgNHb87kpOn9XbhUp3kGnEb8Gh/wIQwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAIIp3fYA+++MNJGMkzNih3BrH
-# eoXVvlCOZkdiJiG0zFPtduUAppufHrgtAaWgOkkW848j5otggLjsXvcRgeuZ/x/N
-# cPVR47BUEnxIfAJhFsQKe8UbDyA3iN3m+LeqZLyGwHLt1Uk9rNFOAZey9+kH9e9v
-# usW0F3lY5UNDJSDvmnNnaxSHA1JYGzKWFljsj5RWwi/GV4W0VMuhsSFid76oVFJA
-# r0UulWy2mc53CuE+sdhjhPVG5I02dnHM1sOvtYv5y3bnPhG8KKMw008InlJ0RtIY
-# UK/8Fo1eKe4z4kDjc6s/BCmaCbeehSr4F0ktYUPTKM3t2QrgDTJQDdey1CtdOlS3
-# kcN8Ok36U7EZmKrrshAv2/3TVrtqLAZpvpC4cC9+05uzA6ecJLEZO4+adLbcUJ7j
-# nF+6KJnhniyjTzje01B0sX2VrI8nelccE0LFzTgaFQdz8DLznXNdjFdpiiopKkw4
-# gMYgj08x3DdL8/QgrUAKLdoNRqkZemBkK80CAaPCv5lyd1KqRXrkFL/nIWL93tpN
-# 7auf7e7JYMLHMAruvJNAdgBXAZxflBgED8qnYaueKGKbX61JUkPzY3PkUz3sE0Wp
-# NEV5OzRlqGHJTNwXh5RnKwGnoib/SEmG1gCOoaSmTIylijDd838jmxhuK7wBhVK8
-# N0UtaRPHWhR6wquWxNE=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAgcstMhqwPg5Mfqniy+sM0OeI
+# oIe32KTAMGdsGsc3W8JLImFQctHHU5UXtSRKmmYxvxa31E/wl1yuv4/nItKwucKq
+# 8srqMQmjexxrHEhJpbpwS5Dt7rViGSs9ICkmf8iUEzszZP7aQmKhYvFQ4ZlnY21G
+# QTsMdcukyaSJNDiUJ1hh/K1nVN1pBsu0mwdhgsQBr3kcPCt7xBRmcTaA6MZ+d+Xf
+# ncgK0Ubtwn9FVkHIjy3ovpuOJiYFFaUVzJH5UOAnYh445nH6BiM8Q7TIiClxhDsR
+# uPiL4Ju4Crazuzeent0FVCEcSABomY7MoPwsih6pIXoPx45xobXx0F88nLMzzoUK
+# IzkZh4CPfevFUXScR6ijwgn2vI1jwa7guOEZ6cX95XCkhsdEJvSplR3TfAQttz6C
+# GuYBLxpMHuKIF3PZZxnFd1LFuHFv2kM5wJWTlglMcNk+i97c2bsAIuk5yYLNCRJe
+# 5i5NVhpxl9pbwTBJ/ItwMGGwGYLrqq+qwIorcW582CfLclU+dRiBZ1Znm9BKjEIO
+# GadxL6yNasI60w0zeBUyhai6jx7AVkhJDKrhx1zzTbARNz2kCsmFxgDKh3NrG3o8
+# 6CWRz9hToRP1QqooqeCcMAhon6TylYEi6CbcSNaZpZhpUcvAtz1/17ei0eAmJ+aO
+# lvQvjXPS6sdiUCn+F0c=
 # SIG # End signature block

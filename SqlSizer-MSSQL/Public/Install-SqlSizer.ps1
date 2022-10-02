@@ -3,6 +3,9 @@
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $false)]
         [bool]$Force = $false,
 
@@ -16,7 +19,7 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $currentSqlSizerVersion = "1.0.0-alpha14"
+    $currentSqlSizerVersion = "1.0.0-alpha15"
 
     $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $true)
@@ -61,7 +64,12 @@
         }
         else
         {
-            Write-Host "Installation of SqlSizer skipped" -ForegroundColor Yellow
+            Write-Host "Installation of SqlSizer: only session views..." -ForegroundColor Yellow
+
+            Install-SqlSizerResultViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+            Install-SqlSizerSecureViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+            Install-SqlSizerExportViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+
             return
         }
         }
@@ -81,10 +89,9 @@
     }
 
     Install-SqlSizerTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-
-    Install-SqlSizerResultViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerSecureViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerExportViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    Install-SqlSizerResultViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    Install-SqlSizerSecureViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    Install-SqlSizerExportViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 
     # install JSON helper for Synapse
     if ($ConnectionInfo.IsSynapse)

@@ -4,6 +4,9 @@ function Get-SubsetTableCsv
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -27,7 +30,7 @@ function Get-SubsetTableCsv
 
     if ($ConnectionInfo.IsSynapse -eq $true)
     {
-        $json = Get-SubsetTableJson -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
+        $json = Get-SubsetTableJson -SessionId $SessionId -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
         $obj = $json | ConvertFrom-Json
         $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
         if ($SkipHeader)
@@ -36,18 +39,18 @@ function Get-SubsetTableCsv
         }
         return [string]::Join("`r`n", $csv)
     }
-    
-    $schema = "Export"
+
+    $prefix = "$($SessionId).Export"
     if ($Secure -eq $true)
     {
-        $schema = 'Secure'
+        $prefix = "$($SessionId).Secure"
     }
 
     foreach ($table in $DatabaseInfo.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
+            $sql = "SELECT * FROM SqlSizer_$($prefix).$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
             $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation

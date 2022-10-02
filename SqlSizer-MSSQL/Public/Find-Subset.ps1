@@ -4,6 +4,9 @@
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $false)]
@@ -193,7 +196,7 @@
                 $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                 $i += 1
             }
-            $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $baseProcessing p WHERE p.[Color] = $newColor AND p.[Table] = $baseTableId AND $columns )"
+            $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $baseProcessing p WHERE p.[Color] = $newColor AND p.[Table] = $baseTableId AND $columns AND p.[SessionId] = '$SessionId')"
 
             # from
             $join = " INNER JOIN $slice s ON "
@@ -234,9 +237,9 @@
 
             $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
 
-            $insert = " SELECT $baseTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId INTO #tmp2 FROM (" + $sql + ") x "
+            $insert = " SELECT $baseTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId INTO #tmp2 FROM (" + $sql + ") x "
             $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
-            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
+            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
             $insert += " DROP TABLE #tmp2"
 
             if ($ConnectionInfo.IsSynapse -eq $false)
@@ -329,7 +332,7 @@
                     $columns = $columns + " f.$($pk.Name) = p.Key$i "
                     $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $fkProcessing p WHERE p.[Color] = $newColor and p.[Table] = $fkTableId and $columns )"
+                $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $fkProcessing p WHERE p.[Color] = $newColor AND p.[Table] = $fkTableId AND $columns AND p.[SessionId] = '$SessionId')"
 
                 if ($null -ne $maxDepth)
                 {
@@ -382,9 +385,9 @@
                     $columns = $columns + "x.val" + $i + ","
                 }
 
-                $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId INTO #tmp FROM (" + $sql + ") x "
+                $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId INTO #tmp FROM (" + $sql + ") x "
                 $insert += " INSERT INTO $fkProcessing SELECT * FROM #tmp "
-                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
+                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
                 $insert += " DROP TABLE #tmp "
 
                 if ($ConnectionInfo.IsSynapse -eq $false)
@@ -460,16 +463,16 @@
 
         # red
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk INTO #tmp1 FROM $slice s" + $where
+        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId INTO #tmp1 FROM $slice s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
         $result += $q
 
         # green
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk INTO #tmp2 FROM $slice s" + $where
+        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId INTO #tmp2 FROM $slice s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
         $result += $q
         $result += "DROP TABLE #tmp1 DROP TABLE #tmp2"
 
@@ -553,7 +556,7 @@
                 FROM
                     [SqlSizer].[Operations]
                 WHERE
-                    [Processed] = 0
+                    [Processed] = 0 AND [SessionId] = '$SessionId'
                 GROUP BY
                     [Table], [Depth], [Color]
                 ORDER BY
@@ -568,7 +571,7 @@
                 FROM
                     [SqlSizer].[Operations]
                 WHERE
-                    [Processed] = 0
+                    [Processed] = 0 AND [SessionId] = '$SessionId'
                 GROUP BY
                     [Table], [Color]
                 ORDER BY
@@ -602,30 +605,30 @@
                 $keys = $keys + "Key" + $i + ","
             }
 
-            $q = "TRUNCATE TABLE $slice"
+            $q = "DELETE FROM $slice WHERE SessionId = '$SessionId'"
             $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
             # slicing
             if ($false -eq $useDfs)
             {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $processing WHERE [Depth] = $depth AND [Color] = $color AND [Table] = $tableId"
+                $q = "INSERT INTO $slice " + "SELECT " + $keys + " [Source], [Depth], [Fk], [SessionId] FROM $processing WHERE [Depth] = $depth AND [Color] = $color AND [Table] = $tableId AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
             else 
             {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p INNER JOIN [SqlSizer].[Operations] o ON o.[Color] = p.[Color] and o.[Depth] = p.[Depth] and o.[Table] = p.[Table] WHERE o.[Processed] = 0 AND p.[Color] = $color AND p.[Table] = $tableId"
+                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], [SessionId] FROM $processing p INNER JOIN [SqlSizer].[Operations] o ON o.[Color] = p.[Color] and o.[Depth] = p.[Depth] and o.[Table] = p.[Table] WHERE o.[Processed] = 0 AND p.[Color] = $color AND p.[Table] = $tableId AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
             
             # update operations
             if ($false -eq $useDfs)
             {
-                $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth"
+                $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
             else
             {
-                $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and Processed = 0"
+                $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and Processed = 0 AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
             }
 
@@ -657,7 +660,7 @@
     $fkGroupedByName = $sqlSizerInfo.ForeignKeys | Group-Object -Property FkSchemaName, FkTableName, Name -AsHashTable -AsString
 
     # init
-    $null = Initialize-Statistics -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     DoSearch -useDfs $UseDfs
 }

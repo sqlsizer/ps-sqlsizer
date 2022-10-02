@@ -4,6 +4,9 @@ function Copy-SubsetToDatabaseFileSet
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$SourceDatabase,
 
         [Parameter(Mandatory = $true)]
@@ -19,13 +22,13 @@ function Copy-SubsetToDatabaseFileSet
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $subsetTables = Get-SubsetTables -Database $SourceDatabase -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    $subsetTables = Get-SubsetTables -SessionId $SessionId -Database $SourceDatabase -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 
     $result = @()
     foreach ($table in $subsetTables)
     {
         $tmpFile = New-TemporaryFile
-        $csv = Get-SubsetTableJson -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -ConnectionInfo $ConnectionInfo `
+        $csv = Get-SubsetTableJson -SessionId $SessionId -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -ConnectionInfo $ConnectionInfo `
                                     -Secure $Secure -DatabaseInfo $DatabaseInfo
 
         [System.IO.File]::WriteAllText($tmpFile.FullName, $csv, [Text.Encoding]::GetEncoding("utf-8"))

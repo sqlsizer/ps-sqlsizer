@@ -22,10 +22,10 @@ function Get-SubsetTableJson
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $schema = "Export"
+    $prefix = "$($SessionId).Export"
     if ($Secure -eq $true)
     {
-        $schema = "Secure"
+        $prefix = "$($SessionId).Secure"
     }
 
     foreach ($table in $DatabaseInfo.Tables)
@@ -34,11 +34,11 @@ function Get-SubsetTableJson
         {
             if ($ConnectionInfo.IsSynapse -eq $true)
             {
-                $sql = "EXEC SqlSizer.CreateJSON @SchemaName = 'SqlSizer', @ViewName = '$($schema)_$($SchemaName)_$($TableName)'"
+                $sql = "EXEC SqlSizer.CreateJSON @SchemaName = 'SqlSizer_$($SessionId)', @ViewName = 'Export_$($SchemaName)_$($TableName)'"
             }
             else
             {
-                $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH"
+                $sql = "SELECT * FROM SqlSizer_$($prefix)_$($SchemaName)_$($TableName) FOR JSON PATH"
             }
             
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

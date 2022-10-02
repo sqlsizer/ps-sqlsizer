@@ -2,7 +2,10 @@ function Copy-SubsetToAzStorageContainer
 {
     [cmdletbinding()]
     param
-    (
+    (  
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$ContainerName,
 
@@ -24,12 +27,12 @@ function Copy-SubsetToAzStorageContainer
 
     New-AzStorageContainer -Name $ContainerName -Context $StorageContext
 
-    $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -SessionId $SessionId
 
     foreach ($table in $subsetTables)
     {
         $tmpFile = New-TemporaryFile
-        $csv = Get-SubsetTableCsv -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -ConnectionInfo $ConnectionInfo -Secure $Secure -DatabaseInfo $DatabaseInfo
+        $csv = Get-SubsetTableCsv -SessionId $SessionId -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -ConnectionInfo $ConnectionInfo -Secure $Secure -DatabaseInfo $DatabaseInfo
 
         [System.IO.File]::WriteAllText($tmpFile.FullName, $csv, [Text.Encoding]::GetEncoding("utf-8"))
 

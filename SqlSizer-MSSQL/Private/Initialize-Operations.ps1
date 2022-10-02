@@ -1,8 +1,11 @@
-﻿function Initialize-Statistics
+﻿function Initialize-Operations
 {
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -18,10 +21,6 @@
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $allTablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
-    # clear operations
-    $sql = "DELETE FROM SqlSizer.Operations"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
     # initialize operations
     foreach ($table in $DatabaseInfo.Tables)
     {
@@ -36,8 +35,8 @@
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature)
 
-        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created])
-        SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE()
+        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created], [SessionId])
+        SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE(), '$SessionId'
         FROM $($processing) p
         WHERE p.[Table] = $($allTablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id)
         GROUP BY [Table], [Color]"
