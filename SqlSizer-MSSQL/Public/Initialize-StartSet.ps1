@@ -33,7 +33,20 @@
             $top = " TOP " + $query.Top;
         }
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table) }
-        $procesing = $Structure.GetProcessingName($structure.Tables[$table])
+
+        if ($null -eq $table)
+        {
+            throw "Could not found $($query.Schema).$($query.Table) table to init the start set."
+        }
+
+        $signature = $structure.Tables[$table]
+
+        if ($null -eq $signature)
+        {
+            throw "Table $($query.Schema).$($query.Table) doesn't have the primary key"
+        }
+
+        $procesing = $Structure.GetProcessingName($signature)
         $tmp = "INSERT INTO $($procesing) SELECT " + $top + " $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id), "
 
         $i = 0

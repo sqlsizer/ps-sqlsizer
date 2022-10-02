@@ -9,6 +9,9 @@
         [Parameter(Mandatory = $true)]
         [string]$SchemaName,
 
+        [Parameter(Mandatory = $false)]
+        [string[]]$KeepTables = $null,
+
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
@@ -26,7 +29,7 @@
     # drop tables in schema
     foreach ($table in $DatabaseInfo.Tables)
     {
-        if ($table.SchemaName -eq $SchemaName)
+        if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -notin $KeepTables))
         {
             $null = Remove-Table -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
         }
@@ -60,16 +63,18 @@
     }
 
     # drop schema
-    if ($true -eq $ConnectionInfo.IsSynapse)
+    if ($null -eq $KeepTables)
     {
-        $sql = "DROP SCHEMA $SchemaName"    
+        if ($true -eq $ConnectionInfo.IsSynapse)
+        {
+            $sql = "DROP SCHEMA $SchemaName"    
+        }
+        else 
+        {
+            $sql = "DROP SCHEMA IF EXISTS $SchemaName"    
+        }
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
-    else 
-    {
-        $sql = "DROP SCHEMA IF EXISTS $SchemaName"    
-    }
-    
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

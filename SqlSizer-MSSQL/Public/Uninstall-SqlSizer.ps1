@@ -9,6 +9,9 @@
         [Parameter(Mandatory = $false)]
         [string]$RemoveHistory = $false,
 
+        [Parameter(Mandatory = $false)]
+        [string]$RemoveSettings = $true,
+
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
@@ -21,7 +24,14 @@
         Remove-Schema -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     }
 
-    Remove-Schema -Database $Database -SchemaName "SqlSizer" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $tablesToKeep = @()
+
+    if ($RemoveSettings -eq $false)
+    {
+        $tablesToKeep += "Settings"
+    }
+
+    Remove-Schema -Database $Database -SchemaName "SqlSizer" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -KeepTables $tablesToKeep
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

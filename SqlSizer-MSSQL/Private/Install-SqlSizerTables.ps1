@@ -57,6 +57,16 @@
     {
         $pk = "PRIMARY KEY"
     }
+    $tmp = "IF OBJECT_ID('SqlSizer.Settings') IS NULL
+            BEGIN
+                CREATE TABLE SqlSizer.Settings(Id int identity(1,1) $pk, Name varchar(128), Value varchar(256))
+                INSERT INTO SqlSizer.Settings(Name, Value) VALUES('Version', '$($currentSqlSizerVersion)')
+            END
+            ELSE
+            BEGIN
+                UPDATE SqlSizer.Settings SET Value = '$($currentSqlSizerVersion)' WHERE Name = 'Version'
+            END"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     if ($ConnectionInfo.IsSynapse -eq $true)
     {
