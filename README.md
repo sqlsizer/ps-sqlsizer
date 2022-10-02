@@ -8,7 +8,7 @@ The core feature is ability to find desired subset from the database and that fe
  - No limitation on database or subset size
  - No limitation on primary key size. It can handle tables with any size of primary key (e.g. even with 8 columns and any types)
  - No limitation on foreign key size. It can handle tables with any size of foreign key (e.g. even with 8 columns and any types)
- - Heavy processing done on the server side (Azure SQL or Microsoft SQL Server)
+ - Heavy processing done on the server side (Azure SQL, Microsoft SQL Server or Azure Synapse Analytics SQL Pool)
  - Memory complexity:
     - on PowerShell side related to number of tables (rather very small, benchmark to be provided)
     - on SQL Server or Azure SQL side dependent on server configuration
