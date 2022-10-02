@@ -27,7 +27,14 @@ function Get-SubsetTableCsv
 
     if ($ConnectionInfo.IsSynapse -eq $true)
     {
-        throw "CSV is currently not supported in Azure Synapse Analytics"
+        $json = Get-SubsetTableJson -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
+        $obj = $json | ConvertFrom-Json
+        $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
+        if ($SkipHeader)
+        {
+            $csv = $csv | select-object -skip 1
+        }
+        return [string]::Join("`r`n", $csv)
     }
     
     $schema = "Export"
