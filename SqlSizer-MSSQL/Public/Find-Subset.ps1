@@ -336,6 +336,12 @@
                     $where += " AND s.Depth <= $maxDepth"
                 }
 
+                # prevent go-back if this is not full search
+                if ($FullSearch -eq $false)
+                {
+                    $where += " AND ((s.Fk <> $($fkId)) OR (s.Fk IS NULL))"
+                }
+
                 # from
                 $join = " INNER JOIN $slice s ON "
                 $i = 0
@@ -613,7 +619,7 @@
             }
             else 
             {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p INNER JOIN [SqlSizer].[Operations] o ON o.[Color] = p.[Color] and o.[Depth] = p.[Depth] and o.[Table] = p.[Table] WHERE o.[Processed] = 0 AND p.[Color] = $color AND p.[Table] = $tableId"
+                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[Color] = $color AND o.[Table] = $tableId)"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
             
