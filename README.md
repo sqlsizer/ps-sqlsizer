@@ -36,7 +36,9 @@ The core feature is ability to find desired subset from the database and that fe
     - enabling / disabling triggers
  - testing data consistency
      - testing foreign keys
-    
+ - data integrity verification
+ 
+ 
 # Internals
 There are two algorithms used in SqlSizer:
   - a variation of *Breadth-first search (BFS)* algorithm with *multiple sources* 
