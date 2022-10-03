@@ -1,8 +1,5 @@
 name: Publish to PowerShell Gallery
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
   
 jobs:
