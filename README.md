@@ -81,7 +81,7 @@ Install-Module Az -Scope CurrentUser
 ```
 
 # Installation
-Run the following to install SqlSizer-MSSQL from the  [PowerShell Gallery](https://www.powershellgallery.com/packages/SqlSizer-MSSQL/1.0.0-alpha14).
+Run the following to install SqlSizer-MSSQL from the  [PowerShell Gallery](https://www.powershellgallery.com/packages/SqlSizer-MSSQL/1.0.0-alpha16).
 
 Please bare in mind that at the moment the SqlSizer-MSSQL is in alpha stage.
 
