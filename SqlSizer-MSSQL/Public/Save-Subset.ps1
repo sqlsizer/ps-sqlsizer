@@ -27,7 +27,7 @@ function Save-Subset
         $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         $subsetId = $result.Id
     
-        $tables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        $tables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -SessionId $SessionId
         foreach ($table in $tables)
         {
             $tableGuid = (New-Guid).ToString()
@@ -63,7 +63,7 @@ function Save-Subset
     
             $sql = "INSERT INTO SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize)([Guid], $([string]::Join(',', $keys)), TableGuid, [Hash])
             SELECT NEWID(), $([string]::Join(',', $columns)), '$tableGuid', row_sha2_512
-            FROM SqlSizer_$SessionId.Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
+            FROM [SqlSizer_$SessionId].Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
             
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
@@ -77,7 +77,7 @@ function Save-Subset
     $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     $subsetId = $result.Id
 
-    $tables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    $tables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -SessionId $SessionId
     foreach ($table in $tables)
     {
         $sql = "INSERT INTO SqlSizerHistory.SubsetTable([SchemaName], [TableName], [PrimaryKeySize], [RowCount], [SubsetId]) VALUES('$($table.SchemaName)', '$($table.TableName)', $($table.PrimaryKeySize), $($table.RowCount), $subsetId)  SELECT SCOPE_IDENTITY() as TableId"
@@ -115,7 +115,7 @@ function Save-Subset
 
         $sql = "INSERT INTO SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize)($([string]::Join(',', $keys)), TableId, [Hash])
         SELECT $([string]::Join(',', $columns)), $tableId, row_sha2_512
-        FROM SqlSizer.Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
+        FROM [SqlSizer_$SessionId].Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
         
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }

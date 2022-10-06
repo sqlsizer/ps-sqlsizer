@@ -21,8 +21,8 @@ if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $f
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -34,17 +34,13 @@ $query.Table = "Customer"
 $query.KeyColumns = @('CustomerID')
 $query.Top = 10
 
-# Define ignored tables
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
@@ -73,7 +69,7 @@ $ctx = New-AzStorageContext -StorageAccountName "$storageAccount" -StorageAccoun
 
 # Copy subset to storage account
 $container = "subset_for_$newDatabase".Replace('_', '').Substring(0, 30)
-Copy-SubsetToAzStorageContainer -ContainerName $container -StorageContext $ctx -Database $database -DatabaseInfo $info -ConnectionInfo $connection -Secure $false
+Copy-SubsetToAzStorageContainer -ContainerName $container -StorageContext $ctx -Database $database -DatabaseInfo $info -ConnectionInfo $connection -Secure $false -SessionId $sessionId
 
 $masterPassword = "$((New-Guid).ToString().Replace('-', '_'))"
 # Copy data from Azure Blob storage

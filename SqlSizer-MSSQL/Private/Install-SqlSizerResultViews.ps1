@@ -42,7 +42,7 @@ function Install-SqlSizerResultViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizer_$($SessionId).Result_$($table.SchemaName)_$($table.TableName) AS SELECT SessionId, $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE VIEW SqlSizer_$($SessionId).Result_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
@@ -75,10 +75,10 @@ function GetResultViewsTableJoin
         $i = $i + 1
     }
 
-    $sql = " (SELECT DISTINCT $([string]::Join(',', $select)), SessionId
+    $sql = " (SELECT DISTINCT $([string]::Join(',', $select))
                FROM $($processing) p
                INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id]) rr ON $([string]::Join(' and ', $join))"
+               WHERE p.[Table] = tt.[Id] AND p.[SessionId] = '$SessionId') rr ON $([string]::Join(' and ', $join))"
 
     return $sql
 }

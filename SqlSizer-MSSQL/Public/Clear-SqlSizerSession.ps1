@@ -1,8 +1,14 @@
-function Clear-SqlSizer
+function Clear-SqlSizerSession
 {
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $false)]
+        [bool]$RemoveSessionData,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -11,19 +17,19 @@ function Clear-SqlSizer
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
-    )
+    )  
+    
+    # remove session
+    $sql = "DELETE FROM SqlSizer.Sessions WHERE SessionId = '$SessionId'"
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
-        TRUNCATE TABLE SqlSizer.Operations"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    # remove session schema
+    Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
-    $structure = [Structure]::new($DatabaseInfo)
-    foreach ($signature in $structure.Signatures.Keys)
+    # remove session data
+    if ($RemoveSessionData -eq $true)
     {
-        $processing = $structure.GetProcessingName($signature)
-        $tmp = "IF OBJECT_ID('$($processing)') IS NOT NULL
-            TRUNCATE TABLE $($processing)"
-        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        Clear-SqlSizerSessionData -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
     }
 }
 # SIG # Begin signature block
@@ -226,22 +232,22 @@ function Clear-SqlSizer
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDMwNTM2MTJaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# Fw0yMjEwMDIxMjM2NTFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
 # lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDjXS1Xm+ti
 # MswE5Ze65jd3JZM7VC3Hye7+XwgNHb87kpOn9XbhUp3kGnEb8Gh/wIQwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAhH1UC/ia79Ho8TDnLtakxsgT
-# oI6YRdXBFohQElisXD/rPJmPmd6aWfbdRMLAGm1WcFAJ20wIU29njDs+uDQI5loM
-# Lh0EdpfZlZzq+T2NrIgH15ej09LPuyfy0uQ7+5TlDbb/SfMD0GX7hde5C5bSQo8v
-# NapcyY2/vwvbupIC90pIjzBRg4M6hYnwUnfgmbQqXDgwQUFkvej0FaL8X1wdvO5U
-# n7K2gyy/ZRCJweGZT5RONbG8MyRiE6VOpZD9HRgXfja9G+eAC1WpWXR3rv7X0Kg1
-# uz3Zzhh3ymXSa91y4HIbOjM4bbuSt8H1CEDA7ZWqCPV/p5HCdIE85sUD6pQYcL7i
-# EY3QFadf9G63WLlZQksHFxyKftSLc6vzInz195wSgW7OHG7Rg+xAT9eG3B4CpCRZ
-# bjrgP0K+6+ILeJxKbwDrXQjXxfMAdau5Tiav7y32cYT9+1fUAlShugUh5tIcEglP
-# SvcFthbkWDslEzv01jQ+TA7HTY0uS2J0XzbN3NbpRkpQvD0MhQl/VJ6iSbufDKYy
-# aXeEhbONPGqiKGQtYAll3gkIMUSDHOTeH8egwxfzja98evey0U5+U2TmrQ1ARGbW
-# XY4kgPevNaCzXgLBiC7Bb1rb6j1no/E/xTnlOaHfihiXIQ/Eq9dAkRpGOesof1ev
-# i9GuTSxZOWlUJjRfaAo=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAgcstMhqwPg5Mfqniy+sM0OeI
+# oIe32KTAMGdsGsc3W8JLImFQctHHU5UXtSRKmmYxvxa31E/wl1yuv4/nItKwucKq
+# 8srqMQmjexxrHEhJpbpwS5Dt7rViGSs9ICkmf8iUEzszZP7aQmKhYvFQ4ZlnY21G
+# QTsMdcukyaSJNDiUJ1hh/K1nVN1pBsu0mwdhgsQBr3kcPCt7xBRmcTaA6MZ+d+Xf
+# ncgK0Ubtwn9FVkHIjy3ovpuOJiYFFaUVzJH5UOAnYh445nH6BiM8Q7TIiClxhDsR
+# uPiL4Ju4Crazuzeent0FVCEcSABomY7MoPwsih6pIXoPx45xobXx0F88nLMzzoUK
+# IzkZh4CPfevFUXScR6ijwgn2vI1jwa7guOEZ6cX95XCkhsdEJvSplR3TfAQttz6C
+# GuYBLxpMHuKIF3PZZxnFd1LFuHFv2kM5wJWTlglMcNk+i97c2bsAIuk5yYLNCRJe
+# 5i5NVhpxl9pbwTBJ/ItwMGGwGYLrqq+qwIorcW582CfLclU+dRiBZ1Znm9BKjEIO
+# GadxL6yNasI60w0zeBUyhai6jx7AVkhJDKrhx1zzTbARNz2kCsmFxgDKh3NrG3o8
+# 6CWRz9hToRP1QqooqeCcMAhon6TylYEi6CbcSNaZpZhpUcvAtz1/17ei0eAmJ+aO
+# lvQvjXPS6sdiUCn+F0c=
 # SIG # End signature block

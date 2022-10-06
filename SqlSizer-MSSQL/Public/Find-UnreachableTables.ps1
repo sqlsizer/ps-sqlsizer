@@ -140,6 +140,17 @@ function Find-UnreachableTables
 
     foreach ($table in $DatabaseInfo.Tables)
     {
+    
+        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+        {
+            continue
+        }
+
+        if ($table.SchemaName.StartsWith('SqlSizer'))
+        {
+            continue
+        }
+        
         $key = $table.SchemaName + "." + $table.TableName
 
         if ($reachableTables.Contains($key) -eq $false)

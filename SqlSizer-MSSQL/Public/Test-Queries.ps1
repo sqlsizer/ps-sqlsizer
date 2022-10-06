@@ -24,10 +24,10 @@ function Test-Queries
 
     if ($unreachable.Count -gt 0)
     {
-        Write-Output "$($unreachable.Length) are not reachable by queries:"
+        Write-Host "$($unreachable.Length) are not reachable by queries:"
         foreach ($item in $unreachable)
         {
-            Write-Output $item
+            Write-Host $item
         }
         return $false
     }

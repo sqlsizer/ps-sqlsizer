@@ -31,7 +31,6 @@ function Get-SubsetTableXml
         return $xml
     }
 
-    $SessionId = $SessionId.Replace("-", "_")
     $prefix = "_$($SessionId).Export"
     if ($Secure -eq $true)
     {

@@ -1,4 +1,4 @@
-function Clear-Session
+function Clear-SqlSizerSessionData
 {
     [cmdletbinding()]
     param
@@ -16,7 +16,32 @@ function Clear-Session
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -KeepTables $tablesToKeep
+       # get meta data
+       $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+       $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+       $structure = [Structure]::new($DatabaseInfo)
+   
+       foreach ($table in $DatabaseInfo.Tables)
+       {
+           if ($table.PrimaryKey.Count -eq 0)
+           {
+               continue
+           }
+           if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+           {
+               continue
+           }
+
+           if ($table.SchemaName.StartsWith('SqlSizer'))
+           {
+               continue
+           }
+
+           $tableName = $structure.GetProcessingName($structure.Tables[$table])
+   
+           $sql = "DELETE FROM $($tableName) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id) AND [SessionId] = '$SessionId'"
+           $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+       }
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

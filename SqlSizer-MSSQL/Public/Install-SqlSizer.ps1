@@ -128,34 +128,26 @@
         }
         else
         {
-        if ($currentSqlSizerVersion -ne $result.Version)
-        {
-            $answer = Read-Host -Prompt "Would you like to uninstall SqlSizer [y/n]?"
-
-            if ($answer -eq "y")
+            if ($currentSqlSizerVersion -ne $result.Version)
             {
-                Write-Host "New version. Uninstalling SqlSizer..." -ForegroundColor Cyan
-                Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+                $answer = Read-Host -Prompt "Would you like to uninstall SqlSizer [y/n]?"
+
+                if ($answer -eq "y")
+                {
+                    Write-Host "New version. Uninstalling SqlSizer..." -ForegroundColor Cyan
+                    Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+                }
+                else
+                {
+                    throw "Installation has been interrupted"
+                    return
+                }
             }
             else
             {
-                throw "Installation has been interupted"
+                Write-Host "Installation of SqlSizer: skipped" -ForegroundColor Yellow
                 return
             }
-        }
-        else
-        {
-            Write-Host "Installation of SqlSizer: only session tables and views" -ForegroundColor Yellow
-
-            Install-SqlSizerSessionTables -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-            Install-SqlSizerResultViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-            Install-SqlSizerSecureViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-            Install-SqlSizerExportViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-            
-            CreateJsonFactory
-
-            return
-        }
         }
     }
 
@@ -166,23 +158,21 @@
         throw "No tables have been found. Cannot install SqlSizer on database without tables."
     }
 
-    $withPrimaryKey = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -notin @('SqlSizer', 'SqlSizerHistory')) -and ($null -ne $_.PrimaryKey) -and ($_.PrimaryKey.Length -gt 0)}
+    $withPrimaryKey = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -notin @('SqlSizer', 'SqlSizerHistory')) -and ($null -ne $_.PrimaryKey) -and ($_.PrimaryKey.Length -gt 0) }
     if ($null -eq $withPrimaryKey)
     {
         throw "No table has been found with primary key. Run Install-PrimaryKeys or set up manually first."
     }
 
     Install-SqlSizerCoreTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerSessionTables -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerResultViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerSecureViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerExportViews -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-
+  
     # install JSON helper for Synapse
     if ($ConnectionInfo.IsSynapse)
     {
         CreateJsonFactory
     }
+
+    Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

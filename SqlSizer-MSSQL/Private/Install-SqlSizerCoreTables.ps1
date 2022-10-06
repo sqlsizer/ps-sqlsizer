@@ -74,7 +74,7 @@
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "IF OBJECT_ID('SqlSizer.Sessions') IS NULL 
-                CREATE TABLE SqlSizer.Sessions([SessionId] varchar(256) $pk)"
+                CREATE TABLE SqlSizer.Sessions(Id int identity(1,1) $pk, [SessionId] varchar(256))"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $sql = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Tables ([Schema] ASC, [TableName] ASC)"

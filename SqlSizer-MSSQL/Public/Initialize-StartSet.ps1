@@ -25,9 +25,6 @@
     $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
     $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
-    # clear SqlSizer
-    $null = Clear-SqlSizer -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
     foreach ($query in $Queries)
     {
         $top = "";

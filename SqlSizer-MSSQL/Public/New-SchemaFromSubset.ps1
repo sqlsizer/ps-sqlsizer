@@ -4,6 +4,9 @@ function New-SchemaFromSubset
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -19,13 +22,14 @@ function New-SchemaFromSubset
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $subsetTables = Get-SubsetTables -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $subsetTables = Get-SubsetTables -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -SessionId $SessionId
 
     # create tables
     foreach ($subsetTable in $subsetTables)
     {
         $null = New-DataTableFromSubsetTable -Database $Database -NewSchemaName "$($NewSchemaPrefix)_$($subsetTable.SchemaName)" -NewTableName "$($subsetTable.TableName)" `
-            -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -CopyData $CopyData -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+            -SchemaName $subsetTable.SchemaName -TableName $subsetTable.TableName -CopyData $CopyData -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo `
+            -SessionId $SessionId
     }
 
     # create foreign keys
@@ -39,9 +43,8 @@ function New-SchemaFromSubset
             {
                 foreach ($fk in $table.ForeignKeys)
                 {
-
-                        $sql = "ALTER TABLE $($NewSchemaPrefix)_$($table.SchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($NewSchemaPrefix)_$($fk.Schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
-                        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
+                    $sql = "ALTER TABLE $($NewSchemaPrefix)_$($table.SchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($NewSchemaPrefix)_$($fk.Schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
+                    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
                 }
             }
         }

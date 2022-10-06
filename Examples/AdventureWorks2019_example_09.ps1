@@ -12,8 +12,8 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -43,17 +43,14 @@ foreach ($table in $info.Tables)
         $colorMapItem.Condition.SourceTableName = "Person"
         $colorMapItem.Condition.SourceSchemaName = "Person"
         $colorMap.Items += $colorMapItem
-
     }
 }
 
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
 Measure-Command {
-    Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap
+    Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -SessionId $sessionId
 }
 
 # end of script

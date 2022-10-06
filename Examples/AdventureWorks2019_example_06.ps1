@@ -12,11 +12,10 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Find subset1
-
 # Query 1: All persons with first name = 'Michael'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow

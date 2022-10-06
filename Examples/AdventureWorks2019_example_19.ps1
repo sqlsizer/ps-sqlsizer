@@ -15,9 +15,8 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 $query = New-Object -TypeName Query
@@ -34,13 +33,11 @@ $query2.Table = "Product"
 $query2.KeyColumns = @('ProductID')
 $query2.Where = "[`$table].SafetyStockLevel > 500"
 
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
 # Init start set with data from query and query2 (multiple sources)
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query, $query2) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -UseDfs $true
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -UseDfs $true -SessionId $sessionId
 
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -50,7 +47,7 @@ Disable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInf
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Remove subset from database
-Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1000
+Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1000 -SessionId $sessionId
 
 # Enable integrity checks and triggers
 Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -60,7 +57,7 @@ Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -Databa
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 Write-Host "Following data has been removed:"
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

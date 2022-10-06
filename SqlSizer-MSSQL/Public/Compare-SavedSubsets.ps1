@@ -123,6 +123,12 @@ function Compare-SavedSubsets
         }
         else
         {
+            $keys = @()
+            for ($i = 0; $i -lt $sourceTable.PrimaryKeySize; $i++)
+            {
+                $keys += "t.Key$i as Key$i"
+            }
+
             if ($ConnectionInfo.IsSynapse -eq $true)
             {
                 $sql = "SELECT $([string]::Join(',', $keys))

@@ -13,8 +13,8 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 $query = New-Object -TypeName Query
@@ -30,12 +30,10 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -UseDfs $true
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -UseDfs $true -SessionId $sessionId
 
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -45,7 +43,7 @@ Disable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInf
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Remove subset from database
-Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1
+Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 100 -SessionId $sessionId
 
 # Enable integrity checks and triggers
 Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info

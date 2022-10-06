@@ -149,8 +149,9 @@
     {
         param
         (
-            [TableFk]$fk,
-            [int]$color
+            [TableInfo]$table,
+            [int]$color,
+            [ColorMap]$colorMap
         )
 
         $result = ""
@@ -170,6 +171,11 @@
             $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
         }
 
+        if ($table.ForeignKeys.Count -eq 0)
+        {
+            return $result
+        }
+
         foreach ($fk in $table.ForeignKeys)
         {
             if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true)
@@ -177,7 +183,7 @@
                 continue
             }
 
-            $newColor = GetOutgoingColor -color $color -fk $fk -colorMap $ColorMap
+            $newColor = GetOutgoingColor -color $color -fk $fk -colorMap $colorMap
 
             $baseTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
             $baseTableId = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table].Id
@@ -261,7 +267,8 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [bool]$useDfs = $false
+            [bool]$useDfs = $false,
+            [ColorMap]$colorMap
         )
 
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
@@ -272,7 +279,7 @@
         }
         else
         {
-            $query = CreateOutgoingQueryPattern -table $table -color $color -useDfs $useDfs
+            $query = CreateOutgoingQueryPattern -table $table -color $color -useDfs $useDfs -colorMap $colorMap
             $outgoingCache[$key] = $query
         }
 
@@ -288,7 +295,8 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [bool]$useDfs = $false
+            [bool]$useDfs = $false,
+            [ColorMap]$colorMap
         )
         $result = ""
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
@@ -304,9 +312,9 @@
                     continue
                 }
 
-                $newColor = GetIncomingNewColor -color $color -fk $fk -colorMap $ColorMap
-                $maxDepth = GetMaxDepth -color $color -fk $fk -colorMap $ColorMap
-                $top = GetTop -color $color -fk $fk -colorMap $ColorMap
+                $newColor = GetIncomingNewColor -color $color -fk $fk -colorMap $colorMap
+                $maxDepth = GetMaxDepth -color $color -fk $fk -colorMap $colorMap
+                $top = GetTop -color $color -fk $fk -colorMap $colorMap
 
                 $fkTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
                 $fkTableId = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable].Id
@@ -416,7 +424,8 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [bool]$useDfs = $false
+            [bool]$useDfs = $false,
+            [ColorMap]$colorMap
         )
 
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
@@ -427,7 +436,7 @@
         }
         else
         {
-            $query = CreateIncomingQueryPattern -table $table -color $color -useDfs $useDfs
+            $query = CreateIncomingQueryPattern -table $table -color $color -useDfs $useDfs -colorMap $colorMap
             $incomingCache[$key] = $query
         }
 
@@ -468,14 +477,14 @@
         }
 
         # red
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
+        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
         $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId INTO #tmp1 FROM $slice s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
         $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
         $result += $q
 
         # green
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + "  and p.[Table] = $tableId and " + $cond + ")"
+        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.[Color] = " + [int][Color]::Green + "  and p.[Table] = $tableId and " + $cond + ")"
         $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId INTO #tmp2 FROM $slice s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
         $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
@@ -622,7 +631,7 @@
             }
             else 
             {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[Color] = $color AND o.[Table] = $tableId AND o.[Processed] = 0)"
+                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[SessionId] = '$SessionId' AND o.[Color] = $color AND o.[Table] = $tableId AND o.[Processed] = 0)"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
             }
         
@@ -641,13 +650,13 @@
             $addOutgoing = ShouldAddOutgoing -color $color
             if ($true -eq $addOutgoing)
             {
-                HandleOutgoing -table $table -color $color -useDfs $useDfs
+                HandleOutgoing -table $table -color $color -useDfs $useDfs -colorMap $ColorMap
             }
 
             $addIncoming = ShouldAddIncoming -color $color
             if ($true -eq $addIncoming)
             {
-                HandleIncoming -table $table -color $color -useDfs $useDfs
+                HandleIncoming -table $table -color $color -useDfs $useDfs -colorMap $ColorMap
             }
 
             # Yellow -> Split into Red and Green

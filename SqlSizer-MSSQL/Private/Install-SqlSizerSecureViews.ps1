@@ -53,7 +53,7 @@ function Install-SqlSizerSecureViews
         {
             continue
         }
-        $sql = "CREATE VIEW SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, SessionId,  $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE VIEW SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName)"
@@ -94,10 +94,10 @@ function GetSecureViewsTableJoin
         $i = $i + 1
     }
 
-    $sql = " (SELECT DISTINCT $([string]::Join(',', $select)), SessionId
+    $sql = " (SELECT DISTINCT $([string]::Join(',', $select))
                FROM $($processing) p
                INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id]) rr ON $([string]::Join(' and ', $join))"
+               WHERE p.[Table] = tt.[Id] AND p.[SessionId] = '$SessionId') rr ON $([string]::Join(' and ', $join))"
 
     return $sql
 }
