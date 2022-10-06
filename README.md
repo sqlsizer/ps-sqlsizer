@@ -102,9 +102,6 @@ Please take a look at examples in *Examples* folder.
 
 ## Sample 1 (on-premises SQL server)
 ```powershell
-## Example that shows how to create a new database with the subset of data based on queries which define initial data
-
-# Connection settings
 $server = "localhost"
 $database = "AdventureWorks2019"
 $username = "someuser"
@@ -116,11 +113,10 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
-
 # Query 1: 10 persons with first name = 'John'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
@@ -131,39 +127,29 @@ $query.Where = "[`$table].FirstName = 'John'"
 $query.Top = 10
 $query.OrderBy = "[`$table].LastName ASC"
 
-# Define ignored tables
-
-$ignored = New-Object -Type TableInfo2
-$ignored.SchemaName = "dbo"
-$ignored.TableName = "ErrorLog"
-
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+# Init start set
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
-
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" 
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 # Create a new db with found subset of data
-
-$newDatabase = "AdventureWorks2019_subset_01"
-
+$newDatabase = "AdventureWorks2019_subset_John"
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
-Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Compress-Database -Database $newDatabase -ConnectionInfo $connection
+$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection
 
-Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Copy-DataFromSubset -Source $database -Destination $newDatabase -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
+Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Compress-Database -Database $newDatabase -ConnectionInfo $connection
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
@@ -174,7 +160,12 @@ foreach ($table in $infoNew.Tables)
     $sum += $table.Statistics.Rows
 }
 
+Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 Write-Output "Total rows: $($sum)"
+Write-Output "==================="
+
+Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
+
 # end of script
 ```
 ## Sample 2 (Azure SQL database)
@@ -196,8 +187,8 @@ $connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -209,18 +200,14 @@ $query.Table = "Customer"
 $query.KeyColumns = @('CustomerID')
 $query.Top = 10
 
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+# Init start set
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
-
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)" 
-
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 ```
 
 ## Schema visualizations

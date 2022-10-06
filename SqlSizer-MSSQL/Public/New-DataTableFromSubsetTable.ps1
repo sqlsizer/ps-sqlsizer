@@ -4,6 +4,9 @@ function New-DataTableFromSubsetTable
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -29,7 +32,7 @@ function New-DataTableFromSubsetTable
     )
 
     $null = New-DataTableFromView -Database $Database -NewSchemaName $NewSchemaName -NewTableName $NewTableName `
-        -ViewSchemaName "SqlSizer" -ViewName "Result_$($SchemaName)_$($TableName)" `
+        -ViewSchemaName "SqlSizer_$($SessionId)" -ViewName "Result_$($SchemaName)_$($TableName)" `
         -CopyData $CopyData -ConnectionInfo $ConnectionInfo
 
     # setup primary key

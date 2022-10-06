@@ -12,8 +12,8 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -33,23 +33,22 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+# Init start set
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 $subsetId = (New-Guid).ToString().Replace('-', '_')
 
 New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
-                     -NewSchemaPrefix "SqlSizer_subset_$subsetId"
+                     -NewSchemaPrefix "SqlSizer_subset_$subsetId" `
+                     -SessionId $sessionId
 
 Write-Output "New schema: SqlSizer_subset_$subsetId"
 

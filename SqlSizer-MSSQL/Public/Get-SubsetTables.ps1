@@ -4,6 +4,9 @@ function Get-SubsetTables
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -16,7 +19,7 @@ function Get-SubsetTables
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $tables = Get-SubsetTableStatistics -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $tables = Get-SubsetTableStatistics -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo -SessionId $SessionId
 
     if ($Negation -eq $false)
     {

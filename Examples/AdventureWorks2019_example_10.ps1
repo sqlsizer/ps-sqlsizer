@@ -13,7 +13,7 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
 Remove-Schema -Database $database -ConnectionInfo $connection -SchemaName "Person6" -DatabaseInfo $info
-New-SchemaFromDatabase -SourceDatabase $database -TargetDatabase $database -ConnectionInfo $connection -SchemaName "Person" -NewSchemaName "Person6" -CopyData $false -DatabaseInfo $info
+$null = New-SchemaFromDatabase -SourceDatabase $database -TargetDatabase $database -ConnectionInfo $connection -SchemaName "Person" -NewSchemaName "Person6" -CopyData $false -DatabaseInfo $info
 
 # end of script
 # SIG # Begin signature block

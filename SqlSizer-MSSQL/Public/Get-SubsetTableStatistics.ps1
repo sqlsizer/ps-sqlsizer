@@ -4,6 +4,9 @@ function Get-SubsetTableStatistics
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -30,6 +33,11 @@ function Get-SubsetTableStatistics
         {
             continue
         }
+
+        if ($table.SchemaName.StartsWith('SqlSizer'))
+        {
+            continue
+        }
         $tableName = $structure.GetProcessingName($structure.Tables[$table])
 
         $keys = ""
@@ -43,13 +51,14 @@ function Get-SubsetTableStatistics
             }
         }
 
-        if ($allTablesGroupedbyName.ContainsKey($table.SchemaName + ", " + $table.TableName) -eq $false)
+        $tableInfo = $allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName]
+
+        if ($null -eq $tableInfo)
         {
-            # todo remove it someday
             continue
         }
 
-        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)) x"
+        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($tableInfo.Id) AND [SessionId] = '$SessionId') x"
         $count = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
         $obj = New-Object -TypeName SubsettingTableResult

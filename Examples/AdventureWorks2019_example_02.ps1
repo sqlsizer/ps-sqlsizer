@@ -12,11 +12,10 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
-
 # Query 1: All persons with first name = 'Michael'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Blue
@@ -29,11 +28,9 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "Sales"
 $ignored.TableName = "Store"
 
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
-
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored)
-
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored) -SessionId $sessionId
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 # end of script
 # SIG # Begin signature block

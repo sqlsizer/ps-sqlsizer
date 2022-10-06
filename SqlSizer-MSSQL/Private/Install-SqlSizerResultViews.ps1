@@ -2,7 +2,10 @@ function Install-SqlSizerResultViews
 {
     [cmdletbinding()]
     param
-    (
+    ( 
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -16,6 +19,13 @@ function Install-SqlSizerResultViews
         [TableInfo2[]]$IgnoredTables
     )
 
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+    
     $structure = [Structure]::new($DatabaseInfo)
 
     foreach ($table in $DatabaseInfo.Tables)
@@ -32,7 +42,7 @@ function Install-SqlSizerResultViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizer.Result_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $sql = "CREATE VIEW SqlSizer_$($SessionId).Result_$($table.SchemaName)_$($table.TableName) AS SELECT $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }
@@ -68,7 +78,7 @@ function GetResultViewsTableJoin
     $sql = " (SELECT DISTINCT $([string]::Join(',', $select))
                FROM $($processing) p
                INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id]) rr ON $([string]::Join(' and ', $join))"
+               WHERE p.[Table] = tt.[Id] AND p.[SessionId] = '$SessionId') rr ON $([string]::Join(' and ', $join))"
 
     return $sql
 }

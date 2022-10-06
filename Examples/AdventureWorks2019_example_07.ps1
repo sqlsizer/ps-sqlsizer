@@ -12,8 +12,8 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -47,46 +47,33 @@ foreach ($table in $info.Tables)
     $colorMap.Items += $colorMapItem
 }
 
-
-# Define ignored tables
-
-$ignored = New-Object -Type TableInfo2
-$ignored.SchemaName = "dbo"
-$ignored.TableName = "ErrorLog"
-
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -UseDfs $true
-
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -UseDfs $true -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 # Create a new db with found subset of data
 
 $newDatabase = "AdventureWorks2019_subset_07"
-
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
+$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 
-Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
+Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 
-Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Uninstall-SqlSizer -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
 
-Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 

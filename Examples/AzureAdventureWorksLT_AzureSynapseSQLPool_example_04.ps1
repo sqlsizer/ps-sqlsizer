@@ -49,7 +49,6 @@ $column.DataType = "int"
 $table.PrimaryKey += $column
 $additonalStructure.Tables += $table
 
-
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
 

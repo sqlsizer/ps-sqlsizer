@@ -12,11 +12,10 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
-
 # Query 1: 10 persons with first name = 'John'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
@@ -33,23 +32,21 @@ $ignored = New-Object -Type TableInfo2
 $ignored.SchemaName = "dbo"
 $ignored.TableName = "ErrorLog"
 
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+# Init start set
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
-
 New-DataTableFromSubsetTable -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
-                             -NewSchemaName "Person_subset_02" -NewTableName "Address" -SchemaName "Person" -TableName "Address"
-
+                             -NewSchemaName "Person_subset_02" -NewTableName "Address" -SchemaName "Person" -TableName "Address" `
+                             -SessionId $sessionId
+                        
 # end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

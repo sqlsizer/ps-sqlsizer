@@ -1,66 +1,84 @@
-## Example that shows how to find a subset in Azure Synapse Analytics and remove it
-
-# Connection settings
-$server = "#name#.sql.azuresynapse.net"
-$database = ""
-$username = "sqladminuser"
-$password = ConvertTo-SecureString -String "" -AsPlainText -Force
-
-# Create connection
-$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
-
-# Check if database is available
-if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
+﻿function Install-SqlSizerSessionTables
 {
-    Write-Output "Database is not available" 
-    return
+    [cmdletbinding()]
+    param
+    (   
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Database,
+
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory = $true)]
+        [SqlConnectionInfo]$ConnectionInfo
+    )
+
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $pk = "PRIMARY KEY NONCLUSTERED NOT ENFORCED"
+    }
+    else
+    {
+        $pk = "PRIMARY KEY"
+    }
+    $structure = [Structure]::new($DatabaseInfo)
+
+    foreach ($signature in $structure.Signatures.Keys)
+    {
+        $slice = $structure.GetSliceName($signature, $SessionId)
+
+        $keys = ""
+        $columns = ""
+        $keysIndex = ""
+        $i = 0
+        $len = $structure.Signatures[$signature].Count
+
+        foreach ($column in $structure.Signatures[$signature])
+        {
+            $keys += " Key$($i) "
+            $columns += " Key$($i) "
+            $keysIndex += " Key$($i) ASC "
+
+            if ($column.DataType -in @('varchar', 'nvarchar', 'char', 'nchar'))
+            {
+                $columns += $column.DataType + "(" + $column.Length + ") NOT NULL "
+            }
+            else
+            {
+                $columns += $column.DataType + " NOT NULL "
+            }
+
+            if ($i -lt ($len - 1))
+            {
+                $keysIndex += ", "
+                $keys += ", "
+                $columns += ", "
+            }
+
+            $i += 1
+        }
+
+        if ($len -gt 0)
+        {
+            $sql = "CREATE TABLE $($slice) ([Id] int identity(1,1) $pk, $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+    }
 }
-
-$additonalStructure = New-Object DatabaseStructureInfo
-
-$fk1 = New-Object TableFk
-$fk1.Name = "AC"
-$fk1.FkSchema = "SalesLT"
-$fk1.FkTable = "CustomerAddress"
-$fk1.Schema = "SalesLT"
-$fk1.Table = "Customer"
-$c1 = New-Object ColumnInfo
-$c1.Name = "CustomerID"
-$c1.DataType = "int"
-$fk1.FkColumns += $c1
-$fk1.Columns += $c1
-$additonalStructure.Fks += $fk1
-
-# Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
-
-# Start session
-$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-# Define start set
-
-# Query 1: 10 persons with first name = 'John'
-$query = New-Object -TypeName Query
-$query.Color = [Color]::Yellow
-$query.Schema = "SalesLT"
-$query.Table = "Customer"
-$query.KeyColumns = @('CustomerID')
-$query.Where =  "[`$table].FirstName = 'James'"
-$query.Top = 1000
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
-
-# Find some subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
-Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
-
-
-# end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAeLEW7mIbk7N8k
-# bqpdyP8HAlXn/JVHb8GHUy/kHIX0oaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBCeI6eAUf51VcQ
+# 4LwfTHrniMP8IC0Lz8q8ljlCXV/r0qCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -240,38 +258,38 @@ Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCBXnRddv2l83ooBzFUFPoF9Ya+UmGWkN1bOANhHzl2tvjANBgkqhkiG9w0B
-# AQEFAASCAgCAHvCj5jHqP4XtuxWf5AoqAPNlQ3IbMVmle1+EXV4G/XKVjsT1zgJ/
-# 3026fhks2Xs/jaob9U47/1Zoqd7i7W7B23r0GJcmbOC/HeuJcev2/FLHnpqlnrRu
-# K6H8hef2XSkv7EN2YEhZqRuSL8ppqvZeIsGVQDOLm9fA2jaHLhU7j/7zA9dOUh7l
-# Yo2oWgS2yS0nNuiscWAkCMaAUHc2Fb6jsYU3zKbt6SUH7ulMzJtMliXYJ7k7iJ7Z
-# OaqZrPljRBIzmDsJoisdw/4Fj+vXATWaMn1YG3S/m6mJ0FUjrWWFxu8XcWW4ceci
-# q46wM5bRR3+j/p9kLhMW6nJt60564fq474I7rVHMgGIDS7kyoA46XuZKLQZoKA26
-# xItNWEVgK3a4I5ttg6QgbCm04uyGheY1FVTMa0eDIs+9lOZPnZ7KgAyrCOr07yDn
-# Lcilz6JOYDoIbH28JDpZgqTZx3YsxXue4p6KuBrkxej5/TIKLVgoUJzZsw01I3Yx
-# S3uHBXzxvXC4AVj9INzDJHB5eLtjZbki4KecqqKoNH5wUZ2m0v3UyUf8ok6N5xPN
-# /hoawSJB8CA6cQxJd+W54biKGx+rlzIOWTL2fppS5aalLeKz2NHl8Equ+m3op3qj
-# TLt8kTSId6XZLL4W6/FfuJqQ89UWoswrJB0wttPTUiU3hm0vlqB+5aGCBAIwggP+
+# BDEiBCDWKnhe2Njm09DmNkcJMtTk1Vq4UXlGcLvzzYjQVBT0NDANBgkqhkiG9w0B
+# AQEFAASCAgCHV5keLC638+GWapqkvYct7Q9wZgmkf3sI0HLJpDKd3qnZqc1sORgh
+# 7iEZy8W5JOF/p9yoU4HeJEdZG2sZVlVE7fMakeVCuExf+aiGvai+W18NRy5rPY8X
+# qpc8rMHLSTgN8AJal1LuFCzxOVXF5pNTIUO3MmlOrsbTh/YzbOfsNexPkcdaBavY
+# I3W3L42KguHpBEL3NYdZrGxBZYQJ7Ug3uskj4q68xp69NShH/z1gWkPuwWapg0Fi
+# E5nI4LupA3AlEDw+kV5ZP3Jh1UI/qQM2wm3z7zNhN1v6ngZbLCO4y6DfVe1O06jz
+# kCGapBZyBC6AezgJvfAZApPH9ZWdnAXqoB54GCBvCXxQZoDfo1vSPN3NSjEUihTp
+# B7Os+M1RnkpHRNujV5sBP1I7rjM9WHvMGVn++YWBoM39lN2zXya3aMALwVjeXQT8
+# 27kqHfrcvCHWmk2P8VjYLXUkLJwPCqPyyIPlfsiz5TUs8P7LlUMmHkIUHJ1VxJZl
+# 3PMwgQOHlOgfAb3ECHzYZ74BnShpKVoGQjBZ4SVJZa0v5CtSXwPx7mqLWdA/38kM
+# zpwkM5tAS46AHhaMF1Fh+daRRG+4BecRDtisAr+5KY6R/2udv/XDAe6s8eKQ57La
+# elozk0uNqCDbNrOU8h7fKJ5R5bnjdXj9kI1k/KZ6t3Pz0ujk/LgU66GCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDMwNTM0NTRaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDBQcdd7WOmZ
-# VSI3Xb03zssiTQAVmZgNPnWDg1yrLu138kZ30mS2CZQQ7vk3BIuJRRAwgZ8GCyqG
+# Fw0yMjEwMDIxMjM2NDJaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDeA3Q6iEV4
+# C77idK2tBUaRLkDCgghA+Goq/M4EOWQbYUqj4tl6zmOrocga+YnpPAwwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAvRnOg7cymoGg2gwJ4e+5zJ0E
-# 3Voy+miIG5A1Xd+qBpdxrMRQ1P9y12pcX6i3C4hs0GasIoHeLicJyuX3TOdFih2D
-# 1t7wzMZ+G8zSRBLAGqebyYBNMym61LkXhpYUIH862w4xS0wPGP6uF40ATT9ej7xb
-# QM5eW734xxJakGh/7YMruOh4TzHoL9ElBbufbFkmsahwaZuv+4XJf68OJw6J3PCT
-# QvPKkAHGpQUcoWBQq58G0cV46T+WF6ZqccTQgCfG+97+Xam571R7b+PNX7g5cJsf
-# U+oWlP0OheX4mtP2Dkhd0GUKe3myQ9hC8KikOFnqDYVXqqdSyQ5VEBedirGYGtR1
-# ouBawduIBiTXF4cfNFMn2rtCZ7Ajlk0ajhm6JUwIt+IRPcbTKVW1K93nu0eO+yLJ
-# 2Sp108GHI2h280t/n/EiE2sZDFTNQj9Szx8YckxtWKm0+Hi74cUiLiZQLZK0x4f6
-# 7iVor8xWWTqd0D5sPN6ixVJjTuBh7aLDLRT3T6PER/wQaSa9MFXnG1x+mVdwowYY
-# NVp/W6z5jXcxN8EmIraPlfgFo6nizEE/v814ZV98YFB95Xl2k9pIovTMLwpiEzxn
-# XpQenAEqbH8MqTxRmEJ+GfEanfJAYwYXKPvTRvsOmRUQ4cXIUMDBFQvKy4XY2IjW
-# MmUiTVIYWkzuacCAjzk=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAV6B34lbiW+NnN3JrdGzo5i9p
+# oLTgVaWdtQCQxhF3wqBeNIfgnbd7CRhyhsxqUYp0RBgDLrS8aLqKV3Er43n9AL6b
+# Zv5buhBKTDD5e4bswJ9Qb0/+avT7QDgZRMb36UDK6wXcXmK1K80VBErEzBZK3N2z
+# xrvqt+HEfZHkAO04lY1lVy3zYNDjyrPTgcIpy80R+DJ5ep3EvrgAP91a8n9eqpNV
+# xZd+jxx4f9I2SLe8j+Pt/Xb1qiyHnVD9R3hx4gzINEy/NFW+PhJFj/U9q/n9X4HW
+# El6wUtF7MIQSF+5UoD55lNmVDGeNAjdtJjs4VLEV6OjiFJ/cO69FOoUpx0doR9Vc
+# RcvlZtJqAZ2BNJ+hIPVykXM6cfrTZ/wA1a6zeboIwFkhN3a8x+Nr67tXkqAfLpML
+# V5w+dGZFdLvlgZMkAPYJ6viBCuQTzWi7c7oe09fCVKgzSynScQkByyjuEBDJm6yt
+# tEPGy++qD7xCe5mLK3xSTJatk0gkqok9Ib1t6yuuBLmS7rBMHQBKdGYL/NbvwHkd
+# CDFBu7Qu5INLt6f6BUv0qW1eM0lMvxh56tl9TTCrP+pXpM3m+1UChd4k+D/0GdkC
+# PsW1QAd9wiS1WbUK6bUcerdpknfg1LnAa2iXBTuiqV7/bsRLRhUNCrU2qij2W2Lv
+# EPToDbxnB2n2BKmrMQw=
 # SIG # End signature block

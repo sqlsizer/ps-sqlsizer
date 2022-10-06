@@ -20,8 +20,8 @@ if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $f
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -33,17 +33,13 @@ $query.Table = "Customer"
 $query.KeyColumns = @('CustomerID')
 $query.Top = 10
 
-# Define ignored tables
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
@@ -69,7 +65,7 @@ while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) 
 $newInfo = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $false
 Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
-$files = Copy-SubsetToDatabaseFileSet -SourceDatabase $database -TargetDatabase $newDatabase -DatabaseInfo $info -ConnectionInfo $connection -Secure $false
+$files = Copy-SubsetToDatabaseFileSet -SourceDatabase $database -TargetDatabase $newDatabase -DatabaseInfo $info -ConnectionInfo $connection -Secure $false -SessionId $sessionId
 Import-SubsetFromFileSet -SourceDatabase $newDatabase -TargetDatabase $newDatabase -DatabaseInfo $newInfo -ConnectionInfo $connection -Files $files
 Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo

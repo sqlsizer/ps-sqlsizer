@@ -1,8 +1,8 @@
-function Clear-SqlSizer
+﻿function Install-SqlSizerCoreTables
 {
     [cmdletbinding()]
     param
-    (
+    (   
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -13,33 +13,204 @@ function Clear-SqlSizer
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
-        TRUNCATE TABLE SqlSizer.Operations"
-    Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
-
-    $structure = [Structure]::new($DatabaseInfo)
-
-    foreach ($signature in $structure.Signatures.Keys)
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $false)
     {
-        $slice = $structure.GetSliceName($signature)
-        $tmp = "IF OBJECT_ID('$($slice)') IS NOT NULL
-            TRUNCATE TABLE $($slice)"
-        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $tmp = "CREATE SCHEMA SqlSizer"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
+    $tmp = "IF OBJECT_ID('SqlSizer.Operations') IS NOT NULL
+        Drop Table SqlSizer.Operations"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "IF OBJECT_ID('SqlSizer.Tables') IS NOT NULL
+        Drop Table SqlSizer.Tables"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "IF OBJECT_ID('SqlSizer.ForeignKeys') IS NOT NULL
+        Drop Table SqlSizer.ForeignKeys"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $structure = [Structure]::new($DatabaseInfo)
     foreach ($signature in $structure.Signatures.Keys)
     {
         $processing = $structure.GetProcessingName($signature)
         $tmp = "IF OBJECT_ID('$($processing)') IS NOT NULL
-            TRUNCATE TABLE $($processing)"
+            Drop Table $($processing)"
         Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $pk = "PRIMARY KEY NONCLUSTERED NOT ENFORCED"
+    }
+    else
+    {
+        $pk = "PRIMARY KEY"
+    }
+    $tmp = "IF OBJECT_ID('SqlSizer.Settings') IS NULL
+            BEGIN
+                CREATE TABLE SqlSizer.Settings(Id int identity(1,1) $pk, Name varchar(128), Value varchar(256))
+                INSERT INTO SqlSizer.Settings(Name, Value) VALUES('Version', '$($currentSqlSizerVersion)')
+            END
+            ELSE
+            BEGIN
+                UPDATE SqlSizer.Settings SET Value = '$($currentSqlSizerVersion)' WHERE Name = 'Version'
+            END"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $tmp = "CREATE TABLE SqlSizer.Files(Id int identity(1,1) $pk, FileId uniqueidentifier, [Index] int, [Content] nvarchar(4000))"
+    }
+    else
+    {
+        $tmp = "CREATE TABLE SqlSizer.Files(Id int identity(1,1) $pk, FileId uniqueidentifier, [Index] int, [Content] nvarchar(max))"
+    }
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "CREATE TABLE SqlSizer.Tables(Id int identity(1,1) $pk, [Schema] varchar(128), [TableName] varchar(128))"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "IF OBJECT_ID('SqlSizer.Sessions') IS NULL 
+                CREATE TABLE SqlSizer.Sessions(Id int identity(1,1) $pk, [SessionId] varchar(256))"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $sql = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Tables ([Schema] ASC, [TableName] ASC)"
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "CREATE TABLE SqlSizer.ForeignKeys(Id int identity(1,1) $pk, [FkTableId] int, [TableId] int, [Name] varchar(256))"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    foreach ($table in $DatabaseInfo.Tables)
+    {
+        $tmp = "INSERT INTO SqlSizer.Tables VALUES('$($table.SchemaName)', '$($table.TableName)')"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    foreach ($table in $DatabaseInfo.Tables)
+    {
+        foreach ($fk in $table.ForeignKeys)
+        {
+            $tmp = "SELECT [Id] FROM SqlSizer.Tables WHERE [Schema] = '$($fk.FkSchema)' AND TableName = '$($fk.FkTable)'"
+            $result = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $tmp = "SELECT [Id] FROM SqlSizer.Tables WHERE [Schema] = '$($fk.Schema)' AND TableName = '$($fk.Table)'"
+            $result2 = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $tmp = "INSERT INTO SqlSizer.ForeignKeys VALUES($($result.Id), $($result2.Id), '$($fk.Name)')"
+            $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+    }
+
+    $tmp = "CREATE TABLE SqlSizer.Operations(Id int identity(1,1) $pk, [Table] smallint, [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL, [ProcessedDate] datetime NULL, [SessionId] varchar(256) NOT NULL)"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Table] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    foreach ($signature in $structure.Signatures.Keys)
+    {
+        $processing = $structure.GetProcessingName($signature)
+
+        $keys = ""
+        $columns = ""
+        $keysIndex = ""
+        $i = 0
+        $len = $structure.Signatures[$signature].Count
+
+        foreach ($column in $structure.Signatures[$signature])
+        {
+            $keys += " Key$($i) "
+            $columns += " Key$($i) "
+            $keysIndex += " Key$($i) ASC "
+
+            if ($column.DataType -in @('varchar', 'nvarchar', 'char', 'nchar'))
+            {
+                $columns += $column.DataType + "(" + $column.Length + ") NOT NULL "
+            }
+            else
+            {
+                $columns += $column.DataType + " NOT NULL "
+            }
+
+            if ($i -lt ($len - 1))
+            {
+                $keysIndex += ", "
+                $keys += ", "
+                $columns += ", "
+            }
+
+            $i += 1
+        }
+
+        if ($len -gt 0)
+        {
+            $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, [Table] smallint NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [SessionId] varchar(256) NOT NULL)"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+            $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Table] ASC, $($keysIndex), [Color] ASC)"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Table] ASC, [Color] ASC, [Depth] ASC)"
+            }
+            else
+            {
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Table] ASC, [Color] ASC, [Depth] ASC) INCLUDE ($($keys), [Source], [Fk])"
+            }
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
+    }
+    
+    $schemaExists = Test-SchemaExists -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo
+
+    if ($schemaExists -eq $false)
+    {
+        $tmp = "CREATE SCHEMA SqlSizerHistory"
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+
+    }
+
+    if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "Subset" -ConnectionInfo $ConnectionInfo) -eq $false)
+    {
+        if ($ConnectionInfo.IsSynapse -eq $true)
+        {
+            $sql = "CREATE TABLE SqlSizerHistory.Subset ([Guid] [uniqueidentifier] NOT NULL $pk, [Name] varchar(256), [Created] datetime NULL)"
+        }
+        else
+        {
+            $sql = "CREATE TABLE SqlSizerHistory.Subset ([Id] int identity(1,1) $pk, [Guid] [uniqueidentifier] NOT NULL, [Name] varchar(256), [Created] datetime default(GETDATE()))"
+        }
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    }
+
+    if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "SubsetTable" -ConnectionInfo $ConnectionInfo) -eq $false)
+    {
+        if ($ConnectionInfo.IsSynapse -eq $true)
+        {
+            $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Guid] [uniqueidentifier] $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL, [SubsetGuid] uniqueidentifier NOT NULL)"
+        }
+        else 
+        {
+            $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Id] int identity(1,1) $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL,  [SubsetId] int NOT NULL)"
+        }
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    
+        if ($ConnectionInfo.IsSynapse -eq $false)
+        {
+            $sql = "ALTER TABLE SqlSizerHistory.SubsetTable ADD CONSTRAINT SubsetTable_SubsetId FOREIGN KEY (SubsetId) REFERENCES SqlSizerHistory.Subset([Id]) ON DELETE CASCADE"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
     }
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDSTESgjbsx+BY4
-# s0ZK5DcXa1wew5tBxalCaRsCGpwBlKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBCeI6eAUf51VcQ
+# 4LwfTHrniMP8IC0Lz8q8ljlCXV/r0qCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -219,38 +390,38 @@ function Clear-SqlSizer
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDrlj1xLnAOPPBRYiH79XAmu4o2ACxIVODVEmTCOcs3mzANBgkqhkiG9w0B
-# AQEFAASCAgARVBBRn4JIaaInZYWrHYy4CD1ciJNk5MnFA7UvYvEigP01xk0LTT11
-# h3fPahNj0ifrlYInA353bhKMAMYgHFGqarXtAIr63ocXTAZ4OQ9CiKPAVPMYFLKh
-# FdlEos8qTHxXnzhog7kdK+m00U6/ttf8GwBGLZtnu9Cka0XohJwqkL3U1j+rHRF3
-# 3k9xy99BHs4SxuduMWTY+sch75LzmE9jXVh+q5xCfT5EorvY8bFDg5YA/jOAhh2B
-# HGh92gf4IDacRbJEFb9oi9J6N+VTM64GYsvFsvJ5znHiIYgZ5f4214HPHwSrKnaX
-# kR9392fiw37XCoFDeA2c5g4DcHb69cDJrhrJnjEzQlBR5gyLjLRaNuldnggKFU83
-# 9jntWUHsJGXyJyKHYZrUI6UixgOIkYOi3hhPFuUCzNwyEVfrp3K+gEjAUb1s20Ak
-# PzagymUhqO1ewzRMpcZ8b+bJOBLUIR5I8P/QelpiWE7JZSFDb1wfTaREnDA8eUVk
-# tJWBnULYRwGoZIF2OdkZjh01Sm1VN5GLfaajutzm84kDRvz9Mfgpe9+am4Dxcfiu
-# t2fB//2CwyIkJNHYc/Elg2Ebhqzf+NVFjqPVzrY8mt7IOWVIobsyLp/VV0/Olxmn
-# +xeSewk/N0OSxOspwycXwDTbDwhI2QGXhmPX7G8BmlMbwqx1DviANKGCBAIwggP+
+# BDEiBCDWKnhe2Njm09DmNkcJMtTk1Vq4UXlGcLvzzYjQVBT0NDANBgkqhkiG9w0B
+# AQEFAASCAgCHV5keLC638+GWapqkvYct7Q9wZgmkf3sI0HLJpDKd3qnZqc1sORgh
+# 7iEZy8W5JOF/p9yoU4HeJEdZG2sZVlVE7fMakeVCuExf+aiGvai+W18NRy5rPY8X
+# qpc8rMHLSTgN8AJal1LuFCzxOVXF5pNTIUO3MmlOrsbTh/YzbOfsNexPkcdaBavY
+# I3W3L42KguHpBEL3NYdZrGxBZYQJ7Ug3uskj4q68xp69NShH/z1gWkPuwWapg0Fi
+# E5nI4LupA3AlEDw+kV5ZP3Jh1UI/qQM2wm3z7zNhN1v6ngZbLCO4y6DfVe1O06jz
+# kCGapBZyBC6AezgJvfAZApPH9ZWdnAXqoB54GCBvCXxQZoDfo1vSPN3NSjEUihTp
+# B7Os+M1RnkpHRNujV5sBP1I7rjM9WHvMGVn++YWBoM39lN2zXya3aMALwVjeXQT8
+# 27kqHfrcvCHWmk2P8VjYLXUkLJwPCqPyyIPlfsiz5TUs8P7LlUMmHkIUHJ1VxJZl
+# 3PMwgQOHlOgfAb3ECHzYZ74BnShpKVoGQjBZ4SVJZa0v5CtSXwPx7mqLWdA/38kM
+# zpwkM5tAS46AHhaMF1Fh+daRRG+4BecRDtisAr+5KY6R/2udv/XDAe6s8eKQ57La
+# elozk0uNqCDbNrOU8h7fKJ5R5bnjdXj9kI1k/KZ6t3Pz0ujk/LgU66GCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDMwNTM2MTJaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDjXS1Xm+ti
-# MswE5Ze65jd3JZM7VC3Hye7+XwgNHb87kpOn9XbhUp3kGnEb8Gh/wIQwgZ8GCyqG
+# Fw0yMjEwMDMwNTM2MDNaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDeA3Q6iEV4
+# C77idK2tBUaRLkDCgghA+Goq/M4EOWQbYUqj4tl6zmOrocga+YnpPAwwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAhH1UC/ia79Ho8TDnLtakxsgT
-# oI6YRdXBFohQElisXD/rPJmPmd6aWfbdRMLAGm1WcFAJ20wIU29njDs+uDQI5loM
-# Lh0EdpfZlZzq+T2NrIgH15ej09LPuyfy0uQ7+5TlDbb/SfMD0GX7hde5C5bSQo8v
-# NapcyY2/vwvbupIC90pIjzBRg4M6hYnwUnfgmbQqXDgwQUFkvej0FaL8X1wdvO5U
-# n7K2gyy/ZRCJweGZT5RONbG8MyRiE6VOpZD9HRgXfja9G+eAC1WpWXR3rv7X0Kg1
-# uz3Zzhh3ymXSa91y4HIbOjM4bbuSt8H1CEDA7ZWqCPV/p5HCdIE85sUD6pQYcL7i
-# EY3QFadf9G63WLlZQksHFxyKftSLc6vzInz195wSgW7OHG7Rg+xAT9eG3B4CpCRZ
-# bjrgP0K+6+ILeJxKbwDrXQjXxfMAdau5Tiav7y32cYT9+1fUAlShugUh5tIcEglP
-# SvcFthbkWDslEzv01jQ+TA7HTY0uS2J0XzbN3NbpRkpQvD0MhQl/VJ6iSbufDKYy
-# aXeEhbONPGqiKGQtYAll3gkIMUSDHOTeH8egwxfzja98evey0U5+U2TmrQ1ARGbW
-# XY4kgPevNaCzXgLBiC7Bb1rb6j1no/E/xTnlOaHfihiXIQ/Eq9dAkRpGOesof1ev
-# i9GuTSxZOWlUJjRfaAo=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIATftlNdUlwagFFSBRkIuUfi1V
+# 5qT4kb1QBkVWylyrs5BzruWXUChmQCoVrGU5x3yg+KPN1Jh4YsClPa5002g+Z8BG
+# 1P/JYUoDAEhaI/tRnL+ygQyrqrougp11m4DXAgkmv76UwceYEs/HsyreBdK1AJp5
+# ay5MSFjuG+SMSqPTlvmj7+THlq9FqHuwc2Z8CoLe4//7yG3K0IJOVCwyuOvtta5R
+# ZcUFxLgSjunpJbRs3oEuu7rYnIGOfrcmSvyhZvnmlr5FbgeploFHVqL5yv75qLnF
+# E7R5pp9cPgF/V3f1v6j9mMu56qjQJj0HUepBSS/t52seEjWTXa8c1T3Tg8NfnM0Q
+# RKq5vW6kPh3FNgLGtY1GTLVYeXqKGRcHka+P6dhl87RmWBY/gzSX0KZtWPHVLECP
+# EMUgkmwxEfxj9/irFjS/uHDXl76/k4C2VBnTrf8YDpiAX569qXy575tPBrkTqVSs
+# fmVlxDtrXVqfRqVvsRUDzyRXSyx3WB3+mSVuqVa4jywoSKH8f/ANdSsFMV8ygwkD
+# Xokjo42+AXyN54Rtl12H3jz+IX+EAD5ZB9KjXuiwn6vouj3slWLCCX1cKIny8HX+
+# 3/wKCxSVUwEIHN0R4wMq/dOQGcJw64QW5WMwC55QFZWAujDPUT7GDBI8dUKSUl2s
+# NiQccGx6ZgFuGDySBGc=
 # SIG # End signature block

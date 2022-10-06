@@ -34,11 +34,10 @@ $additonalStructure.Fks += $fk1
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
-
 # Query 1: 10 persons with first name = 'John'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
@@ -48,18 +47,14 @@ $query.KeyColumns = @('CustomerID')
 $query.Where =  "[`$table].FirstName = 'Raja'"
 $query.Top = 1000
 
-# Define ignored tables
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find some subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
 # Create new schema with  the data for data masking
 New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
-                     -NewSchemaPrefix "SqlSizer_subset_tomask"
+                     -NewSchemaPrefix "SqlSizer_subset_tomask" -SessionId $sessionId
 
 
 # end of script

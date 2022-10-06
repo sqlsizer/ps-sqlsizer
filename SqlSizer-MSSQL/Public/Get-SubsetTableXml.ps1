@@ -22,17 +22,26 @@ function Get-SubsetTableXml
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $schema = "Export"
+    if ($ConnectionInfo.IsSynapse -eq $true)
+    {
+        $json = Get-SubsetTableJson -SessionId $SessionId -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
+        $obj = $json | ConvertFrom-Json
+        $xml = $obj | ConvertTo-Xml -NoTypeInformation
+        
+        return $xml
+    }
+
+    $prefix = "_$($SessionId).Export"
     if ($Secure -eq $true)
     {
-        $schema = 'Secure'
+        $prefix = "_$($SessionId).Secure"
     }
 
     foreach ($table in $DatabaseInfo.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $sql = "SELECT * FROM SqlSizer.$($schema)_$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
+            $sql = "SELECT * FROM SqlSizer$($prefix)_$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
             $xml = $obj | ConvertTo-Xml -NoTypeInformation

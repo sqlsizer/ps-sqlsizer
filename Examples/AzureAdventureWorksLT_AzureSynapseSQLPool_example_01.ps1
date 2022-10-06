@@ -34,8 +34,9 @@ $additonalStructure.Fks += $fk1
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start sessions
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+$sessionId2 = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 
@@ -48,15 +49,11 @@ $query.KeyColumns = @('CustomerID')
 $query.Where =  "[`$table].FirstName = 'Brian'"
 $query.Top = 1000
 
-# Define ignored tables
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find some subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-$subset1Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "BeforeChangesToData" -DatabaseInfo $info
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
+$subset1Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "BeforeChangesToData" -DatabaseInfo $info -SessionId $sessionId
 
 # Remove some data from db
 $null = Invoke-SqlcmdEx -Sql "DELETE FROM SalesLT.Customer WHERE FirstName = 'Brian' AND LastName = 'Goldstein'" -Database $Database -ConnectionInfo $connection
@@ -65,9 +62,8 @@ $null = Invoke-SqlcmdEx -Sql "DELETE FROM SalesLT.Customer WHERE FirstName = 'Br
 $null = Invoke-SqlcmdEx -Sql "UPDATE SalesLT.Customer SET Title = 'MR2.' WHERE FirstName = 'Brian'" -Database $Database -ConnectionInfo $connection
 
 # Find some subset again
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-$subset2Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "AfterChangesToData" -DatabaseInfo $info
-
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId2
+$subset2Guid = Save-Subset -Database $database -ConnectionInfo $connection -SubsetName "AfterChangesToData" -DatabaseInfo $info -SessionId $sessionId2
 
 $compareResult = Compare-SavedSubsets -SourceDatabase $database -TargetDatabase $database `
                                     -SourceSubsetGuid $subset1Guid -TargetSubsetGuid $subset2Guid -ConnectionInfo $connection `

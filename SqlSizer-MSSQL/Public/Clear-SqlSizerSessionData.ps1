@@ -1,8 +1,11 @@
-﻿function Initialize-Statistics
+function Clear-SqlSizerSessionData
 {
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -13,43 +16,38 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    # load meta data
-    $structure = [Structure]::new($DatabaseInfo)
-    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+       # get meta data
+       $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+       $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+       $structure = [Structure]::new($DatabaseInfo)
+   
+       foreach ($table in $DatabaseInfo.Tables)
+       {
+           if ($table.PrimaryKey.Count -eq 0)
+           {
+               continue
+           }
+           if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+           {
+               continue
+           }
 
-    # clear operations
-    $sql = "DELETE FROM SqlSizer.Operations"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+           if ($table.SchemaName.StartsWith('SqlSizer'))
+           {
+               continue
+           }
 
-    # initialize operations
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if ($table.PrimaryKey.Length -eq 0)
-        {
-            continue
-        }
-        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
-        {
-            continue
-        }
-        $signature = $structure.Tables[$table]
-        $processing = $structure.GetProcessingName($signature)
-
-        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created])
-        SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE()
-        FROM $($processing) p
-        WHERE p.[Table] = $($allTablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id)
-        GROUP BY [Table], [Color]"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    }
+           $tableName = $structure.GetProcessingName($structure.Tables[$table])
+   
+           $sql = "DELETE FROM $($tableName) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id) AND [SessionId] = '$SessionId'"
+           $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+       }
 }
-
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCavfGYiT32fv3T
-# 1+jyF3FIzn/SPG+sHjY+HhCrJgjXtKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDSTESgjbsx+BY4
+# s0ZK5DcXa1wew5tBxalCaRsCGpwBlKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -229,38 +227,38 @@
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCBvOekBxV7aRuMVU7JkbIw57hLHa4TL0uY7a5t3p6nIBDANBgkqhkiG9w0B
-# AQEFAASCAgCJv4OSMiUyLaezCnrSDfkUp54RDMythLTRnFbpBzwgIbZ1V0piOnZA
-# KDeSVgcCV8MXTxEcKD1tN2hZMAaMctQb43LYFdrYd9+l4uFLdYh0/iqXOLFiFHkN
-# maTQR5818x7xZ/LR4TpRhC3aXmu+WVosYse11mRaAZwb/Di2z5gPBs1v89i8ncwx
-# VV5pKtxrBRiyGvxDVIfR2MbVC1zU2GQRfetK+UhFJ+Cg6WGnyxcUdl9BulLljxej
-# 1ltNNiCU3+srNL2M+mqwAwz0Bgg8h0aTS2ckyUeme+4Csl+NU/Ga2Ohedm/pCk5/
-# LiyXOW89DOkcVZqHdUOyNG0v6lCfVx6IAdY06q4SGgdAPPbrINzjaBalxIbbf/BK
-# kPw5+VlugkHPXSS8rq5miYnVjQE3/xCm+Qppb/eZXS/BEXrCbocMs6jOSzUtUQdq
-# PRKNoHMRLggqwA1ypfEpyA0Y6vXt4FLLpAVHBCSGKj/edqDk9RQOvFM9F9U0TTnw
-# /rZBrxKCCuohVjeeBPCPIImaDUSGUCRGX93RyZIADhsF8DxHgXp+UF3QO1WFXvKA
-# IzlhpfQzR1GA+EVCe0CYxWdMBR3SOKMbs6e1bwpufGoXaKEv7DpRvndzCfPaTy4X
-# IRLaEwDp7UDyudom/Ii7aJUV720pV+bqsDLFq6RUkgfFAwguCHAPJKGCBAIwggP+
+# BDEiBCDrlj1xLnAOPPBRYiH79XAmu4o2ACxIVODVEmTCOcs3mzANBgkqhkiG9w0B
+# AQEFAASCAgARVBBRn4JIaaInZYWrHYy4CD1ciJNk5MnFA7UvYvEigP01xk0LTT11
+# h3fPahNj0ifrlYInA353bhKMAMYgHFGqarXtAIr63ocXTAZ4OQ9CiKPAVPMYFLKh
+# FdlEos8qTHxXnzhog7kdK+m00U6/ttf8GwBGLZtnu9Cka0XohJwqkL3U1j+rHRF3
+# 3k9xy99BHs4SxuduMWTY+sch75LzmE9jXVh+q5xCfT5EorvY8bFDg5YA/jOAhh2B
+# HGh92gf4IDacRbJEFb9oi9J6N+VTM64GYsvFsvJ5znHiIYgZ5f4214HPHwSrKnaX
+# kR9392fiw37XCoFDeA2c5g4DcHb69cDJrhrJnjEzQlBR5gyLjLRaNuldnggKFU83
+# 9jntWUHsJGXyJyKHYZrUI6UixgOIkYOi3hhPFuUCzNwyEVfrp3K+gEjAUb1s20Ak
+# PzagymUhqO1ewzRMpcZ8b+bJOBLUIR5I8P/QelpiWE7JZSFDb1wfTaREnDA8eUVk
+# tJWBnULYRwGoZIF2OdkZjh01Sm1VN5GLfaajutzm84kDRvz9Mfgpe9+am4Dxcfiu
+# t2fB//2CwyIkJNHYc/Elg2Ebhqzf+NVFjqPVzrY8mt7IOWVIobsyLp/VV0/Olxmn
+# +xeSewk/N0OSxOspwycXwDTbDwhI2QGXhmPX7G8BmlMbwqx1DviANKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDMwNTM1NDVaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDD4BYpU0Umh
-# IAeih012DJD9vyl0wfPaioKX6wK6MjOfdmifuuqxTCKTxZPN0rw8/NIwgZ8GCyqG
+# Fw0yMjEwMDIxMjM2NTFaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDjXS1Xm+ti
+# MswE5Ze65jd3JZM7VC3Hye7+XwgNHb87kpOn9XbhUp3kGnEb8Gh/wIQwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAZlgESFzLamPOy/SOceun2Mw6
-# gX+pXdhSp8CNncooYzSmuwOKQ+TuGYY2FLoUaB9ZLooYwESldW/LjOuBdxclRilH
-# oAX/2a0E+nv9twQ10odrhInNf2ey4+k5NaY9xvnimM3juidlQkNfVDr1j5ZceJUQ
-# DJvsb8e35Na8LGQU3rIrRHEcFPoMa9mnueRSwap4XgaprrcOr/8ceHMbKoShNbcu
-# 2CXQtn4cEy6cp37BcfrWkfAKDNJMrO0NtKhK3CCVllrobyjkZm3AXpSt5bJtiMHc
-# MW7ymbanPEv3U0LKlhnYvd5XtMFXzqPN01DS/HWO677NlBLiJiTocWCV1hfSEyWc
-# yu6ZdjLBBx6ULO1glvwRTAKH0AS3R9cuNnM91ij+lC7UAaFxRNyzIzrCE/x4nx4T
-# iuVYzfnJvp/OpKkr516JTfyk5pDTGSLVrCLwDnNfl2blEXwnwWhyrQg1v9dwJz3L
-# jL3i91vdTamB865sLDu7JX7mM1TK8mE3l54Zpu+HaDQUTH3sD9bWhHCqbSD7pbZU
-# 8spWJTylMAcNNgCYCK1qNZyRXBX8hBFAr+geedThLrpK8HyY5sdAK4nAIEShfVoX
-# oFItaXbeF84mpB9The0/M1emVSI6e7jhdnWb3AWp3lUStYzOn9bmPef03WFlmGxc
-# QcbaCEYgoLbrJSKZzQ4=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAgcstMhqwPg5Mfqniy+sM0OeI
+# oIe32KTAMGdsGsc3W8JLImFQctHHU5UXtSRKmmYxvxa31E/wl1yuv4/nItKwucKq
+# 8srqMQmjexxrHEhJpbpwS5Dt7rViGSs9ICkmf8iUEzszZP7aQmKhYvFQ4ZlnY21G
+# QTsMdcukyaSJNDiUJ1hh/K1nVN1pBsu0mwdhgsQBr3kcPCt7xBRmcTaA6MZ+d+Xf
+# ncgK0Ubtwn9FVkHIjy3ovpuOJiYFFaUVzJH5UOAnYh445nH6BiM8Q7TIiClxhDsR
+# uPiL4Ju4Crazuzeent0FVCEcSABomY7MoPwsih6pIXoPx45xobXx0F88nLMzzoUK
+# IzkZh4CPfevFUXScR6ijwgn2vI1jwa7guOEZ6cX95XCkhsdEJvSplR3TfAQttz6C
+# GuYBLxpMHuKIF3PZZxnFd1LFuHFv2kM5wJWTlglMcNk+i97c2bsAIuk5yYLNCRJe
+# 5i5NVhpxl9pbwTBJ/ItwMGGwGYLrqq+qwIorcW582CfLclU+dRiBZ1Znm9BKjEIO
+# GadxL6yNasI60w0zeBUyhai6jx7AVkhJDKrhx1zzTbARNz2kCsmFxgDKh3NrG3o8
+# 6CWRz9hToRP1QqooqeCcMAhon6TylYEi6CbcSNaZpZhpUcvAtz1/17ei0eAmJ+aO
+# lvQvjXPS6sdiUCn+F0c=
 # SIG # End signature block

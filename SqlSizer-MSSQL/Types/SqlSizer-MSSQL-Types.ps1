@@ -279,9 +279,9 @@ class Structure
         return "SqlSizer.Processing" + $Signature
     }
 
-    [string] GetSliceName([string] $Signature)
+    [string] GetSliceName([string] $Signature, [string] $SessionId)
     {
-        return "SqlSizer.Slice" + $Signature
+        return "SqlSizer_$SessionId.Slice" + $Signature
     }
 
     [string] GetTablePrimaryKeySignature([TableInfo]$Table)

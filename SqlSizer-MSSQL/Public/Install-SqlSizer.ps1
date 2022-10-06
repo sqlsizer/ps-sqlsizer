@@ -3,6 +3,9 @@
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $false)]
         [bool]$Force = $false,
 
@@ -16,81 +19,14 @@
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $currentSqlSizerVersion = "1.0.0-alpha16"
-
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
-    if ($schemaExists -eq $true)
+    function CreateJsonFactory()
     {
-        Write-Host "SqlSizer is already installed" -ForegroundColor Green
-        Write-Host "Checking the version of installed SqlSizer ..." -ForegroundColor Yellow
-        
-        $sql = "IF OBJECT_ID('SqlSizer.Settings') IS NULL
-        BEGIN
-            SELECT 'Unknown' as Version
-        END
-        ELSE
-        BEGIN
-            SELECT Value as Version FROM SqlSizer.Settings WHERE Name = 'Version'
-        END"
-        $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        Write-Host "Installed version: $($result.Version)" -ForegroundColor Green
-        Write-Host "Current version: $($currentSqlSizerVersion)" -ForegroundColor Green
-        
-        if ($Force)
+        $factory = $DatabaseInfo.StoredProcedures | Where-Object { ($_.Schema -eq "SqlSizer") -and ($_.Name -eq "CreateJSON") }
+
+        if ($null -eq $factory)
         {
-            Write-Host "Installation of SqlSizer forced" -ForegroundColor Red
-            Write-Host "Uninstalling SqlSizer..." -ForegroundColor Red
-            Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-        }
-        else
-        {
-        if ($currentSqlSizerVersion -ne $result.Version)
-        {
-            $answer = Read-Host -Prompt "Would you like to uninstall SqlSizer [y/n]?"
-
-            if ($answer -eq "y")
-            {
-                Write-Host "New version. Uninstalling SqlSizer..." -ForegroundColor Cyan
-                Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-            }
-            else
-            {
-                throw "Installation has been interupted"
-                return
-            }
-        }
-        else
-        {
-            Write-Host "Installation of SqlSizer skipped" -ForegroundColor Yellow
-            return
-        }
-        }
-    }
-
-    Write-Host "Installing SqlSizer..." -ForegroundColor Green
-
-    if ($DatabaseInfo.Tables.Count -eq 0)
-    {
-        throw "No tables have been found. Cannot install SqlSizer on database without tables."
-    }
-
-    $withPrimaryKey = $DatabaseInfo.Tables | Where-Object {($_.SchemaName -notin @('SqlSizer', 'SqlSizerHistory')) -and ($null -ne $_.PrimaryKey) -and ($_.PrimaryKey.Length -gt 0)}
-    if ($null -eq $withPrimaryKey)
-    {
-        throw "No table has been found with primary key. Run Install-PrimaryKeys or set up manually first."
-    }
-
-    Install-SqlSizerTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-
-    Install-SqlSizerResultViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerSecureViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerExportViews -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-
-    # install JSON helper for Synapse
-    if ($ConnectionInfo.IsSynapse)
-    {
-        $sql = "CREATE PROCEDURE [SqlSizer].[CreateJSON] @SchemaName [VARCHAR](1024),@ViewName [VARCHAR](1024) AS
-        BEGIN
+            $sql = "CREATE PROCEDURE [SqlSizer].[CreateJSON] @SchemaName [VARCHAR](1024),@ViewName [VARCHAR](1024) AS
+            BEGIN
                 SET NOCOUNT ON
                 DECLARE @columnCount INT,
                         @rowCount INT,
@@ -159,9 +95,84 @@
                 DROP TABLE #columns
                 DROP TABLE #viewData
                 SELECT '[' + @result + ']'
-        END"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            END"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        }
     }
+
+    $currentSqlSizerVersion = "1.0.0-alpha16"
+
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
+    if ($schemaExists -eq $true)
+    {
+        Write-Host "SqlSizer is already installed" -ForegroundColor Green
+        Write-Host "Checking the version of installed SqlSizer ..." -ForegroundColor Yellow
+        
+        $sql = "IF OBJECT_ID('SqlSizer.Settings') IS NULL
+        BEGIN
+            SELECT 'Unknown' as Version
+        END
+        ELSE
+        BEGIN
+            SELECT Value as Version FROM SqlSizer.Settings WHERE Name = 'Version'
+        END"
+        $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        Write-Host "Installed version: $($result.Version)" -ForegroundColor Green
+        Write-Host "Current version: $($currentSqlSizerVersion)" -ForegroundColor Green
+        
+        if ($Force)
+        {
+            Write-Host "Installation of SqlSizer forced" -ForegroundColor Red
+            Write-Host "Uninstalling SqlSizer..." -ForegroundColor Red
+            Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+        }
+        else
+        {
+            if ($currentSqlSizerVersion -ne $result.Version)
+            {
+                $answer = Read-Host -Prompt "Would you like to uninstall SqlSizer [y/n]?"
+
+                if ($answer -eq "y")
+                {
+                    Write-Host "New version. Uninstalling SqlSizer..." -ForegroundColor Cyan
+                    Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+                }
+                else
+                {
+                    throw "Installation has been interrupted"
+                    return
+                }
+            }
+            else
+            {
+                Write-Host "Installation of SqlSizer: skipped" -ForegroundColor Yellow
+                return
+            }
+        }
+    }
+
+    Write-Host "Installing SqlSizer..." -ForegroundColor Green
+
+    if ($DatabaseInfo.Tables.Count -eq 0)
+    {
+        throw "No tables have been found. Cannot install SqlSizer on database without tables."
+    }
+
+    $withPrimaryKey = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -notin @('SqlSizer', 'SqlSizerHistory')) -and ($null -ne $_.PrimaryKey) -and ($_.PrimaryKey.Length -gt 0) }
+    if ($null -eq $withPrimaryKey)
+    {
+        throw "No table has been found with primary key. Run Install-PrimaryKeys or set up manually first."
+    }
+
+    Install-SqlSizerCoreTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+  
+    # install JSON helper for Synapse
+    if ($ConnectionInfo.IsSynapse)
+    {
+        CreateJsonFactory
+    }
+
+    Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

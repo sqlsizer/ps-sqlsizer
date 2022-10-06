@@ -10,7 +10,6 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
-
 # Query 1: All persons with first name = 'Michael'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
@@ -28,7 +27,7 @@ $colorMapItem.ForcedColor = New-Object -Type ForcedColor
 $colorMapItem.ForcedColor.Color = [Color]::Purple
 $colorMap.Items += $colorMapItem
 
-Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -ColorMap $colorMap
+$null = Test-Queries -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -ColorMap $colorMap
 
 # end of script
 # SIG # Begin signature block

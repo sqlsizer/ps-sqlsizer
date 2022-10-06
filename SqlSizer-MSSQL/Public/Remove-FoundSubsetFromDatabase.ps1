@@ -4,6 +4,9 @@
     param
     (
         [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
         [string]$Database,
         
         [Parameter(Mandatory = $false)]
@@ -26,7 +29,7 @@
 
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName) }
         $primaryKey = $table.PrimaryKey
-        $where = " WHERE EXISTS(SELECT * FROM SqlSizer.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE"
+        $where = " WHERE EXISTS(SELECT * FROM SqlSizer_$SessionId.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE "
 
         $conditions = @()
         foreach ($column in $primaryKey)
@@ -42,7 +45,7 @@
 
     Write-Progress -Activity "Removing data from database" -PercentComplete 0
 
-    $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -SessionId $SessionId
     
     $i = 0
     foreach ($table in $subsetTables)

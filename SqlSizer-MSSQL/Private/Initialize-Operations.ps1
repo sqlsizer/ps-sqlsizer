@@ -1,66 +1,65 @@
-## Example that shows how to find a subset in Azure Synapse Analytics and remove it
-
-# Connection settings
-$server = "#name#.sql.azuresynapse.net"
-$database = ""
-$username = "sqladminuser"
-$password = ConvertTo-SecureString -String "" -AsPlainText -Force
-
-# Create connection
-$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password -EncryptConnection $true -IsSynapse $true
-
-# Check if database is available
-if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
+﻿function Initialize-Operations
 {
-    Write-Output "Database is not available" 
-    return
+    [cmdletbinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Database,
+
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
+
+        [Parameter(Mandatory = $true)]
+        [SqlConnectionInfo]$ConnectionInfo
+    )
+
+    # load meta data
+    $structure = [Structure]::new($DatabaseInfo)
+    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
+    $allTablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+
+    # initialize operations
+    foreach ($table in $DatabaseInfo.Tables)
+    {
+        if ($table.PrimaryKey.Length -eq 0)
+        {
+            continue
+        }
+        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
+        {
+            continue
+        }
+
+        if ($table.SchemaName.StartsWith('SqlSizer'))
+        {
+            continue
+        }
+        $signature = $structure.Tables[$table]
+        $processing = $structure.GetProcessingName($signature)
+        $table = $allTablesGroupedByName[$table.SchemaName + ", " + $table.TableName]
+
+        if ($null -eq $table)
+        {
+            continue
+        }
+
+        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created], [SessionId])
+        SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE(), '$SessionId'
+        FROM $($processing) p
+        WHERE p.[Table] = $($table.Id)
+        GROUP BY [Table], [Color]"
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    }
 }
 
-$additonalStructure = New-Object DatabaseStructureInfo
-
-$fk1 = New-Object TableFk
-$fk1.Name = "AC"
-$fk1.FkSchema = "SalesLT"
-$fk1.FkTable = "CustomerAddress"
-$fk1.Schema = "SalesLT"
-$fk1.Table = "Customer"
-$c1 = New-Object ColumnInfo
-$c1.Name = "CustomerID"
-$c1.DataType = "int"
-$fk1.FkColumns += $c1
-$fk1.Columns += $c1
-$additonalStructure.Fks += $fk1
-
-# Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
-
-# Start session
-$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-# Define start set
-
-# Query 1: 10 persons with first name = 'John'
-$query = New-Object -TypeName Query
-$query.Color = [Color]::Yellow
-$query.Schema = "SalesLT"
-$query.Table = "Customer"
-$query.KeyColumns = @('CustomerID')
-$query.Where =  "[`$table].FirstName = 'James'"
-$query.Top = 1000
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
-
-# Find some subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
-Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
-
-
-# end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAeLEW7mIbk7N8k
-# bqpdyP8HAlXn/JVHb8GHUy/kHIX0oaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCavfGYiT32fv3T
+# 1+jyF3FIzn/SPG+sHjY+HhCrJgjXtKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -240,38 +239,38 @@ Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCBXnRddv2l83ooBzFUFPoF9Ya+UmGWkN1bOANhHzl2tvjANBgkqhkiG9w0B
-# AQEFAASCAgCAHvCj5jHqP4XtuxWf5AoqAPNlQ3IbMVmle1+EXV4G/XKVjsT1zgJ/
-# 3026fhks2Xs/jaob9U47/1Zoqd7i7W7B23r0GJcmbOC/HeuJcev2/FLHnpqlnrRu
-# K6H8hef2XSkv7EN2YEhZqRuSL8ppqvZeIsGVQDOLm9fA2jaHLhU7j/7zA9dOUh7l
-# Yo2oWgS2yS0nNuiscWAkCMaAUHc2Fb6jsYU3zKbt6SUH7ulMzJtMliXYJ7k7iJ7Z
-# OaqZrPljRBIzmDsJoisdw/4Fj+vXATWaMn1YG3S/m6mJ0FUjrWWFxu8XcWW4ceci
-# q46wM5bRR3+j/p9kLhMW6nJt60564fq474I7rVHMgGIDS7kyoA46XuZKLQZoKA26
-# xItNWEVgK3a4I5ttg6QgbCm04uyGheY1FVTMa0eDIs+9lOZPnZ7KgAyrCOr07yDn
-# Lcilz6JOYDoIbH28JDpZgqTZx3YsxXue4p6KuBrkxej5/TIKLVgoUJzZsw01I3Yx
-# S3uHBXzxvXC4AVj9INzDJHB5eLtjZbki4KecqqKoNH5wUZ2m0v3UyUf8ok6N5xPN
-# /hoawSJB8CA6cQxJd+W54biKGx+rlzIOWTL2fppS5aalLeKz2NHl8Equ+m3op3qj
-# TLt8kTSId6XZLL4W6/FfuJqQ89UWoswrJB0wttPTUiU3hm0vlqB+5aGCBAIwggP+
+# BDEiBCBvOekBxV7aRuMVU7JkbIw57hLHa4TL0uY7a5t3p6nIBDANBgkqhkiG9w0B
+# AQEFAASCAgCJv4OSMiUyLaezCnrSDfkUp54RDMythLTRnFbpBzwgIbZ1V0piOnZA
+# KDeSVgcCV8MXTxEcKD1tN2hZMAaMctQb43LYFdrYd9+l4uFLdYh0/iqXOLFiFHkN
+# maTQR5818x7xZ/LR4TpRhC3aXmu+WVosYse11mRaAZwb/Di2z5gPBs1v89i8ncwx
+# VV5pKtxrBRiyGvxDVIfR2MbVC1zU2GQRfetK+UhFJ+Cg6WGnyxcUdl9BulLljxej
+# 1ltNNiCU3+srNL2M+mqwAwz0Bgg8h0aTS2ckyUeme+4Csl+NU/Ga2Ohedm/pCk5/
+# LiyXOW89DOkcVZqHdUOyNG0v6lCfVx6IAdY06q4SGgdAPPbrINzjaBalxIbbf/BK
+# kPw5+VlugkHPXSS8rq5miYnVjQE3/xCm+Qppb/eZXS/BEXrCbocMs6jOSzUtUQdq
+# PRKNoHMRLggqwA1ypfEpyA0Y6vXt4FLLpAVHBCSGKj/edqDk9RQOvFM9F9U0TTnw
+# /rZBrxKCCuohVjeeBPCPIImaDUSGUCRGX93RyZIADhsF8DxHgXp+UF3QO1WFXvKA
+# IzlhpfQzR1GA+EVCe0CYxWdMBR3SOKMbs6e1bwpufGoXaKEv7DpRvndzCfPaTy4X
+# IRLaEwDp7UDyudom/Ii7aJUV720pV+bqsDLFq6RUkgfFAwguCHAPJKGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDMwNTM0NTRaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDBQcdd7WOmZ
-# VSI3Xb03zssiTQAVmZgNPnWDg1yrLu138kZ30mS2CZQQ7vk3BIuJRRAwgZ8GCyqG
+# Fw0yMjEwMDMwNTM1NDVaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDD4BYpU0Umh
+# IAeih012DJD9vyl0wfPaioKX6wK6MjOfdmifuuqxTCKTxZPN0rw8/NIwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAvRnOg7cymoGg2gwJ4e+5zJ0E
-# 3Voy+miIG5A1Xd+qBpdxrMRQ1P9y12pcX6i3C4hs0GasIoHeLicJyuX3TOdFih2D
-# 1t7wzMZ+G8zSRBLAGqebyYBNMym61LkXhpYUIH862w4xS0wPGP6uF40ATT9ej7xb
-# QM5eW734xxJakGh/7YMruOh4TzHoL9ElBbufbFkmsahwaZuv+4XJf68OJw6J3PCT
-# QvPKkAHGpQUcoWBQq58G0cV46T+WF6ZqccTQgCfG+97+Xam571R7b+PNX7g5cJsf
-# U+oWlP0OheX4mtP2Dkhd0GUKe3myQ9hC8KikOFnqDYVXqqdSyQ5VEBedirGYGtR1
-# ouBawduIBiTXF4cfNFMn2rtCZ7Ajlk0ajhm6JUwIt+IRPcbTKVW1K93nu0eO+yLJ
-# 2Sp108GHI2h280t/n/EiE2sZDFTNQj9Szx8YckxtWKm0+Hi74cUiLiZQLZK0x4f6
-# 7iVor8xWWTqd0D5sPN6ixVJjTuBh7aLDLRT3T6PER/wQaSa9MFXnG1x+mVdwowYY
-# NVp/W6z5jXcxN8EmIraPlfgFo6nizEE/v814ZV98YFB95Xl2k9pIovTMLwpiEzxn
-# XpQenAEqbH8MqTxRmEJ+GfEanfJAYwYXKPvTRvsOmRUQ4cXIUMDBFQvKy4XY2IjW
-# MmUiTVIYWkzuacCAjzk=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAZlgESFzLamPOy/SOceun2Mw6
+# gX+pXdhSp8CNncooYzSmuwOKQ+TuGYY2FLoUaB9ZLooYwESldW/LjOuBdxclRilH
+# oAX/2a0E+nv9twQ10odrhInNf2ey4+k5NaY9xvnimM3juidlQkNfVDr1j5ZceJUQ
+# DJvsb8e35Na8LGQU3rIrRHEcFPoMa9mnueRSwap4XgaprrcOr/8ceHMbKoShNbcu
+# 2CXQtn4cEy6cp37BcfrWkfAKDNJMrO0NtKhK3CCVllrobyjkZm3AXpSt5bJtiMHc
+# MW7ymbanPEv3U0LKlhnYvd5XtMFXzqPN01DS/HWO677NlBLiJiTocWCV1hfSEyWc
+# yu6ZdjLBBx6ULO1glvwRTAKH0AS3R9cuNnM91ij+lC7UAaFxRNyzIzrCE/x4nx4T
+# iuVYzfnJvp/OpKkr516JTfyk5pDTGSLVrCLwDnNfl2blEXwnwWhyrQg1v9dwJz3L
+# jL3i91vdTamB865sLDu7JX7mM1TK8mE3l54Zpu+HaDQUTH3sD9bWhHCqbSD7pbZU
+# 8spWJTylMAcNNgCYCK1qNZyRXBX8hBFAr+geedThLrpK8HyY5sdAK4nAIEShfVoX
+# oFItaXbeF84mpB9The0/M1emVSI6e7jhdnWb3AWp3lUStYzOn9bmPef03WFlmGxc
+# QcbaCEYgoLbrJSKZzQ4=
 # SIG # End signature block

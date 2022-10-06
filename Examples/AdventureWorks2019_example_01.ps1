@@ -12,11 +12,10 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Get database info
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
 
-# Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
-
 # Query 1: 10 persons with first name = 'John'
 $query = New-Object -TypeName Query
 $query.Color = [Color]::Yellow
@@ -27,46 +26,35 @@ $query.Where = "[`$table].FirstName = 'John'"
 $query.Top = 10
 $query.OrderBy = "[`$table].LastName ASC"
 
-# Define ignored tables
-
-$ignored = New-Object -Type TableInfo2
-$ignored.SchemaName = "dbo"
-$ignored.TableName = "ErrorLog"
-
-Clear-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
-
-Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info
+# Init start set
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ignored) -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false -SessionId $sessionId
 
 # Get subset info
-Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
-
+Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 # Create a new db with found subset of data
-
 $newDatabase = "AdventureWorks2019_subset_John"
-
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
+$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection
 
-$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
-
-Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Copy-DataFromSubset -Source $database -Destination  $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
+Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Copy-DataFromSubset -Source $database -Destination $newDatabase -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
+Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Compress-Database -Database $newDatabase -ConnectionInfo $connection
+Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 
-Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
-$info = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Output "Subset size: $($info.DatabaseSize)"
+Write-Output "Subset size: $($infoNew.DatabaseSize)"
 $sum = 0
-foreach ($table in $info.Tables)
+foreach ($table in $infoNew.Tables)
 {
     $sum += $table.Statistics.Rows
 }
@@ -75,7 +63,7 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 Write-Output "Total rows: $($sum)"
 Write-Output "==================="
 
-
+Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
