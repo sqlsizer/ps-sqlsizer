@@ -30,7 +30,7 @@ $query.OrderBy = "[`$table].LastName ASC"
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false -SessionId $sessionId
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -FullSearch $false -UseDfs $false -SessionId $sessionId
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
@@ -63,7 +63,7 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 Write-Output "Total rows: $($sum)"
 Write-Output "==================="
 
-Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
+#Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

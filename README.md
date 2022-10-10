@@ -131,7 +131,7 @@ $query.OrderBy = "[`$table].LastName ASC"
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false -SessionId $sessionId
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -FullSearch $false -UseDfs $false -SessionId $sessionId
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
@@ -204,7 +204,7 @@ $query.Top = 10
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
 # Find subset
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ColorMap $colorMap -FullSearch $false -UseDfs $false -SessionId $sessionId
+Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -FullSearch $false -UseDfs $false -SessionId $sessionId
 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId

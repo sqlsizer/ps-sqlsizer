@@ -34,7 +34,7 @@ $iteration = 1
 do
 {
     $result = Find-Subset -Interactive $true -Iteration $iteration -Database $database -ConnectionInfo $connection `
-            -DatabaseInfo $info -ColorMap $colorMap -FullSearch $true `
+            -DatabaseInfo $info -FullSearch $true `
             -UseDfs $false -SessionId $sessionId
 
     # custom logic when to stop or custom logic to process results of iterations
