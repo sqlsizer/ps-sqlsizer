@@ -1,95 +1,62 @@
-function Install-SqlSizerResultViews
+﻿## Example that shows how to do full search in interactive mode
+
+# Connection settings
+$server = "localhost"
+$database = "AdventureWorks2019"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
+
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+# Start session
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Define start set
+# Query 1: 10 persons with first name = 'John'
+$query = New-Object -TypeName Query
+$query.Color = [Color]::Yellow
+$query.Schema = "Person"
+$query.Table = "Person"
+$query.KeyColumns = @('BusinessEntityID')
+$query.Where = "[`$table].FirstName = 'John'"
+$query.Top = 10
+$query.OrderBy = "[`$table].LastName ASC"
+
+# Init start set
+Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
+
+$iteration = 1
+
+do
 {
-    [cmdletbinding()]
-    param
-    ( 
-        [Parameter(Mandatory = $true)]
-        [string]$SessionId,
+    $result = Find-Subset -Interactive $true -Iteration $iteration -Database $database -ConnectionInfo $connection `
+            -DatabaseInfo $info -ColorMap $colorMap -FullSearch $true `
+            -UseDfs $false -SessionId $sessionId
 
-        [Parameter(Mandatory = $true)]
-        [string]$Database,
+    # custom logic when to stop or custom logic to process results of iterations
 
-        [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
+    $sum = "SELECT SUM(ToProcess) as Sum FROM SqlSizer.Operations WHERE [SessionId] = '$sessionId'"
+    $sumRow = Invoke-SqlcmdEx -Sql $sum -Database $Database -ConnectionInfo $connection
 
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo,
-
-        [Parameter(Mandatory = $false)]
-        [TableInfo2[]]$IgnoredTables
-    )
-
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
-    if ($schemaExists -eq $false)
+    if ($sumRow.Sum -gt 4008)
     {
-        $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        Write-Host "Full search stopped..."
+        break
     }
-    
-    $structure = [Structure]::new($DatabaseInfo)
-
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if ($table.SchemaName.StartsWith('SqlSizer'))
-        {
-            continue
-        }
-        $tableSelect = Get-TableSelect -TableInfo $table -Conversion $false -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $false -MaxLength $null
-        $join = GetResultViewsTableJoin -TableInfo $table -Structure $structure
-
-        if ($null -eq $join)
-        {
-            continue
-        }
-
-        $sql = "CREATE VIEW SqlSizer_$($SessionId).Result_$($table.SchemaName)_$($table.TableName) AS SELECT Iteration, $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    }
+    $iteration += 1
 }
+while ($result.Finished -eq $false)
 
-function GetResultViewsTableJoin
-{
-    param (
-        [TableInfo]$TableInfo,
-        [Structure]$Structure
-    )
-
-    $primaryKey = $TableInfo.PrimaryKey
-    $signature = $Structure.Tables[$TableInfo]
-
-    if (($null -eq $signature) -or ($signature -eq ""))
-    {
-        return $null
-    }
-
-    $processing = $Structure.GetProcessingName($signature)
-
-    $select = @()
-    $join = @()
-
-    $i = 0
-    foreach ($column in $primaryKey)
-    {
-        $select += "p.Key$i"
-        $join += "t.$column = rr.Key$i"
-        $i = $i + 1
-    }
-
-    $sql = " (SELECT MIN(Iteration) as Iteration, $([string]::Join(',', $select))
-               FROM $($processing) p
-               INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id] AND p.[SessionId] = '$SessionId'
-               GROUP BY $([string]::Join(',', $select))
-               ) rr ON $([string]::Join(' and ', $join))"
-
-    return $sql
-}
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCwGwARM0JowhfD
-# d0upbO5m+xQGFkNqYQDl+N37lvRAcaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCA43zcbg4eHCbnv
+# 5mmb5+UuXIR0gIqJPgXWg55Pp2mL+6CCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -269,38 +236,38 @@ function GetResultViewsTableJoin
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCB+gKMq7+9O7d2CH8dXzklNlNcpzXTc4UNDk+SgaYuDCTANBgkqhkiG9w0B
-# AQEFAASCAgCqFsLnyjK9ex9tbvnX9KH1uRCA1GTj+h1+f9PxfUbqlxmzSaNcyDYL
-# LrbrqQCIi3CbGS5cFQVDBa9Ls5NwmOBW2aydIFtP80OK5+yN9eyl8NgvfFWfbNto
-# rZEDt+7PFuxX64oqwVriBoIb7fbmqrG7RXAjnXss5aI3caqajaFc5ofRvbHvxCp4
-# KmmHCvTIuFJl9GxXELw/CkNH7YqPevFFVGT4wlczFScqHkv5oYC2qVTj7R0vvKvM
-# NfQj6stx51BgxdcFlpn02ySsppjwOMDTdJuATMjBjrs+UCLmSvBsbboYF5fI6S+x
-# 0BaAvHtPwWCBWkR1cOsPKFCtb1liEyQ0nZpur2qRIlTR009JgRlq7lw2AgrBKhVb
-# TfreY1ZYwB5dyH1X0OnxF8zRUZSYkhe8q0JGWiHOptGrds4h8XMo7s1UB7VmLJ9u
-# upPHOE+FNVrBRFa2HNSnYikDsCbPhKOMRgnGzfV7U3SJySsVBr3n9LqmXMn7qoiy
-# CV4vBXC5SsWZfkYEQl7b5rUM+4jpA52tNNl/sBxU5vLtLkjkU97jl7mBX22NGfd1
-# yElGOVSUlD7O+GhxwIGfnaE+7VJaTd0MOjNGHt4H5nZliZ2YWR+bQvr4v1LOcVtB
-# NRYV8Ybw4k1tu6T2miHpNcQtbjJ36tqkhwxWLlEsWbS2fPmKzZBdCqGCBAIwggP+
+# BDEiBCDZzm47SlQ8k3eX0nFxE4+pNZJvhLFZ6j3/w2NJe5YyIjANBgkqhkiG9w0B
+# AQEFAASCAgA/TdsEtcKmSAjYyqYAeTBvaM9xd+n7Kg5eoUWNAOHq1LHpCgxp/859
+# 9zyKPiJwBxeSrkhmZ4KWygj+z/ge+WvbwkBZVARxzllFeZ5AD3I5U8/tjzxl553F
+# BStKkDqMARW541MQxzTbsNY8S3RtdIODvdI2Tn7n3o9OQQ31ueuzShzahPhHCCJ7
+# KmkLyqkSf63L2/DIqXRwwDKcKTl8fG7D5Ec3ahaIUwPXU4jhxeZtvWqAxxyY67E5
+# R3Ov2doNo3vMDPgOUODvf7dbwuIbQQdvEozf7J9gxAIFoxNnYaCXJmUEp45UQcWP
+# 812ZQHFrItrtn0CvJnqOlzjpd0Y2PATG3BQ1OSC8xF5E6pBdf14pI1m02x0g7e7c
+# L9PQoKw6hz7eOuwGXMGqxeU1KMEcs6sX8CXQNDd9xRbkMsmMFrQBEW3SsA8fngAW
+# RPK+4vtKQZTyd21BVCJ6TNCNh60LYz/RJRWyp6d6AlTJaRgK4l3FSqVuihLyNp4l
+# D8tWMrfMrIyXEo+yJLmkGIrQQsgrD3i/10XmR7KXv+Y+nXmzharl2xEiLHgKZ+4a
+# OQjxnM/ToN6ZDIhKjwQzMfri0rvEdWaYQVBsbSmSzwuyf0ZsEI5oGwIj2aQ4yY/4
+# +NUSPUGZrhfSd5kL7Y/LzSmJQ7I0S+h0s0IwaRvoeooeTw1F1b2YqaGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjEwMDYyMDQwMDZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDBrm3aKGDLI
-# DdV0sKEMCcBM9MlgpXCteJ6vMfLBfgH0Ya3+6FkDBODJ05/wL2UvvlswgZ8GCyqG
+# Fw0yMjEwMDYyMDM3MTVaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDARZ6NyqXYi
+# 8iboOpFE000uGra+6QFen34SHYVMFScmuT7cs1tX9Cn8stQJI+9YKy4wgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIANWy+5LJZ2v3EqVFVnLhWnB+R
-# 0J8od8lFCRhongkGFcwAZt4wakKU1tQzuRY+HwqW99cV8voEoSsyJLE8+aDm3npA
-# 3wL0k30XdsQDiTQAgBZWzCcN2HmW1NeLEecgtUigcnzX+X+Qf9Rb+kytTfzJyPc2
-# epqpX6Owqi+75hkTD/x4/uWoONoRDXh0u17Pjfcu2a/rWnyKMBhNuw36vSPg1fxz
-# 9HhnKHnk+KdbUBtvQtR3cp+Og1QjbLUjrX4cwuoEn0E/lnAb5eZRZIjoJvR3gBBn
-# bt1wjvMj0jDNhTbeoF/B/sSrxgUKqf2FwWFT1eR1CYS0yODELeHHxroURGQKeeDY
-# GFNIqcBmEldjyJKUl2VNrCeA469dsNXg1Mw7eaCRWmpa8/SpgxOwn0/HERCz+1A2
-# XvMoicnjyC2Hy84hb0q27uBR9+JhLfZXib3Z0vphmRPxCJVxmqBxsrLFlL1losH2
-# MceKnjwZunHjyEang9ziDWm/ILJclknFM/mI4rhfEHoAx1DmvcaKDqzY3eVt8Fcp
-# 9v665G08SzskPJNgzsUUL5wVXsewcSTAxcVnmAw/meUcdLsPc7M1+XlXA+x6jCgd
-# UZVhHL8p/h5aGm31P9YC5/nQZMm7sw1EjzO7d9BIalnk+YmJWCiZEAjtAVQQuRjx
-# 58RL8L6FdFwdw2vjZZk=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIASAkf3ffrbn6QBOw0fZSBDtrc
+# RbYIXiDxvExf8vAgjbSimIqJMzdN3znlfKogYR8gLfXvJxwHm8zbpFSH7R6JICfO
+# rMxOv2S2hsmMHjhvF20UJy5hp3iBMJawe7Gslame/n4w6gizgJy1+VDGWfmDDQfb
+# SvIadFQ5AhTYYyIu1+mEpbdJj6At7na8PU8am1mdDTi6a3N0EOFEPuXE8ks1d7dA
+# U7VBSrUOhgp8O7yRUBv/6L+PikOUzEtxRh+8SYLCzBje9Kr9qSzCTwADDGQzwlhS
+# Uz4UNWN/eIUUMqgTeZaP5V8r5e5Po5bZgiKIoyBV038yZptoVr+2nR0F8AugTGV2
+# tMJlCp2O/NI2izK7TNl70ccubquNfdh5iJ1lFg1+WmHxbZsXB5VS/M+0iW+FJahR
+# bgeQmKtpv5TQV6BGAapYwifD4Bwv1lEBT9P2QMuUI/J+rMjfXKcwqIZV4y86xlxx
+# 9Qru8ZGbaV3IGcqLJ5nF5K5Ioc5iTNmS3GDCpr8wIbH+tjKETiGQ/h7JEtWLXxma
+# cCHkK8bLPsQLehjSkZ0PUNM1v0Wv5qKhMCZ8t3BxqsqFPhB2rOxKnrvM43MxJekb
+# Dj6dNuVPanDJOKqGPgqVRpo8/W8HbpEgMrW13lOlC420OeeWvD4B2YT3OQuTan46
+# UgYVZL5UMC4U8eN5MVs=
 # SIG # End signature block

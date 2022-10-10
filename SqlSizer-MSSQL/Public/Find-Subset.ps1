@@ -3,6 +3,12 @@
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $false)]
+        [bool]$Interactive = $false,
+
+        [Parameter(Mandatory = $false)]
+        [int]$Iteration = -1,
+
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
@@ -682,23 +688,47 @@
     $tablesGroupedByName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
     $fkGroupedByName = $sqlSizerInfo.ForeignKeys | Group-Object -Property FkSchemaName, FkTableName, Name -AsHashTable -AsString
 
-    # init
-    $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    $start = Get-Date
-    $iteration = 1
-
-    do
+    if ($false -eq $Interactive)
     {
-        $result = DoSearch -useDfs $UseDfs -iteration $iteration
-        $iteration = $iteration + 1
-    }
-    while ($result -eq $true)
+        $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+        $start = Get-Date
+        $iteration = 1
 
-    return [pscustomobject]@{
-        Finished            = $true
-        Initialized         = $true
-        CompletedIterations = $iteration
+        do
+        {
+            $result = DoSearch -useDfs $UseDfs -iteration $iteration
+            $iteration = $iteration + 1
+        }
+        while ($result -eq $true)
+
+        return [pscustomobject]@{
+            Finished            = $true
+            Initialized         = $true
+            CompletedIterations = $iteration
+        }
+    }
+    else
+    {
+        if ($Iteration -eq 1)
+        {
+            $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+            return [pscustomobject]@{
+                Finished            = $false
+                Initialized         = $true
+                CompletedIterations = 1
+            }
+        }
+        else
+        {
+            $start = Get-Date
+            $result = DoSearch -useDfs $UseDfs -iteration $Iteration
+
+            return [pscustomobject]@{   
+                Finished            = $result -eq $false
+                Initialized         = $true
+                CompletedIterations = $Iteration
+            }
+        }
     }
 }
 # SIG # Begin signature block

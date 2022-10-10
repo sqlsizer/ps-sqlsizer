@@ -100,7 +100,7 @@
         }
     }
 
-    $currentSqlSizerVersion = "1.0.0-beta1.1"
+    $currentSqlSizerVersion = "1.0.0-beta1.3"
 
     $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $true)
