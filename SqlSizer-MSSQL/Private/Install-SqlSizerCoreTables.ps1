@@ -104,7 +104,7 @@
         }
     }
 
-    $tmp = "CREATE TABLE SqlSizer.Operations(Id int identity(1,1) $pk, [Table] smallint, [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL, [ProcessedDate] datetime NULL, [SessionId] varchar(256) NOT NULL)"
+    $tmp = "CREATE TABLE SqlSizer.Operations(Id int identity(1,1) $pk, [Table] smallint, [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL, [ProcessedDate] datetime NULL, [SessionId] varchar(256) NOT NULL, [Iteration] int NOT NULL)"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Table] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
@@ -147,7 +147,7 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, [Table] smallint NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [SessionId] varchar(256) NOT NULL)"
+            $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, [Table] smallint NOT NULL, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [SessionId] varchar(256) NOT NULL, [Iteration] int NOT NULL)"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
             $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Table] ASC, $($keysIndex), [Color] ASC)"

@@ -69,7 +69,7 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($slice) ([Id] int identity(1,1) $pk, $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint)"
+            $sql = "CREATE TABLE $($slice) ([Id] int identity(1,1) $pk, $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL)"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }

@@ -243,9 +243,9 @@
 
             $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
 
-            $insert = " SELECT $baseTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId INTO #tmp2 FROM (" + $sql + ") x "
+            $insert = " SELECT $baseTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId, ##iteration## as Iteration INTO #tmp2 FROM (" + $sql + ") x "
             $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
-            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
+            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration## FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
             $insert += " DROP TABLE #tmp2"
 
             if ($ConnectionInfo.IsSynapse -eq $false)
@@ -268,7 +268,8 @@
             [TableInfo]$table,
             [int]$color,
             [bool]$useDfs = $false,
-            [ColorMap]$colorMap
+            [ColorMap]$colorMap,
+            [int]$iteration
         )
 
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
@@ -279,12 +280,14 @@
         }
         else
         {
-            $query = CreateOutgoingQueryPattern -table $table -color $color -useDfs $useDfs -colorMap $colorMap
+            $query = CreateOutgoingQueryPattern -table $table -color $color -useDfs $useDfs -colorMap $colorMap -iteration $iteration
             $outgoingCache[$key] = $query
         }
 
         if ($query -ne "")
         {
+            $query = $query.Replace("##iteration##", $iteration)
+
             $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
     }
@@ -399,9 +402,9 @@
                     $columns = $columns + "x.val" + $i + ","
                 }
 
-                $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId INTO #tmp FROM (" + $sql + ") x "
+                $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId, ##iteration## as Iteration INTO #tmp FROM (" + $sql + ") x "
                 $insert += " INSERT INTO $fkProcessing SELECT * FROM #tmp "
-                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
+                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  0, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration## FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
                 $insert += " DROP TABLE #tmp "
 
                 if ($ConnectionInfo.IsSynapse -eq $false)
@@ -425,7 +428,8 @@
             [TableInfo]$table,
             [int]$color,
             [bool]$useDfs = $false,
-            [ColorMap]$colorMap
+            [ColorMap]$colorMap,
+            [int]$iteration
         )
 
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
@@ -442,6 +446,7 @@
 
         if ($query -ne "")
         {
+            $query = $query.Replace("##iteration##", $iteration)
             $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
     }
@@ -451,7 +456,9 @@
         param
         (
             [TableInfo]$table,
-            [bool]$useDfs = $false
+            [int]$color,
+            [int]$depth,
+            [int]$iteration
         )
 
         $result = ""
@@ -478,16 +485,16 @@
 
         # red
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId INTO #tmp1 FROM $slice s" + $where
+        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId, $iteration as Iteration INTO #tmp1 FROM $slice s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
         $result += $q
 
         # green
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.[Color] = " + [int][Color]::Green + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId INTO #tmp2 FROM $slice s" + $where
+        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId, $iteration as Iteration INTO #tmp2 FROM $slice s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId' FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  0, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
         $result += $q
         $result += "DROP TABLE #tmp1 DROP TABLE #tmp2"
 
@@ -508,9 +515,10 @@
             [TableInfo]$table,
             [int]$color,
             [int]$depth,
-            [bool]$useDfs
+            [bool]$useDfs,
+            [int]$iteration
         )
-        $query = CreateSplitQuery -table $table -color $color -depth $depth -useDfs $useDfs
+        $query = CreateSplitQuery -table $table -color $color -depth $depth -iteration $iteration
 
         $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
     }
@@ -541,29 +549,28 @@
     {
         param
         (
-            [bool]$useDfs = $false
+            [bool]$useDfs = $false,
+            [int]$iteration
         )
 
-        # save start time
-        $start = Get-Date
+      
     
         $interval = 5
         $percent = 0
-        while ($true)
+       
+        # Progress handling
+        $totalSeconds = (New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds
+        if ($totalSeconds -gt ($lastTotalSeconds + $interval))
         {
-            # Progress handling
-            $totalSeconds = (New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds
-            if ($totalSeconds -gt ($lastTotalSeconds + $interval))
-            {
-                $lastTotalSeconds = $totalSeconds
-                $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
-                $percent = (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
-                Write-Progress -Activity "Finding subset" -PercentComplete $percent
-            }
+            $lastTotalSeconds = $totalSeconds
+            $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
+            $percent = (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
+            Write-Progress -Activity "Finding subset" -PercentComplete $percent
+        }
 
-            if ($false -eq $useDfs)
-            {
-                $q = "SELECT TOP 1   
+        if ($false -eq $useDfs)
+        {
+            $q = "SELECT TOP 1   
 			        [Table],
 			        [Depth],
     			    [Color],
@@ -576,10 +583,10 @@
                     [Table], [Depth], [Color]
                 ORDER BY
                     [Depth] ASC, [ToProcess] DESC"
-            }
-            else
-            {
-                $q = "SELECT TOP 1   
+        }
+        else
+        {
+            $q = "SELECT TOP 1   
 			        [Table],
     			    [Color],
                     SUM([ToProcess]) as [ToProcess]
@@ -591,80 +598,81 @@
                     [Table], [Color]
                 ORDER BY
                     [ToProcess] DESC"
-            }
-
-            $operations = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-
-            if ($null -eq $operations)
-            {
-                Write-Progress -Activity "Finding subset" -Completed
-                break
-            }
-
-            # load node info 
-            $tableId = $operations.Table
-            $color = $operations.Color
-            $depth = $operations.Depth
-            $tableData = $tablesGroupedById["$($tableId)"]
-            $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
-        
-            $signature = $structure.Tables[$table]
-            $slice = $structure.GetSliceName($signature, $SessionId)
-            $processing = $structure.GetProcessingName($signature)
-        
-            Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
-
-            $keys = ""
-            for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-            {
-                $keys = $keys + "Key" + $i + ","
-            }
-
-            $q = "TRUNCATE TABLE $slice"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-
-            # slicing
-            if ($false -eq $useDfs)
-            {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " [Source], [Depth], [Fk] FROM $processing WHERE [Depth] = $depth AND [Color] = $color AND [Table] = $tableId AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-            }
-            else 
-            {
-                $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[SessionId] = '$SessionId' AND o.[Color] = $color AND o.[Table] = $tableId AND o.[Processed] = 0)"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-            }
-        
-            # update operations
-            if ($false -eq $useDfs)
-            {
-                $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-            }
-            else
-            {
-                $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and Processed = 0 AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
-            }
-
-            $addOutgoing = ShouldAddOutgoing -color $color
-            if ($true -eq $addOutgoing)
-            {
-                HandleOutgoing -table $table -color $color -useDfs $useDfs -colorMap $ColorMap
-            }
-
-            $addIncoming = ShouldAddIncoming -color $color
-            if ($true -eq $addIncoming)
-            {
-                HandleIncoming -table $table -color $color -useDfs $useDfs -colorMap $ColorMap
-            }
-
-            # Yellow -> Split into Red and Green
-            if ($color -eq [int][Color]::Yellow)
-            {
-                Split -table $table -useDfs $useDfs
-            }
         }
+
+        $operations = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+
+        if ($null -eq $operations)
+        {
+            Write-Progress -Activity "Finding subset" -Completed
+            return $false
+        }
+
+        # load node info 
+        $tableId = $operations.Table
+        $color = $operations.Color
+        $depth = $operations.Depth
+        $tableData = $tablesGroupedById["$($tableId)"]
+        $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
+        
+        $signature = $structure.Tables[$table]
+        $slice = $structure.GetSliceName($signature, $SessionId)
+        $processing = $structure.GetProcessingName($signature)
+        
+        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+
+        $keys = ""
+        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
+        {
+            $keys = $keys + "Key" + $i + ","
+        }
+
+        $q = "TRUNCATE TABLE $slice"
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
+
+        # slicing
+        if ($false -eq $useDfs)
+        {
+            $q = "INSERT INTO $slice " + "SELECT " + $keys + " [Source], [Depth], [Fk], [Iteration] FROM $processing WHERE [Depth] = $depth AND [Color] = $color AND [Table] = $tableId AND [SessionId] = '$SessionId'"
+            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        }
+        else 
+        {
+            $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[SessionId] = '$SessionId' AND o.[Color] = $color AND o.[Table] = $tableId AND o.[Processed] = 0)"
+            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        }
+        
+        # update operations
+        if ($false -eq $useDfs)
+        {
+            $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and [Depth] = $depth AND [SessionId] = '$SessionId'"
+            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        }
+        else
+        {
+            $q = "UPDATE SqlSizer.Operations SET Processed = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId and [Color] = $color and Processed = 0 AND [SessionId] = '$SessionId'"
+            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
+        }
+
+        $addOutgoing = ShouldAddOutgoing -color $color
+        if ($true -eq $addOutgoing)
+        {
+            HandleOutgoing -table $table -color $color -useDfs $useDfs -colorMap $ColorMap -iteration $iteration
+        }
+
+        $addIncoming = ShouldAddIncoming -color $color
+        if ($true -eq $addIncoming)
+        {
+            HandleIncoming -table $table -color $color -useDfs $useDfs -colorMap $ColorMap -iteration $iteration
+        }
+
+        # Yellow -> Split into Red and Green
+        if ($color -eq [int][Color]::Yellow)
+        {
+            Split -table $table -useDfs $useDfs -iteration $iteration
+        }
+        
+        return $true
     }
 
     # get meta data
@@ -677,7 +685,21 @@
     # init
     $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
-    DoSearch -useDfs $UseDfs
+    $start = Get-Date
+    $iteration = 1
+
+    do
+    {
+        $result = DoSearch -useDfs $UseDfs -iteration $iteration
+        $iteration = $iteration + 1
+    }
+    while ($result -eq $true)
+
+    return [pscustomobject]@{
+        Finished            = $true
+        Initialized         = $true
+        CompletedIterations = $iteration
+    }
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

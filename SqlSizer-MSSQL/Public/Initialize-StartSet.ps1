@@ -61,7 +61,7 @@
         {
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, '$SessionId' FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, '$SessionId', 0 FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
 
         if ($null -ne $query.Where)
         {
