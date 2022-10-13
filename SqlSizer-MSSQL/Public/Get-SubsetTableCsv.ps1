@@ -28,44 +28,16 @@ function Get-SubsetTableCsv
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    if ($ConnectionInfo.IsSynapse -eq $true)
+    $json = Get-SubsetTableJson -SessionId $SessionId -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
+    $obj = $json | ConvertFrom-Json
+    $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
+    if ($SkipHeader)
     {
-        $json = Get-SubsetTableJson -SessionId $SessionId -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
-        $obj = $json | ConvertFrom-Json
-        $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
-        if ($SkipHeader)
-        {
-            $csv = $csv | select-object -skip 1
-        }
-        return [string]::Join("`r`n", $csv)
+        $csv = $csv | select-object -skip 1
     }
-
-    $prefix = "$($SessionId).Export"
-    if ($Secure -eq $true)
-    {
-        $prefix = "$($SessionId).Secure"
-    }
-
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
-        {
-            $sql = "SELECT * FROM SqlSizer_$($prefix).$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
-            $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-            $obj = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join "" | ConvertFrom-Json
-            $csv = $obj | ConvertTo-Csv  -Delimiter ';' -NoTypeInformation
-
-            if ($SkipHeader)
-            {
-                $csv = $csv | select-object -skip 1
-            }
-
-            return [string]::Join("`r`n", $csv)
-        }
-    }
-
-    return $null
+    return [string]::Join("`r`n", $csv)
 }
+
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
