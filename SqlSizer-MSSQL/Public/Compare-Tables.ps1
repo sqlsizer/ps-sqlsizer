@@ -30,20 +30,19 @@ function Compare-Tables
 
     if ([string]::Join(',', $table1.Columns) -ne [string]::Join(',', $table2.Columns))
     {
-        Write-Output "Tables have different schema."
-        return
+        throw "Tables have different schema"
     }
 
-    $schemaExists = Test-SchemaExists -SchemaName "SqlSizerCompare" -Database $Database -ConnectionInfo $ConnectionInfo
+    $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $false)
     {
-        $sql = "CREATE SCHEMA SqlSizerCompare"
+        $sql = "CREATE SCHEMA SqlSizer"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     $compareId = (New-Guid).ToString().Replace('-', '_')
 
-    $sql = "CREATE TABLE SqlSizerCompare.Comparision_$compareId ("
+    $sql = "CREATE TABLE SqlSizer.TableCompare_$compareId ("
     foreach ($primaryColumn in $table1.PrimaryKey)
     {
         $sql += $primaryColumn.Name + " " + $primaryColumn.DataType + " NOT NULL, "
@@ -51,7 +50,7 @@ function Compare-Tables
     $sql += " [Result] int NOT NULL)"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     
-    $sql = "ALTER TABLE SqlSizerCompare.TableCompare_$compareId ADD PRIMARY KEY " + [string]::Join(",", $table1.PrimaryKey)
+    $sql = "ALTER TABLE SqlSizer.TableCompare_$compareId ADD CONSTRAINT PK_$compareId PRIMARY KEY (" + [string]::Join(",", $table1.PrimaryKey) + ")"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     # prepare
@@ -77,24 +76,24 @@ function Compare-Tables
         else
         {
             $columns += "((t.$column=t2.$column) or (t.$column is null and t2.$column is null))"
-            $columnsOr += "(t.$column <> t2.$column)"
+            $columnsOr += "((t.$column <> t2.$column) or (t.$column is null and t2.$column is not null) or (t.$column is not null and t2.$column is null))"
         }
     }
 
     # only in schema1.table1
-    $sql = "INSERT INTO SqlSizerCompare.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), -1 FROM $SchemaName1.$TableName1 t LEFT JOIN  $SchemaName2.$TableName2 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $cond2)
+    $sql = "INSERT INTO SqlSizer.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), -1 FROM $SchemaName1.$TableName1 t LEFT JOIN $SchemaName2.$TableName2 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $cond2)
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    # only in schem2.table2
-    $sql = "INSERT INTO SqlSizerCompare.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 1 FROM $SchemaName2.$TableName2 t LEFT JOIN  $SchemaName1.$TableName1 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $cond2)
+    # only in schema2.table2
+    $sql = "INSERT INTO SqlSizer.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 1 FROM $SchemaName2.$TableName2 t LEFT JOIN  $SchemaName1.$TableName1 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $cond2)
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     
     # same
-    $sql = "INSERT INTO SqlSizerCompare.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 0 FROM $SchemaName1.$TableName2 t INNER JOIN  $SchemaName2.$TableName1 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $columns)
+    $sql = "INSERT INTO SqlSizer.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 0 FROM $SchemaName1.$TableName1 t INNER JOIN  $SchemaName2.$TableName2 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $columns)
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     # different
-    $sql = "INSERT INTO SqlSizerCompare.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 2 FROM $SchemaName1.$TableName2 t INNER JOIN  $SchemaName2.$TableName1 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" or ", $columnsOr)
+    $sql = "INSERT INTO SqlSizer.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 2 FROM $SchemaName1.$TableName1 t INNER JOIN  $SchemaName2.$TableName2 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" or ", $columnsOr)
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     return $compareId
