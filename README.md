@@ -24,9 +24,9 @@ The core feature is ability to find desired subset from the database and that fe
  - comparing data:
      - comparing only data that you are interested in
  - extracting data:
-     - CSV, JSON format to file
+     - to CSV, JSON
  - importing data:
-     - previously extracted subset data from Azure BLOB storage
+     - from JSON
  - removing:
      - subsets
      - schemas
