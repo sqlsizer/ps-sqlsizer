@@ -1,8 +1,11 @@
-function Get-DatabaseSchemaJson
+function Get-SubsetSchemaJson
 {
     [cmdletbinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -23,14 +26,13 @@ function Get-DatabaseSchemaJson
     {
         $allColors += """rgb($($random.Next(255)),$($random.Next(255)),$($random.Next(255)))"""
     }
-
     
     $i = 0
     $tableSize = @()
     foreach ($table in $DatabaseInfo.Tables)
     {    
         $i += 1
-        $tableSize += @{Table = $table; Size = $table.Statistics.Rows }
+        $tableSize += @{ Table = $table; Size = $table.Statistics.Rows }
     }
 
     $sorted = $tableSize | Sort-Object -Property Size
@@ -42,10 +44,11 @@ function Get-DatabaseSchemaJson
         $sizes[$table.SchemaName + $table.TableName] = $index
     }
 
+    $subsetTables = Get-SubsetTables -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -Connection $ConnectionInfo
 
     $i = 0
     $j = 0
-    foreach ($table in $DatabaseInfo.Tables)
+    foreach ($table in $subsetTables)
     {
         if ($table.SchemaName.StartsWith("SqlSizer"))
         {
@@ -65,14 +68,22 @@ function Get-DatabaseSchemaJson
 
         $nodes += "{ ""data"": { ""id"": $i, ""order"": $($sizes[$table.SchemaName + $table.TableName]), ""color"": $colorForSchema, ""label"": ""$($table.SchemaName).$($table.TableName)""}}"
 
-        foreach ($fk in $table.ForeignKeys)
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
+
+        foreach ($fk in $tableInfo.ForeignKeys)
         {
+            
+            $tableBase = $subsetTables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
+
+            if ($null -eq $tableBase)
+            {
+                continue
+            }
+
             $j += 1
-            $tableBase = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
-            $tableIndex = $DatabaseInfo.Tables.IndexOf($tableBase)
+            $tableIndex = $subsetTables.IndexOf($tableBase)
 
             $within = "false"
-
             if (($fk.Schema -eq $table.SchemaName))
             {
                 $within = "true"

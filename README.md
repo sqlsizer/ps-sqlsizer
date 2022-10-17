@@ -218,6 +218,9 @@ https://sqlsizer.github.io/sqlsizer-mssql/Visualizations/Demo01/
 Demo02:
 https://sqlsizer.github.io/sqlsizer-mssql/Visualizations/Demo02/
 
+Demo03:
+https://sqlsizer.github.io/sqlsizer-mssql/Visualizations/Demo03/
+
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsqlsizer%2Fsqlsizer-mssql?ref=badge_large)
 
