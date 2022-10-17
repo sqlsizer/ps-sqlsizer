@@ -56,7 +56,7 @@ function Install-SqlSizerSecureViews
         $sql = "CREATE VIEW SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table], STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|') as [TableHash] FROM SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName)"
+        $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table],  CONVERT(VARCHAR(max), HASHBYTES('SHA1', STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|')), 2) as [TableHash_SHA_1], CONVERT(VARCHAR(max), HASHBYTES('SHA2_256', STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|')), 2) as [TableHash_SHA_256],  CONVERT(VARCHAR(max), HASHBYTES('SHA2_512', STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|')), 2) as [TableHash_SHA_512] FROM SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName)"
     }
 
     if ($total.Length -ne 0)
