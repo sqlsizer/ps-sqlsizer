@@ -31,6 +31,7 @@ $ignored.TableName = "Store"
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored) -SessionId $sessionId
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
+Get-SubsetHashSummary -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
 # end of script
 # SIG # Begin signature block
