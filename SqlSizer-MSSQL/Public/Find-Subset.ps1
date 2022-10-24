@@ -1,6 +1,7 @@
 ﻿function Find-Subset
 {
     [cmdletbinding()]
+    [outputtype([pscustomobject])]
     param
     (
         [Parameter(Mandatory = $false)]
@@ -709,7 +710,7 @@
     }
     else
     {
-        if ($Iteration -eq 1)
+        if ($Iteration -eq 0)
         {
             $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
             return [pscustomobject]@{
