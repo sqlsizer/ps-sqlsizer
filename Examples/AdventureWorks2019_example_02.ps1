@@ -29,9 +29,14 @@ $ignored.SchemaName = "Sales"
 $ignored.TableName = "Store"
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
-Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored) -SessionId $sessionId
+$null = Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored) -SessionId $sessionId
+
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 Get-SubsetHashSummary -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
+Get-SubsetTableStatistics -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
+
+Get-SubsetTableRows -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId -Iteration 0 -TableName "Person" -SchemaName "Person"
+
 
 # end of script
 # SIG # Begin signature block

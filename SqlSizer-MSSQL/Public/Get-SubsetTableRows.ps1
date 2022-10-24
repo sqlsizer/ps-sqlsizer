@@ -2,7 +2,10 @@ function Get-SubsetTableRows
 {
     [cmdletbinding()]
     param
-    (
+    (  
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -11,6 +14,9 @@ function Get-SubsetTableRows
 
         [Parameter(Mandatory = $true)]
         [string]$TableName,
+
+        [Parameter(Mandatory = $false)]
+        [int]$Iteration = -1,
 
         [Parameter(Mandatory = $false)]
         [bool]$AllColumns = $false,
@@ -50,7 +56,7 @@ function Get-SubsetTableRows
                     }
                 }
 
-                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)"
+                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE ([Iteration] = $Iteration OR $Iteration = -1) AND SessionId = '$SessionId' AND [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)"
                 $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }
@@ -104,7 +110,7 @@ function Get-SubsetTableRows
                         FROM $($processing) p
                         INNER JOIN $($table.SchemaName).$($table.TableName) t ON $($cond)
                         INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '$($table.SchemaName)' AND tt.[TableName] = '$($table.TableName)'
-                        WHERE p.[Table] = tt.Id"
+                        WHERE p.[Table] = tt.Id AND p.SessionId = '$SessionId' AND ([Iteration] = $Iteration OR $Iteration = -1)"
                 $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }

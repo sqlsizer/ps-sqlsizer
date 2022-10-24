@@ -6,6 +6,9 @@ function Get-SubsetTableStatistics
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
+        [Parameter(Mandatory = $false)]
+        [int]$Iteration = -1,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -15,58 +18,34 @@ function Get-SubsetTableStatistics
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
+    
+    $sql = "SELECT t.[Schema] as [SchemaName],
+                   t.TableName,
+                   SUM([ToProcess]) as [Count]
+            FROM [SqlSizer].[Operations] o
+            INNER JOIN [SqlSizer].[Tables] t ON o.[Table] = t.Id
+            WHERE (o.Iteration = $Iteration OR $Iteration = -1) AND o.ToProcess <> 0 AND o.SessionId = '$SessionId'
+            GROUP BY t.[Schema], t.TableName
+            ORDER BY [Schema], [TableName]"
 
-    # get meta data
-    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
-    $structure = [Structure]::new($DatabaseInfo)
+    $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     $result = @()
-
-    foreach ($table in $DatabaseInfo.Tables)
-    {
-        if ($table.PrimaryKey.Count -eq 0)
-        {
-            continue
-        }
-        if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
-        {
-            continue
-        }
-
-        if ($table.SchemaName.StartsWith('SqlSizer'))
-        {
-            continue
-        }
-        $tableName = $structure.GetProcessingName($structure.Tables[$table])
-
-        $keys = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            $keys += "Key$($i)"
-
-            if ($i -lt ($table.PrimaryKey.Count - 1))
-            {
-                $keys += ", "
-            }
-        }
-
-        $tableInfo = $allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName]
+    foreach ($row in $rows)
+    { 
+        $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $row.SchemaName) -and ($_.TableName -eq $row.TableName) }
 
         if ($null -eq $tableInfo)
         {
             continue
         }
 
-        $sql = "SELECT COUNT(*) as Count FROM (SELECT DISTINCT $($keys) FROM $($tableName) WHERE [Table] = $($tableInfo.Id) AND [SessionId] = '$SessionId') x"
-        $count = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-
         $obj = New-Object -TypeName SubsettingTableResult
-        $obj.SchemaName = $table.SchemaName
-        $obj.TableName = $table.TableName
-        $obj.PrimaryKeySize = $table.PrimaryKey.Count
-        $obj.CanBeDeleted = $table.IsHistoric -eq $false
-        $obj.RowCount = $count["Count"]
+        $obj.SchemaName = $tableInfo.SchemaName
+        $obj.TableName = $tableInfo.TableName
+        $obj.PrimaryKeySize = $tableInfo.PrimaryKey.Count
+        $obj.CanBeDeleted = $tableInfo.IsHistoric -eq $false
+        $obj.RowCount = $row.Count
         $result += $obj
     }
 

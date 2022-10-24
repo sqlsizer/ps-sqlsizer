@@ -1,6 +1,7 @@
 function Get-SubsetTables
 {
     [cmdletbinding()]
+    [outputtype([System.Object[]])]
     param
     (
         [Parameter(Mandatory = $true)]
@@ -23,11 +24,15 @@ function Get-SubsetTables
 
     if ($Negation -eq $false)
     {
-        return $tables | Where-Object { $_.RowCount -gt 0 }
+        $filtered = $tables | Where-Object -Property RowCount -GT 0
+
+        return $filtered
     }
     else
     {
-        return $tables | Where-Object { $_.RowCount -eq 0 }
+        $filtered = $tables | Where-Object -Property RowCount -EQ 0
+
+        return $filtered
     }
 }
 # SIG # Begin signature block

@@ -29,7 +29,7 @@ $query.OrderBy = "[`$table].LastName ASC"
 # Init start set
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
-$iteration = 1
+$iteration = 0
 
 do
 {
