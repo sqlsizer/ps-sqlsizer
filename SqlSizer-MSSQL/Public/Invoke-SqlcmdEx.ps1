@@ -56,10 +56,9 @@
         }
         else
         {
-            Invoke-Sqlcmd @params -ErrorAction Stop
+            $result = Invoke-Sqlcmd @params -ErrorAction Stop
+            return $result
         }
-
-        Write-Verbose $Sql
     }
     catch
     {
