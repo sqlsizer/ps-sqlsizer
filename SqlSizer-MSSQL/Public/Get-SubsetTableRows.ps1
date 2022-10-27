@@ -84,11 +84,11 @@ function Get-SubsetTableRows
 
                     if ($include)
                     {
-                        $columns += "ISNULL(t.$($table.Columns[$i].Name), '') as $($table.Columns[$i].Name)"
+                        $columns += "ISNULL(t.[$($table.Columns[$i].Name)], '') as [$($table.Columns[$i].Name)]"
                     }
                     else
                     {
-                        $columns += "NULL as $($table.Columns[$i].Name)"
+                        $columns += "NULL as [$($table.Columns[$i].Name)]"
                     }
 
                     if ($i -lt ($table.Columns.Count - 1))
