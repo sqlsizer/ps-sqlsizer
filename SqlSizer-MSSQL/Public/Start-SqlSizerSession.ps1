@@ -9,6 +9,9 @@ function Start-SqlSizerSession
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
+        [Parameter(Mandatory = $false)]
+        [bool]$ForceInstallation = $false,
+
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
@@ -18,8 +21,8 @@ function Start-SqlSizerSession
 
     Write-Host "SqlSizer: Installation verification"
     
-    # install sql sizer if not installed
-    Install-SqlSizer -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -SessionId $sessionId
+    # install SqlSizer if not installed
+    Install-SqlSizer -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -SessionId $sessionId -Force $ForceInstallation
 
     # save session id
     $sql = "INSERT INTO SqlSizer.Sessions(SessionId) VALUES('$SessionId')"
