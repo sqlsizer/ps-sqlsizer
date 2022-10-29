@@ -53,9 +53,12 @@ function Install-SqlSizerSecureViews
         {
             continue
         }
-        $sql = "CREATE VIEW SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, $tableSelect, HASHBYTES('SHA2_512', CONCAT($([string]::Join(', ''|'', ', $hashSelect)))) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
+        $hashInput = GetHashInput -hashSelect $hashSelect
+
+        # create a view
+        $sql = "CREATE VIEW SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName) AS SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS SqlSizer_RowSequence, $tableSelect, HASHBYTES('SHA2_512', $hashInput) as row_sha2_512 FROM $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         $total += "SELECT '$($table.SchemaName)' as [Schema], '$($table.TableName)' as [Table],  CONVERT(VARCHAR(max), HASHBYTES('SHA1', STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|')), 2) as [TableHash_SHA_1], CONVERT(VARCHAR(max), HASHBYTES('SHA2_256', STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|')), 2) as [TableHash_SHA_256],  CONVERT(VARCHAR(max), HASHBYTES('SHA2_512', STRING_AGG(CONVERT(VARCHAR(max), row_sha2_512, 2), '|')), 2) as [TableHash_SHA_512] FROM SqlSizer_$($SessionId).Secure_$($table.SchemaName)_$($table.TableName)"
     }
 
@@ -64,6 +67,50 @@ function Install-SqlSizerSecureViews
         $sql = "CREATE VIEW SqlSizer_$($SessionId).Secure_Summary AS $([string]::Join(' UNION ALL ', $total))"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
+}
+
+function GetHashInput
+{ 
+     param (
+        [string[]]$hashSelect
+    )
+
+    # prepare $hashInput
+    $hashGroups = [System.Collections.ArrayList]@()
+    $hashGroupSize = 50
+
+    for ($i = 0; $i -lt ($hashSelect.Length / $hashGroupSize); $i += 1)
+    {
+        $group = $hashSelect | Select-Object -First $hashGroupSize -Skip ($hashGroupSize * $i)
+        $item = @()
+        $item += $group
+
+        $null = $hashGroups.Add($item)
+    }
+
+    $hashInputs = @()
+    foreach ($hashGroup in $hashGroups)
+    {
+        if ($hashGroup.Length -gt 1)
+        {
+            $hashInputs += "CONCAT($([string]::Join(', ''|'', ', $hashGroup)))"
+        }
+        else
+        {
+            $hashInputs += $hashGroup[0]
+        }
+    }
+
+    if ($hashInputs.Length -gt 1)
+    {
+        $hashInput = "CONCAT($([string]::Join(', ''|'', ', $hashInputs)))"
+    }
+    else
+    {
+        $hashInput = $hashInputs[0]
+    }
+
+    return $hashInput
 }
 
 function GetSecureViewsTableJoin
