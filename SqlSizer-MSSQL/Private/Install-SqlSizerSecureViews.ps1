@@ -97,7 +97,7 @@ function GetHashInput
         }
         else
         {
-            $hashInputs += $hashGroup[0]
+            $hashInputs += "CONCAT($($hashGroup[0]), '|')"
         }
     }
 
