@@ -31,6 +31,11 @@
     }
     else
     {
+        if ($DataType -in $('image'))
+        {
+            return "CONVERT(nvarchar(max), CONVERT(varbinary(max), " + $Prefix + $ColumnName + "))"
+        }
+
         if ($DataType -in @('hierarchyid', 'geography', 'xml'))
         {
             if (($null -ne $MaxLength) -and ($MaxLength -ne ""))
