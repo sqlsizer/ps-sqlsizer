@@ -31,7 +31,7 @@
     }
     else
     {
-        if ($DataType -in $('image'))
+        if ($DataType -in $('image', 'timestamp'))
         {
             return "CONVERT(nvarchar(max), CONVERT(varbinary(max), " + $Prefix + $ColumnName + "))"
         }
