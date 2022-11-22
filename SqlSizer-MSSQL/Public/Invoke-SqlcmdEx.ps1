@@ -27,7 +27,7 @@
             Query             = $Sql
             ServerInstance    = $ConnectionInfo.Server
             Database          = $Database
-            QueryTimeout      = 6000
+            QueryTimeout      = 65535
             Verbose           = $true
             EncryptConnection = $ConnectionInfo.EncryptConnection
         }
