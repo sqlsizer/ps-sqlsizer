@@ -16,7 +16,7 @@ $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Install SqlSizer
-Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Define start set
 # Query 1: All persons with first name = 'Rob'

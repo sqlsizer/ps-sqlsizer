@@ -12,6 +12,15 @@ function Start-SqlSizerSession
         [Parameter(Mandatory = $false)]
         [bool]$ForceInstallation = $false,
 
+        [Parameter(Mandatory = $false)]
+        [bool]$Installation = $true,
+
+        [Parameter(Mandatory = $false)]
+        [bool]$SecureViews = $true,
+
+        [Parameter(Mandatory = $false)]
+        [bool]$ExportViews = $true,
+
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
@@ -19,10 +28,12 @@ function Start-SqlSizerSession
 
     Write-Host "SqlSizer: Starting new session: $sessionId"
 
-    Write-Host "SqlSizer: Installation verification"
-    
-    # install SqlSizer if not installed
-    Install-SqlSizer -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -SessionId $sessionId -Force $ForceInstallation
+    if ($Installation)
+    {
+        Write-Host "SqlSizer: Installation verification"
+
+        Install-SqlSizer -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -Force $ForceInstallation
+    }
 
     # save session id
     $sql = "INSERT INTO SqlSizer.Sessions(SessionId) VALUES('$SessionId')"
@@ -32,9 +43,17 @@ function Start-SqlSizerSession
     # install session structures
     Install-SqlSizerSessionTables -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     Install-SqlSizerResultViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerSecureViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-    Install-SqlSizerExportViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 
+    if ($ExportViews)
+    {
+        Install-SqlSizerExportViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    }
+
+    if ($SecureViews)
+    {
+        Install-SqlSizerSecureViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    }
+    
     Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 
     return $sessionId

@@ -3,9 +3,6 @@
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
-        [string]$SessionId,
-
         [Parameter(Mandatory = $false)]
         [bool]$Force = $false,
 

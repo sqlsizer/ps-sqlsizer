@@ -1,45 +1,64 @@
-function Clear-SqlSizerSession
+﻿## Example that shows how to remove all persons with FirstName LIKE '%o' in very slow way
+
+# Connection settings
+$server = "localhost"
+$database = "AdventureWorks2019"
+$username = "someuser"
+$password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
+
+# Create connection
+$connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
+
+# Get database info
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+
+# Verify if SqlSizer is installed
+Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Disable integrity checks and triggers
+Disable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+while ($true)
 {
-    [cmdletbinding()]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [string]$SessionId,
+    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false
 
-        [Parameter(Mandatory = $false)]
-        [bool]$RemoveSessionData,
+    # Define start set
+    $query = New-Object -TypeName Query
+    $query.Color = [Color]::Blue
+    $query.Schema = "Person"
+    $query.Table = "Person"
+    $query.KeyColumns = @('BusinessEntityID')
+    $query.Where = "[`$table].FirstName LIKE '%a'"
+    $query.Top = 100
 
-        [Parameter(Mandatory = $true)]
-        [string]$Database,
+    Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
-        [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
+    $null = Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
-    )  
-    # remove session
-    Write-Host "SqlSizer: Remove session: $sessionId"
-    
-    $sql = "DELETE FROM SqlSizer.Sessions WHERE SessionId = '$SessionId'"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $empty = Test-FoundSubsetIsEmpty -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
-    # remove session schema
-    Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    # remove session data
-    if ($RemoveSessionData -eq $true)
+    if ($empty -eq $true)
     {
-        Clear-SqlSizerSessionData -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+        Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
+        break
     }
 
-    Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
+    Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1000 -SessionId $sessionId
+    Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
 }
+# Enable integrity checks and triggers
+Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+# Test foreign keys
+Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCne2e8y0rZsSYI
-# At9prm7UrPeNjaaUZWGo4zAKt3sl5aCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAAAubzQjYIIIYb
+# Uhy0MAveb/8STDpD07Y0xF554hnCIKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -219,38 +238,38 @@ function Clear-SqlSizerSession
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCAmevZP0/C6vTuwVYrNz0JIInF41xHEUqvtzpM/+DF3ajANBgkqhkiG9w0B
-# AQEFAASCAgBvZSfE5dHCBid+4ThQ7iQtQtGXsJnWLl8x4JSqGT8aUqvTYgadfT0K
-# hCnJm/SLuFDW+a9waPjLH3Cu9YIgQor1it0TJg9zjCI61Jhm26xNK4+NbizLQshh
-# Mjc9qHm9TE2TYjmkoia1264VXs+ULiJToSqcCGVezU/HYexaq1hxFIQ7Ddh60d+D
-# wdiLxYQcMFg9Qn4ywXQ77SoBsQO5gTKyVQzN+CFy+AgWEzuVv0GCiHAl/jdLnRXb
-# JDpLNAa4BQezfQJVXvWwtqZtPn0Pmm/4fqgL7QK9krBYStu5bdfvmaFC2Eb4DxPf
-# 278Yq07w4iUcRGZPW6pfRwAZ1CdmHMI2ZI5aB7j4TEFXATxEkxLs/00h77TSimXu
-# RfjgACutz4Y1CwgWkrg3+BjGut/lb9XYEVMSWygc2fr1Sti1YAmPxhiI8PVWyHwM
-# w93/naJOjKzrrSL503EDry+JZasTLU6WdG8S+isQhVsDeFBdPBpTjVO4ikYCDv/l
-# jEpIaBlavPOy9NLJqx9xeYaXsg1naIzVnzL4oV9W6MNEj214CJU6LNp+y1OqDUHo
-# 514wowL41CHX64miTOvJ/9R9saLh4HKqZaZE+Hc+I0CgP0FLlxrjE7hT2kiNHf/Q
-# KU0AgK3KDrUCnUYaZXH0zp4stOY5bWfqNodiBiSfyRfsbL2xnvZjwKGCBAIwggP+
+# BDEiBCBtGosefmg87Tdm7MtlPR4Vcz+LInHWkDHr9sRw3dVqhzANBgkqhkiG9w0B
+# AQEFAASCAgB/uyBoXAf011e6+LWsPWmZ6eRzBPXkHzhpKMMkzW/c0RfsCpaZSN4C
+# UYU0sq7dU+V5PCdS83GQAlKwKjr3CFO5+5iXn7vUf5lccdeftpfNWhioR7hk8IWt
+# FJd3sfZ4ggGaA84k5i+86Ov3CpfxfqNEwKqOoWmLfOIwxFG0zO1OrUHLvkjvAaoO
+# FzvRT/LVyZNCycg5WxC3pW6KDJsjl6sCDsrCA3b0kr9+6PpemSSTs0H61u1KEet9
+# X+TlDJz/wILOqnMEmDhKI6Uj2IySXxka8A8EMmxwNDClm7JAAkuO0f/88rFPncJ6
+# 6ub50CgPSlTmcFSKkQ2vrPKGvT8mFQELqT45anUvatS7bmyKS8c9lv/zKX8WeL1h
+# 6vNb/fXXMWhyG5FnP5MZ6WL3+s+9A4TAcMarDwUGuALPCwsiULUCsYBKvvVte/e1
+# ty5QQ+G4ksx0w/sdzkoAO0RwzCJwHK3/NZeab2moPrSCYBUv/PjX9KfSQF0G5H8v
+# A35gb+Z8uHlMwiJWopT5zfT3QKifs+NncDjkcTuIHna6NEGrU1baMUhh9515twcJ
+# k10NQb+p4VGdiFYV0iWO4FQI3BGFRVF7mySk+0eJ6L6QryYjFNNZCMk97Lp0AZJv
+# 80UD0UC0JNYsJc95Nw1J+srJ1wjf4AyDECxDp/9UF3sxD2+98m1rX6GCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjExMjMwNjQyMTRaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDDJXVvsVjes
-# eX+aY4XxtFS/YPPw7jyg33Uzz3ZrCI2cEj5u4k1eOTJm+ZBL7wNtSG0wgZ8GCyqG
+# Fw0yMjExMjMwNjQwMDZaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDD3uafsAkg8
+# a7iXbCsM0sp1nZwHisiqqQha0vZvuLE4xC8RKg3LhC/pLngBIxT00OwwgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAFWVHB7DU+vtHvhB0kaZHObc9
-# O91aQzGKl9ImC1gdzskrZHS/WWJLyrD3OMQKCM8+tX9liD/KQ+DX+Lx9E3lEJAFn
-# e7Wrs8nrTp9uEA1rPv0/IyHvPwomcGufwZeAD9AqZXHxBwSNEy/xosribyEEHAVZ
-# fbwuNuRlRd+t5nJPFCNhlk+Mxu/IectlA6zkISswfy+tAWc36QNEZpL3lZYCeCpY
-# QJkcR9yOdBaDYM6j27axK7OMMYsjtZkbIkxAgWVC1KzYUKcYDkjtQaEabJ5UY7gR
-# YDifMTzBsFpaV8xEMHJhj6mJR/POMCTuCS3XSPj8IAABqp0T5xiw8wGlncRYL9B0
-# jzNpmrdJK7xeNm2ZEPJETOoeRXY6tnpHc1hNDshJeFMD10Ppx8nkv/D7lS2kzEzS
-# Olg008yqouzsFhQpNgJqbTzxgYehkD9pZK8Rbk3f/Y5IbAh7IEGMJ7U5+zXX/pHv
-# t4ry0bQOjBCrcfsfjXWBAih0BigNDJoSkxeicXFX+33bdofC/r2EyopLR8bQuNpW
-# 76glM8YT0gnKEmgGlIIBLEp1WtUixVKOnSutVBTX6DLDu1LLbk2AmshO1V1LqdLz
-# xn47xdlTaJ7LSghDzvSoIgv6MxmUqeIoHXDDUgXRtF35xOTIS7nH8vc0dWIGuBHT
-# Ii4ar7Eq2s9b0npPtUg=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAyZb4Ic405eXTtoUQmZRUT/Ai
+# BSJL318boKU8RPLirbx8GpSj8Rnf6rXzZPjyHzjIdi9NOBHjbUAGg+JhrlLkAICc
+# uEp3Mfc2wVO+21QSx8XANc74ePF7tKOOQJUV5GKlwe6wHDjUoemyZ33tH5gVZ1IN
+# iTNjxm3zWokpA5ndqvOc6xrnThLMyXUG9gbUoLIEnAP4wEQw0Tj3hg7j9QY2+vjI
+# /cbdgllqfYZ9CJiEimsQOEm/0UeXDQG/lrDM/qN7No2tL7f6bsPWH7x0+Lo9en2u
+# 2ydbR00KF6G0FY0BnJQBHcPly2pSfkxuNCPUB3q389YuNZ0eDmatLD1sKp0GHiap
+# GyPioIdrg8h+VYAsAucqfzT0rKSQO9o6wqsEjUtKkBm0vVEivAC577U4xyMMLtE9
+# vof8v3hWjjth0jSt9tLNcpCz0cYVykSzjRT9EjKzhbAkLmvZUbnLs/vGko7yGI+R
+# 5rZs50zk8H2I0YcRp7V0neeZRjpAuG+PosN7Wbpmf9W7yxfFCNVa4XQ0uEb7vodO
+# PPfF4ZS8ooXffeji6Lcb7P4SWC9lLw+FIxIEHRJqAsaf+nl5XMfTbD5mvdDlgAIa
+# Mevsp6FSn7tUijJOUk27DOZyB5K7GoUVlV83ZyHXRKlKS5aiGVjH59K1S0NN8aCI
+# ge2XRwQJVOZ8AOmw3lY=
 # SIG # End signature block
