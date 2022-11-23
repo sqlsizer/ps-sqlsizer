@@ -656,7 +656,7 @@
         }
         else 
         {
-            $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[SessionId] = '$SessionId' AND o.[Color] = $color AND o.[Table] = $tableId AND o.[Processed] = 0)"
+            $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[SessionId] = '$SessionId' AND o.[Color] = $color AND o.[Table] = $tableId AND o.[Status] = 0)"
             $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
         }
         $addOutgoing = ShouldAddOutgoing -color $color
