@@ -104,7 +104,7 @@
         }
     }
 
-    $tmp = "CREATE TABLE SqlSizer.Operations(Id int identity(1,1) $pk, [Table] smallint, [Color] int, [ToProcess] int NOT NULL, [Processed] bit NOT NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL, [ProcessedDate] datetime NULL, [SessionId] varchar(256) NOT NULL, [Iteration] int NOT NULL)"
+    $tmp = "CREATE TABLE SqlSizer.Operations(Id int identity(1,1) $pk, [Table] smallint, [Color] int, [ToProcess] int NOT NULL, [Status] int NULL, [Source] int, [Depth] int, [Created] datetime NOT NULL, [ProcessedDate] datetime NULL, [SessionId] varchar(256) NOT NULL, [FoundIteration] int NOT NULL, [ProcessedIteration] int NULL)"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
 
     $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Table] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"

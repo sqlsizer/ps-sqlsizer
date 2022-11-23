@@ -46,8 +46,8 @@
             continue
         }
 
-        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Color], [Depth], [Created], [SessionId], [Iteration])
-        SELECT p.[Table], COUNT(*), 0, p.[Color], 0, GETDATE(), '$SessionId', 0
+        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Status], [Color], [Depth], [Created], [SessionId], [FoundIteration])
+        SELECT p.[Table], COUNT(*), NULL, p.[Color], 0, GETDATE(), '$SessionId', 0
         FROM $($processing) p
         WHERE p.[Table] = $($table.Id) and p.SessionId = '$SessionId'
         GROUP BY [Table], [Color]"

@@ -24,7 +24,7 @@ function Get-SubsetTableStatistics
                    SUM([ToProcess]) as [Count]
             FROM [SqlSizer].[Operations] o
             INNER JOIN [SqlSizer].[Tables] t ON o.[Table] = t.Id
-            WHERE (o.Iteration = $Iteration OR $Iteration = -1) AND o.ToProcess <> 0 AND o.SessionId = '$SessionId'
+            WHERE (o.FoundIteration = $Iteration OR $Iteration = -1) AND o.ToProcess <> 0 AND o.SessionId = '$SessionId'
             GROUP BY t.[Schema], t.TableName
             ORDER BY [Schema], [TableName]"
 
