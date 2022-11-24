@@ -645,16 +645,33 @@
         
         Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
-        # mark operations as in progress => Status = 0
-        if ($false -eq $useDfs)
+        if ($MaxBatchSize -eq -1)
         {
-            $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+            # mark operations as in progress => Status = 0
+            if ($false -eq $useDfs)
+            {   
+                $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+            }
+            else
+            {
+                $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
+            }
         }
         else
         {
-            $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
+            # mark only first operation as in progress => Status = 0  (heuristic)
+            if ($false -eq $useDfs)
+            {   
+                $q = "UPDATE TOP (1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+            }
+            else
+            {
+                $q = "UPDATE TOP(1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
+            }
         }
 
         $keys = ""
@@ -667,16 +684,9 @@
         $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
         # slicing
-        if ($false -eq $useDfs)
-        {
-            $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[Depth] = $depth AND p.[Color] = $color AND p.[Table] = $tableId AND p.[SessionId] = '$SessionId'"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-        }
-        else 
-        {
-            $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[Color] = $color AND p.[Table] = $tableId AND p.[Depth] IN (SELECT o.[Depth] FROM [SqlSizer].[Operations] o WHERE o.[SessionId] = '$SessionId' AND o.[Color] = $color AND o.[Table] = $tableId AND o.[Status] = 0)"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-        }
+        $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations WHERE Status = 0 AND p.[SessionId] = '$SessionId')"
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        
         $addOutgoing = ShouldAddOutgoing -color $color
         if ($true -eq $addOutgoing)
         {
