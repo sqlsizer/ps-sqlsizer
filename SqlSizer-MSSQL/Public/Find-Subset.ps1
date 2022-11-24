@@ -10,6 +10,9 @@
         [Parameter(Mandatory = $false)]
         [int]$Iteration = -1,
 
+        [Parameter(Mandatory = $false)]
+        [int]$MaxBatchSize = -1,
+
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
@@ -395,6 +398,11 @@
 
                 $topPhrase = " "
 
+                if ($MaxBatchSize -ne -1)
+                {
+                    $top = $MaxBatchSize                    
+                }
+
                 if (($null -ne $top) -and ($top -ne -1))
                 {
                     $topPhrase = " TOP $($top) "
@@ -411,6 +419,16 @@
 
                 $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId, ##iteration## as Iteration INTO #tmp FROM (" + $sql + ") x "
                 $insert += " INSERT INTO $fkProcessing SELECT * FROM #tmp "
+
+                if ($MaxBatchSize -ne -1)
+                {
+                    # reset operation if there is a data and max size is set
+                    $insert += "IF ((SELECT COUNT(*) FROM #tmp) <> 0)
+                                BEGIN
+                                    UPDATE SqlSizer.Operations SET [Status] = NULL WHERE [SessionId] = '$SessionId' AND [Status] = 0
+                                END"
+                }
+
                 $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
                 $insert += " DROP TABLE #tmp "
 
@@ -678,16 +696,8 @@
         }
 
         # mark operations as processed
-        if ($false -eq $useDfs)
-        {
-            $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId AND Status = 0 AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-        }
-        else
-        {
-            $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedDate = GETDATE() WHERE [Table] = $tableId AND Status = 0 AND [Color] = $color AND [SessionId] = '$SessionId'"
-            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
-        }
+        $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedDate = GETDATE() WHERE Status = 0 AND [SessionId] = '$SessionId'"
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
         
         return $true
     }
