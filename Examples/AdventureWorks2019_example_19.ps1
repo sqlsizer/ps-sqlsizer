@@ -13,7 +13,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info

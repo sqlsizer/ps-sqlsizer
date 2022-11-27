@@ -37,7 +37,7 @@ function Compare-Tables
     if ($schemaExists -eq $false)
     {
         $sql = "CREATE SCHEMA SqlSizer"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     $compareId = (New-Guid).ToString().Replace('-', '_')

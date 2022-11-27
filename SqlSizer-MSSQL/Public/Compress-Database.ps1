@@ -18,7 +18,7 @@
     Write-Progress -Activity "Shrinking database" -PercentComplete 0
 
     $sql = "DBCC SHRINKDATABASE ([" + ($Database) + "])"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
     Write-Progress -Activity "Shrinking database" -Completed
 }

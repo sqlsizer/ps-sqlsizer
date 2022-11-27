@@ -19,7 +19,7 @@ if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $f
 }
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info

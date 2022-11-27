@@ -42,7 +42,7 @@ function New-DataTableFromView
     if ($schemaExists -eq $false)
     {
         $sql = "CREATE SCHEMA $NewSchemaName"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     # copy schema

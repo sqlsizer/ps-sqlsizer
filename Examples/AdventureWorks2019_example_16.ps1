@@ -9,7 +9,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 $json = Get-DatabaseSchemaJson -Database $database -DatabaseInfo $info -ConnectionInfo $connection
 

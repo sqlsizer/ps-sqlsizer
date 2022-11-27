@@ -6,9 +6,6 @@ function Clear-SqlSizerSession
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
-        [Parameter(Mandatory = $false)]
-        [bool]$RemoveSessionData,
-
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -24,15 +21,7 @@ function Clear-SqlSizerSession
     $sql = "DELETE FROM SqlSizer.Sessions WHERE SessionId = '$SessionId'"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    # remove session schema
     Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
-
-    # remove session data
-    if ($RemoveSessionData -eq $true)
-    {
-        Clear-SqlSizerSessionData -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
-    }
-
     Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 }
 # SIG # Begin signature block

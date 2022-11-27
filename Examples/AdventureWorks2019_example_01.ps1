@@ -10,7 +10,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ForceInstallation $true
@@ -43,7 +43,11 @@ $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection
 Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Clear-Database -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
+
 Copy-DataFromSubset -Source $database -Destination $newDatabase -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
+Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+
 Enable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Enable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Format-Indexes -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
@@ -59,11 +63,9 @@ foreach ($table in $infoNew.Tables)
     $sum += $table.Statistics.Rows
 }
 
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
+Write-Output "Logical reads: $($connection.Statistics.LogicalReads)"
 Write-Output "Total rows: $($sum)"
 Write-Output "==================="
-
-#Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
 
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

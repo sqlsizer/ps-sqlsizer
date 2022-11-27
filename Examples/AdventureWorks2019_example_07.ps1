@@ -10,7 +10,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -59,7 +59,7 @@ Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info
 
 $newDatabase = "AdventureWorks2019_subset_07"
 Copy-Database -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection
-$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
+$infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection
 
 Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $infoNew

@@ -10,7 +10,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -66,8 +66,8 @@ while (($result.Finished -eq $false) -and ($found -eq $false))
 
 if ($found)
 {
-    Write-Host "Found in $($foundTable.SchemaName).$($foundTable.TableName)"
-    Write-Host "Row $($foundRow.ItemArray)"
+    Write-Host "Found in => $($foundTable.SchemaName).$($foundTable.TableName)"
+    Write-Host "Row => $($foundRow.ItemArray)"
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

@@ -18,7 +18,7 @@
         [SqlConnectionInfo]$ConnectionInfo,
 
         [Parameter(Mandatory = $false)]
-        [bool]$Statistics = $false
+        [bool]$Statistics = $true
     )
 
     try

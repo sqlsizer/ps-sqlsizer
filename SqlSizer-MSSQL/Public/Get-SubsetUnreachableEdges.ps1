@@ -28,7 +28,7 @@ function Get-SubsetUnreachableEdges
 
     foreach ($signature in $structure.Signatures.Keys)
     {
-        $processing = $structure.GetProcessingName($signature)
+        $processing = $structure.GetProcessingName($signature, $SessionId)
 
         $tmp = "SELECT DISTINCT [Fk] FROM $($processing) WHERE [FK] IS NOT NULL"
         $results = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo

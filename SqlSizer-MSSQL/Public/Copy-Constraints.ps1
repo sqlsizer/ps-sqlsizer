@@ -37,7 +37,7 @@ function Copy-Constraints
         if ($schemaExists -eq $false)
         {
             $tmp = "CREATE SCHEMA $schema"
-            Invoke-SqlcmdEx -Sql $tmp -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
+            Invoke-SqlcmdEx -Sql $tmp -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
         }
         
         $sql = "ALTER TABLE $schema.$tableName ADD CONSTRAINT $constraintName CHECK ($definition)"

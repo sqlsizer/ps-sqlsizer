@@ -10,7 +10,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Verify if SqlSizer is installed
 Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Force $true
@@ -33,22 +33,24 @@ while ($true)
 
     Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
-    $null = Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 1000
+    $null = Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
 
     $empty = Test-FoundSubsetIsEmpty -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
     if ($empty -eq $true)
     {
-        Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
+        Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info
         break
     }
 
     Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1000 -SessionId $sessionId
-    Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
+    Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 }
 # Enable integrity checks and triggers
 Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Write-Output "Logical reads from db: $($connection.Statistics.LogicalReads)"
 
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info

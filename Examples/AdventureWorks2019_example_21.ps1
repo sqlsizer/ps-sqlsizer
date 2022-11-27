@@ -10,7 +10,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # New table clone
 New-DataTableClone -ConnectionInfo $connection -CopyData $true -DatabaseInfo $info -SourceDatabase $database -TargetDatabase $database -SchemaName "Person" -TableName "Person" -NewSchemaName "Person2" -NewTableName "Persons"

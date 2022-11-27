@@ -38,8 +38,9 @@
             continue
         }
         $signature = $structure.Tables[$table]
-        $processing = $structure.GetProcessingName($signature)
+        $processing = $structure.GetProcessingName($signature, $SessionId)
         $table = $allTablesGroupedByName[$table.SchemaName + ", " + $table.TableName]
+        $tableId = $table.Id
 
         if ($null -eq $table)
         {
@@ -47,10 +48,9 @@
         }
 
         $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Status], [Color], [Depth], [Created], [SessionId], [FoundIteration])
-        SELECT p.[Table], COUNT(*), NULL, p.[Color], 0, GETDATE(), '$SessionId', 0
+        SELECT $tableId, COUNT(*), NULL, p.[Color], 0, GETDATE(), '$SessionId', 0
         FROM $($processing) p
-        WHERE p.[Table] = $($table.Id) and p.SessionId = '$SessionId'
-        GROUP BY [Table], [Color]"
+        GROUP BY [Color]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 }

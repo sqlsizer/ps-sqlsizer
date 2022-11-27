@@ -31,7 +31,7 @@ function Copy-Functions
         if ($schemaExists -eq $false)
         {
             $tmp = "CREATE SCHEMA $schema"
-            Invoke-SqlcmdEx -Sql $tmp -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
+            Invoke-SqlcmdEx -Sql $tmp -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
         }
         
         $definition = $row.definition

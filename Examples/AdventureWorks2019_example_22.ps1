@@ -13,7 +13,7 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 $info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
-$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+$sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -ForceInstallation $true
 
 # Define start set
 # Query 1: All persons with first name = 'Michael'

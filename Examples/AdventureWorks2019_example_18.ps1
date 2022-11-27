@@ -11,7 +11,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -53,7 +53,7 @@ Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -Databa
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # Remove all SqlSizer
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 Uninstall-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 

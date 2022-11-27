@@ -111,7 +111,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -164,7 +164,7 @@ Write-Output "Logical reads from db during subsetting: $($connection.Statistics.
 Write-Output "Total rows: $($sum)"
 Write-Output "==================="
 
-Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info -RemoveSessionData $true
+Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
 # end of script
 ```
@@ -185,7 +185,7 @@ $accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Tok
 $connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info

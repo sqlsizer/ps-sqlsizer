@@ -47,7 +47,7 @@ function New-DataTableClone
     if ($schemaExists -eq $false)
     {
         $sql = "CREATE SCHEMA $NewSchemaName"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $SchemaName) -and ($_.TableName -eq $TableName) }

@@ -249,7 +249,7 @@
     
         try
         {
-            $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
             return $depRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
         }
         catch 
@@ -391,7 +391,6 @@
                 $table.PrimaryKey += $pkColumn
             }
         }
-       
             if ($true -eq $ConnectionInfo.IsSynapse)
             {
                 if (($null -ne $AdditonalStructureInfo) -and ($null -eq $table.PrimaryKey))

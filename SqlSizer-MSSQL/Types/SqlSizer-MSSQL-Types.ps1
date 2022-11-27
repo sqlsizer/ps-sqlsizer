@@ -258,8 +258,12 @@ class Structure
 
         foreach ($table in $this.DatabaseInfo.Tables)
         {
-
             if ($table.PrimaryKey.Count -eq 0)
+            {
+                continue
+            }
+
+            if ($table.SchemaName.StartsWith("SqlSizer"))
             {
                 continue
             }
@@ -274,9 +278,9 @@ class Structure
         }
     }
 
-    [string] GetProcessingName([string] $Signature)
+    [string] GetProcessingName([string] $Signature, [string] $SessionId)
     {
-        return "SqlSizer.Processing" + $Signature
+        return "SqlSizer_$SessionId." + $Signature
     }
 
     [string] GetSliceName([string] $Signature, [string] $SessionId)
@@ -286,15 +290,7 @@ class Structure
 
     [string] GetTablePrimaryKeySignature([TableInfo]$Table)
     {
-        $result = ""
-        foreach ($pkColumn in $Table.PrimaryKey)
-        {
-            $result += "__" + $pkColumn.DataType
-            if (($null -ne $pkColumn.Length) -and ("" -ne $pkColumn.Length))
-            {
-                $result += "_" + $pkColumn.Length
-            }
-        }
+        $result = $Table.SchemaName + "_" + $Table.TableName
         return $result
     }
 }

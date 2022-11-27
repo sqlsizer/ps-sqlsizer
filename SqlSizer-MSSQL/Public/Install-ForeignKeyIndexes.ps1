@@ -43,7 +43,7 @@ function Install-ForeignKeyIndexes
 
                 if ($OnlyMissing -eq $true)
                 {
-                    $index = $tableInfo.Indexes | Where-Object { $_.Columns.Contains($fkColumn.Name) }
+                    $index = $tableInfo.Indexes | Where-Object { ($null -ne $_.Columns) -and $_.Columns.Contains($fkColumn.Name) }
 
                     if ($null -ne $index)
                     {

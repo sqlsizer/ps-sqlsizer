@@ -50,7 +50,7 @@ $table.PrimaryKey += $column
 $additonalStructure.Tables += $table
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -AdditonalStructureInfo $additonalStructure
 
 # Setup not present primary keys
 Install-PrimaryKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info

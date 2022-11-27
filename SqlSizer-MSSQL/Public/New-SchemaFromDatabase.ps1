@@ -36,7 +36,7 @@ function New-SchemaFromDatabase
         return
     }
     $sql = "CREATE SCHEMA $NewSchemaName"
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
 
     # copy tables
     $i = 0

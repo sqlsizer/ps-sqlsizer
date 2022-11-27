@@ -21,17 +21,8 @@
 
     # get metadata
     $structure = [Structure]::new($DatabaseInfo)
-
-    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
-
     foreach ($query in $Queries)
     {
-        $top = "";
-        if ($query.Top -ne 0)
-        {
-            $top = " TOP " + $query.Top;
-        }
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $query.Schema) -and ($_.TableName -eq $query.Table) }
 
         if ($null -eq $table)
@@ -45,9 +36,13 @@
         {
             throw "Table $($query.Schema).$($query.Table) doesn't have the primary key"
         }
-
-        $procesing = $Structure.GetProcessingName($signature)
-        $tmp = "INSERT INTO $($procesing) SELECT " + $top + " $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id), "
+        $top = "";
+        if ($query.Top -ne 0)
+        {
+            $top = " TOP " + $query.Top;
+        }
+        $procesing = $Structure.GetProcessingName($signature, $SessionId)
+        $tmp = "INSERT INTO $($procesing) SELECT " + $top 
 
         $i = 0
         foreach ($column in $query.KeyColumns)
@@ -61,7 +56,7 @@
         {
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, '$SessionId', 0 FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, 0 FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
 
         if ($null -ne $query.Where)
         {

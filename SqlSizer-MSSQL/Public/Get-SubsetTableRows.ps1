@@ -41,7 +41,7 @@ function Get-SubsetTableRows
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $processing = $structure.GetProcessingName($structure.Tables[$table])
+            $processing = $structure.GetProcessingName($structure.Tables[$table], $SessionId)
 
             if ($AllColumns -eq $false)
             {
@@ -56,7 +56,7 @@ function Get-SubsetTableRows
                     }
                 }
 
-                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE ([FoundIteration] = $Iteration OR $Iteration = -1) AND SessionId = '$SessionId' AND [Table] = $($allTablesGroupedbyName[$table.SchemaName + ", " + $table.TableName].Id)"
+                $sql = "SELECT DISTINCT '$($table.TableName)' as SchemaName,'$($table.SchemaName)' as TableName, $($keys) FROM $($processing) WHERE ([Iteration] = $Iteration OR $Iteration = -1)"
                 $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }
@@ -109,8 +109,7 @@ function Get-SubsetTableRows
                 $sql = "SELECT '$($table.SchemaName)' as SchemaName, '$($table.TableName)' as TableName, $($columns)
                         FROM $($processing) p
                         INNER JOIN $($table.SchemaName).$($table.TableName) t ON $($cond)
-                        INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '$($table.SchemaName)' AND tt.[TableName] = '$($table.TableName)'
-                        WHERE p.[Table] = tt.Id AND p.SessionId = '$SessionId' AND ([Iteration] = $Iteration OR $Iteration = -1)"
+                        WHERE ([Iteration] = $Iteration OR $Iteration = -1)"
                 $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 return $rows
             }

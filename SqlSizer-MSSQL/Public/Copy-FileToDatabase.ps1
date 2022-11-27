@@ -18,7 +18,7 @@ function Copy-FileToDatabase
     if ($schemaExists -eq $false)
     {
         $tmp = "CREATE SCHEMA SqlSizer"
-        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     $tableExists = Test-TableExists -SchemaName "SqlSizer" -TableName "Files" -Database $Database -ConnectionInfo $ConnectionInfo

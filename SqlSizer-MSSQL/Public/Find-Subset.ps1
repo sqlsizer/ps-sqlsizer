@@ -165,8 +165,6 @@
         )
 
         $result = ""
-        $signature = $structure.Tables[$table]
-        $slice = $structure.GetSliceName($signature, $SessionId)
         $primaryKey = $table.PrimaryKey
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
 
@@ -198,7 +196,7 @@
             $baseTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
             $baseTableId = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table].Id
             $baseSignature = $structure.Tables[$baseTable]
-            $baseProcessing = $structure.GetProcessingName($baseSignature)
+            $baseProcessing = $structure.GetProcessingName($baseSignature, $SessionId)
 
             #where
             $columns = ""
@@ -212,21 +210,23 @@
                 $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
                 $i += 1
             }
-            $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $baseProcessing p WHERE p.[Color] = $newColor AND p.[Table] = $baseTableId AND $columns AND p.[SessionId] = '$SessionId')"
+            $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $baseProcessing p WHERE p.[Color] = $newColor AND $columns)"
 
             # from
-            $join = " INNER JOIN $slice s ON "
+            $join = " INNER JOIN $processing s ON "
             $i = 0
             foreach ($primaryKeyColumn in $primaryKey)
             {
                 if ($i -gt 0)
                 {
-                    $join += " and "
+                    $join += " AND "
                 }
 
                 $join += " s.Key" + $i + " = f." + $primaryKeyColumn.Name
                 $i += 1
             }
+
+            $join += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
             $from = " FROM " + $table.SchemaName + "." + $table.TableName + " f " + $join
 
             # select
@@ -253,7 +253,7 @@
 
             $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
 
-            $insert = " SELECT $baseTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId, ##iteration## as Iteration INTO #tmp2 FROM (" + $sql + ") x "
+            $insert = " SELECT $columns " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp2 FROM (" + $sql + ") x "
             $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
             $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
             $insert += " DROP TABLE #tmp2"
@@ -298,7 +298,7 @@
         {
             $query = $query.Replace("##iteration##", $iteration)
 
-            $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+            $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 
@@ -313,7 +313,6 @@
         )
         $result = ""
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
-        $slice = $structure.GetSliceName($structure.Tables[$table], $SessionId)
 
         foreach ($referencedByTable in $table.IsReferencedBy)
         {
@@ -332,7 +331,7 @@
                 $fkTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
                 $fkTableId = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable].Id
                 $fkSignature = $structure.Tables[$fkTable]
-                $fkProcessing = $structure.GetProcessingName($fkSignature)
+                $fkProcessing = $structure.GetProcessingName($fkSignature, $SessionId)
                 $primaryKey = $referencedByTable.PrimaryKey
                 $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
 
@@ -353,7 +352,7 @@
                     $columns = $columns + " f.$($pk.Name) = p.Key$i "
                     $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $fkProcessing p WHERE p.[Color] = $newColor AND p.[Table] = $fkTableId AND $columns AND p.[SessionId] = '$SessionId')"
+                $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $fkProcessing p WHERE p.[Color] = $newColor AND $columns)"
 
                 if ($null -ne $maxDepth)
                 {
@@ -367,20 +366,21 @@
                 }
 
                 # from
-                $join = " INNER JOIN $slice s ON "
+                $join = " INNER JOIN $processing s ON "
                 $i = 0
 
                 foreach ($fkColumn in $fk.FkColumns)
                 {
                     if ($i -gt 0)
                     {
-                        $join += " and "
+                        $join += " AND "
                     }
 
                     $join += " s.Key$i = f.$($fkColumn.Name)"
                     $i += 1
                 }
 
+                $join += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
                 $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName + " f " + $join
 
                 # select
@@ -417,7 +417,7 @@
                     $columns = $columns + "x.val" + $i + ","
                 }
 
-                $insert = " SELECT $fkTableId as BaseTableId, " + $columns + " " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, '$SessionId' as SessionId, ##iteration## as Iteration INTO #tmp FROM (" + $sql + ") x "
+                $insert = " SELECT $columns " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp FROM (" + $sql + ") x "
                 $insert += " INSERT INTO $fkProcessing SELECT * FROM #tmp "
 
                 if ($MaxBatchSize -ne -1)
@@ -472,7 +472,7 @@
         if ($query -ne "")
         {
             $query = $query.Replace("##iteration##", $iteration)
-            $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+            $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
 
@@ -487,8 +487,6 @@
         )
 
         $result = ""
-        $signature = $structure.Tables[$table]
-        $processing = $structure.GetProcessingName($signature)
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
 
         $cond = ""
@@ -508,16 +506,19 @@
             $columns = $columns + "s.Key$i,"
         }
 
+        
         # red
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.[Color] = " + [int][Color]::Red + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId, $iteration as Iteration INTO #tmp1 FROM $slice s" + $where
+        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and " + $cond + ")"
+        $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
+        $q = " SELECT  $columns " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp1 FROM $processing s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
         $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
         $result += $q
 
         # green
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.[Color] = " + [int][Color]::Green + "  and p.[Table] = $tableId and " + $cond + ")"
-        $q = " SELECT $tableId as TableId, " + $columns + " " + [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, '$SessionId' as SessionId, $iteration as Iteration INTO #tmp2 FROM $slice s" + $where
+        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + " and " + $cond + ")"
+        $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
+        $q = " SELECT $columns " +  [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp2 FROM $processing s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
         $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
         $result += $q
@@ -545,7 +546,7 @@
         )
         $query = CreateSplitQuery -table $table -color $color -depth $depth -iteration $iteration
 
-        $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
 
@@ -625,7 +626,7 @@
                     [ToProcess] DESC"
         }
 
-        $operation = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $operation = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
         if ($null -eq $operation)
         {
@@ -638,12 +639,10 @@
         $depth = $operation.Depth
         $tableData = $tablesGroupedById["$($tableId)"]
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
-        
+        Write-Progress -Activity "Finding subset" -CurrentOperation  "$($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+
         $signature = $structure.Tables[$table]
-        $slice = $structure.GetSliceName($signature, $SessionId)
-        $processing = $structure.GetProcessingName($signature)
-        
-        Write-Progress -Activity "Finding subset" -CurrentOperation  "Slice for $($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+        $processing = $structure.GetProcessingName($signature, $SessionId)
 
         if ($MaxBatchSize -eq -1)
         {
@@ -651,12 +650,12 @@
             if ($false -eq $useDfs)
             {   
                 $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
             }
             else
             {
                 $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
             }
         }
         else
@@ -665,12 +664,12 @@
             if ($false -eq $useDfs)
             {   
                 $q = "UPDATE TOP (1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
             }
             else
             {
                 $q = "UPDATE TOP(1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true   
+                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
             }
         }
 
@@ -680,13 +679,6 @@
             $keys = $keys + "Key" + $i + ","
         }
 
-        $q = "TRUNCATE TABLE $slice"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-
-        # slicing
-        $q = "INSERT INTO $slice " + "SELECT " + $keys + " p.[Source], p.[Depth], p.[Fk], p.[Iteration] FROM $processing p WHERE p.[SessionId] = '$SessionId' AND p.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations WHERE Status = 0 AND p.[SessionId] = '$SessionId')"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
-        
         $addOutgoing = ShouldAddOutgoing -color $color
         if ($true -eq $addOutgoing)
         {
@@ -707,7 +699,7 @@
 
         # mark operations as processed
         $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedDate = GETDATE() WHERE Status = 0 AND [SessionId] = '$SessionId'"
-        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $true
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
         
         return $true
     }

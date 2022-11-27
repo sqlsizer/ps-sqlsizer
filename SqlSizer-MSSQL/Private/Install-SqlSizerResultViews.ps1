@@ -23,7 +23,7 @@ function Install-SqlSizerResultViews
     if ($schemaExists -eq $false)
     {
         $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
     
     $structure = [Structure]::new($DatabaseInfo)
@@ -42,8 +42,8 @@ function Install-SqlSizerResultViews
             continue
         }
 
-        $sql = "CREATE VIEW SqlSizer_$($SessionId).Result_$($table.SchemaName)_$($table.TableName) AS SELECT Iteration, $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $sql = "CREATE VIEW SqlSizer_$($SessionId).Result_$($table.SchemaName)_$($table.TableName) AS SELECT rr.Iteration as SqlSizerIteration, $tableSelect from $($table.SchemaName).$($table.TableName) t INNER JOIN $join"
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 }
 
@@ -62,7 +62,7 @@ function GetResultViewsTableJoin
         return $null
     }
 
-    $processing = $Structure.GetProcessingName($signature)
+    $processing = $Structure.GetProcessingName($signature, $SessionId)
 
     $select = @()
     $join = @()
@@ -77,10 +77,7 @@ function GetResultViewsTableJoin
 
     $sql = " (SELECT MIN(Iteration) as Iteration, $([string]::Join(',', $select))
                FROM $($processing) p
-               INNER JOIN SqlSizer.Tables tt ON tt.[Schema] = '" + $TableInfo.SchemaName + "' and tt.TableName = '" + $TableInfo.TableName + "'
-               WHERE p.[Table] = tt.[Id] AND p.[SessionId] = '$SessionId'
-               GROUP BY $([string]::Join(',', $select))
-               ) rr ON $([string]::Join(' and ', $join))"
+               GROUP BY $([string]::Join(',', $select))) rr ON $([string]::Join(' and ', $join))"
 
     return $sql
 }

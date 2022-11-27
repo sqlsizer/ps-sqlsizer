@@ -20,7 +20,7 @@
     if ($schemaExists -eq $false)
     {
         $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
-        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
     if ($ConnectionInfo.IsSynapse -eq $true)
     {
@@ -34,8 +34,8 @@
 
     foreach ($signature in $structure.Signatures.Keys)
     {
-        $slice = $structure.GetSliceName($signature, $SessionId)
-
+        $processing = $structure.GetProcessingName($signature, $SessionId)
+        
         $keys = ""
         $columns = ""
         $keysIndex = ""
@@ -69,8 +69,21 @@
 
         if ($len -gt 0)
         {
-            $sql = "CREATE TABLE $($slice) ([Id] int identity(1,1) $pk, $($columns), [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL)"
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+            $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+
+            $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ($($keysIndex), [Color] ASC)"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+
+            if ($ConnectionInfo.IsSynapse -eq $true)
+            {
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Color] ASC, [Depth] ASC)"
+            }
+            else
+            {
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Color] ASC, [Depth] ASC) INCLUDE ($($keys), [Source], [Fk])"
+            }
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
         }
     }
 }

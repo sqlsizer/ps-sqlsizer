@@ -18,7 +18,7 @@ if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $f
 }
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -62,7 +62,7 @@ while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) 
     Start-Sleep -Seconds 5
 }
 
-$newInfo = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $false
+$newInfo = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection
 Disable-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 Disable-AllTablesTriggers -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $newInfo
 $files = Copy-SubsetToDatabaseFileSet -SourceDatabase $database -TargetDatabase $newDatabase -DatabaseInfo $info -ConnectionInfo $connection -Secure $false -SessionId $sessionId

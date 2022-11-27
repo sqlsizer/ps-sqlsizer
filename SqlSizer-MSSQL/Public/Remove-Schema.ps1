@@ -73,7 +73,7 @@
         {
             $sql = "DROP SCHEMA IF EXISTS $SchemaName"    
         }
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 }
 # SIG # Begin signature block

@@ -19,7 +19,7 @@
 
     $sql = "ENABLE TRIGGER ALL ON DATABASE"
     
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
     Write-Progress -Activity "Enabling all triggers on database $Database" -Completed
 }

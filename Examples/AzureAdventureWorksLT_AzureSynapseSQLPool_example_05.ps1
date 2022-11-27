@@ -32,7 +32,7 @@ $fk1.Columns += $c1
 $additonalStructure.Fks += $fk1
 
 # Get database info
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $false -AdditonalStructureInfo $additonalStructure
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -AdditonalStructureInfo $additonalStructure
 
 # Start session
 $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info

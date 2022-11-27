@@ -127,7 +127,7 @@
         {
             $sql = "DROP VIEW IF EXISTS [$($view.SchemaName)].[$($view.ViewName)]"
         }
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     # drop table
@@ -139,7 +139,7 @@
     {
         $sql = "DROP TABLE IF EXISTS [$($SchemaName)].[$($TableName)]"
     }
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
     return $true
 }

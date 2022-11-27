@@ -28,7 +28,7 @@
 
     $sql = "ENABLE TRIGGER $SchemaName.$TriggerName ON $SchemaName.$TableName"
     
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
     Write-Progress -Activity "Enabling trigger on table $SchemaName.$TableName" -Completed
 }

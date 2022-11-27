@@ -8,7 +8,7 @@ $password = ConvertTo-SecureString -String "pass" -AsPlainText -Force
 
 # Create connection
 $connection = New-SqlConnectionInfo -Server $server -Username $username -Password $password
-$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection -MeasureSize $true
+$info = Get-DatabaseInfo -Database $database -ConnectionInfo $connection
 
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
