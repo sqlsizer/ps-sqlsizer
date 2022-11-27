@@ -12,6 +12,9 @@
         [Parameter(Mandatory = $false)]
         [string[]]$KeepTables = $null,
 
+        [Parameter(Mandatory = $false)]
+        [bool]$DropFks = $true,
+
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
@@ -31,7 +34,7 @@
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -notin $KeepTables))
         {
-            $null = Remove-Table -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+            $null = Remove-Table -Database $Database -SchemaName $table.SchemaName -TableName $table.TableName -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -DropFks $DropFks
         }
     }
 

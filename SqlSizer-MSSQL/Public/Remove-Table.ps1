@@ -15,6 +15,9 @@
         [Parameter(Mandatory = $false)]
         [bool]$RemoveFkColumns = $false,
 
+        [Parameter(Mandatory = $false)]
+        [bool]$DropFks = $true,
+
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
@@ -59,20 +62,23 @@
     }
 
     # drop foreign keys
-    foreach ($table in $DatabaseInfo.Tables)
-    { 
-        $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
-        if ($tableExists -eq $false)
-        {
-            continue
-        }
-
-        foreach ($fk in $table.ForeignKeys)
-        {
-            if (($fk.Schema -eq $SchemaName) -and ($fk.Table -eq $TableName))
+    if ($DropFks)
+    {
+        foreach ($table in $DatabaseInfo.Tables)
+        { 
+            $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
+            if ($tableExists -eq $false)
             {
-                $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
-                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                continue
+            }
+
+            foreach ($fk in $table.ForeignKeys)
+            {
+                if (($fk.Schema -eq $SchemaName) -and ($fk.Table -eq $TableName))
+                {
+                    $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
+                    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                }
             }
         }
     }
