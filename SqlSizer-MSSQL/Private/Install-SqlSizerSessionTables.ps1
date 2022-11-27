@@ -77,12 +77,13 @@
 
             if ($ConnectionInfo.IsSynapse -eq $true)
             {
-                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Color] ASC, [Depth] ASC)"
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration] ASC)"
             }
             else
             {
-                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Color] ASC, [Depth] ASC) INCLUDE ($($keys), [Source], [Fk])"
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration]) INCLUDE ([Depth], [Fk])"    
             }
+            
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
         }
     }
