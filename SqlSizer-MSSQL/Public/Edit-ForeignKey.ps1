@@ -86,7 +86,7 @@
         {
             $rules += " ON UPDATE SET DEFAULT"
         }
-        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
     catch
     {
@@ -122,7 +122,7 @@
         }
 
         Write-Verbose "Error: $_ Cannot change $FkName. Reverting change..."
-        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     Write-Progress -Activity "Editing FK $FkName on $SchemaName.$TableName" -Completed
