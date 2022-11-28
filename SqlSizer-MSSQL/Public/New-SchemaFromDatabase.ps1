@@ -65,7 +65,7 @@ function New-SchemaFromDatabase
                 }
 
                 $sql = "ALTER TABLE $($NewSchemaName).$($table.TableName) ADD CONSTRAINT $($fk.Name) FOREIGN KEY ($([string]::Join(',', $fk.FkColumns))) REFERENCES $($schema).$($fk.Table) ($([string]::Join(',', $fk.Columns)))"
-                $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Silent $false
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Silent $false -Statistics $false
             }
         }
     }

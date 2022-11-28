@@ -42,22 +42,22 @@ function New-DataTableFromView
     if ($schemaExists -eq $false)
     {
         $sql = "CREATE SCHEMA $NewSchemaName"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false -Statistics $false
     }
 
     # copy schema
     if ($CopyData)
     {
         $sql = "SELECT * INTO [$NewSchemaName].[$NewTableName] FROM [$ViewSchemaName].[$ViewName]"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false -Statistics $false
     }
     else
     {
         $sql = "SELECT TOP 1 * INTO [$NewSchemaName].[$NewTableName] FROM [$ViewSchemaName].[$ViewName]"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false -Statistics $false
 
         $sql = "TRUNCATE TABLE [$NewSchemaName].[$NewTableName]"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     Write-Progress -Activity "Copy view $ViewSchemaName.$ViewName" -Completed
