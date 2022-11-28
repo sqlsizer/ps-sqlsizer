@@ -17,7 +17,7 @@ function Format-Indexes
     foreach ($table in $DatabaseInfo.Tables)
     {
         $sql = "SET QUOTED_IDENTIFIER ON; ALTER INDEX ALL ON " + $table.SchemaName + "." + $table.TableName + " REBUILD "
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
     Write-Progress -Activity "Rebuilding indexes on database" -Completed
