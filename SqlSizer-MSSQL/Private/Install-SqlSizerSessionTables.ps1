@@ -2,7 +2,7 @@
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
@@ -35,7 +35,6 @@
     foreach ($signature in $structure.Signatures.Keys)
     {
         $processing = $structure.GetProcessingName($signature, $SessionId)
-        
         $keys = ""
         $columns = ""
         $keysIndex = ""
@@ -81,9 +80,9 @@
             }
             else
             {
-                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration]) INCLUDE ([Depth], [Fk])"    
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration]) INCLUDE ([Depth], [Fk])"
             }
-            
+
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
         }
     }

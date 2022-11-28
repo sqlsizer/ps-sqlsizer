@@ -1,5 +1,6 @@
 function Get-Prefix
 {
+    [outputtype([System.String])]
     [cmdletbinding()]
     param
     (

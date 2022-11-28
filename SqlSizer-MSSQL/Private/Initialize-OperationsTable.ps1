@@ -1,4 +1,4 @@
-﻿function Initialize-Operations
+﻿function Initialize-OperationsTable
 {
     [cmdletbinding()]
     param

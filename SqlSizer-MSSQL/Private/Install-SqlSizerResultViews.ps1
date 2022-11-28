@@ -2,7 +2,7 @@ function Install-SqlSizerResultViews
 {
     [cmdletbinding()]
     param
-    ( 
+    (
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
@@ -25,7 +25,7 @@ function Install-SqlSizerResultViews
         $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
         $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
-    
+
     $structure = [Structure]::new($DatabaseInfo)
 
     foreach ($table in $DatabaseInfo.Tables)

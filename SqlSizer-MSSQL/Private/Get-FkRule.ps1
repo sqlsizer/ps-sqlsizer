@@ -4,7 +4,7 @@ function Get-FkRule
     (
         [string]$Rule
     )
-    
+
     if ($Rule -eq "SET DEFAULT")
     {
         return [ForeignKeyRule]::SetDefault

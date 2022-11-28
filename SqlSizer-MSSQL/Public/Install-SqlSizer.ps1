@@ -161,7 +161,7 @@
         throw "No table has been found with primary key. Run Install-PrimaryKeys or set up manually first."
     }
 
-    Install-SqlSizerCoreTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    Install-SqlSizerCore -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
   
     # install JSON helper for Synapse
     if ($ConnectionInfo.IsSynapse)

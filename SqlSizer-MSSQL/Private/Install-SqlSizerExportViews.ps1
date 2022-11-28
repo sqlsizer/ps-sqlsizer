@@ -18,7 +18,7 @@ function Install-SqlSizerExportViews
         [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables
     )
-    
+
     $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $false)
     {
@@ -43,7 +43,7 @@ function Install-SqlSizerExportViews
         {
             $max = $null
         }
-        
+
         $tableSelect = Get-TableSelect -TableInfo $table -Conversion $true -IgnoredTables $IgnoredTables -Prefix "t." -AddAs $true -SkipGenerated $true -MaxLength $max
         $join = GetExportViewsTableJoin -TableInfo $table -Structure $structure
 

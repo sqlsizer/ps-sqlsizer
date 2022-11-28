@@ -24,7 +24,7 @@ function Install-SqlSizerSecureViews
         $tmp = "CREATE SCHEMA SqlSizer_$SessionId"
         $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
-    
+
     $structure = [Structure]::new($DatabaseInfo)
 
     if ($ConnectionInfo.IsSynapse)
@@ -70,8 +70,8 @@ function Install-SqlSizerSecureViews
 }
 
 function GetHashInput
-{ 
-     param (
+{
+    param (
         [string[]]$hashSelect
     )
 

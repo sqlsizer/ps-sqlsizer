@@ -713,7 +713,7 @@
 
     if ($false -eq $Interactive)
     {
-        $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+        $null = Initialize-OperationsTable -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
         $start = Get-Date
         $iteration = 1
 
@@ -734,7 +734,7 @@
     {
         if ($Iteration -eq 0)
         {
-            $null = Initialize-Operations -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+            $null = Initialize-OperationsTable -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
             return [pscustomobject]@{
                 Finished            = $false
                 Initialized         = $true

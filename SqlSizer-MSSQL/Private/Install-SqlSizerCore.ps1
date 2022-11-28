@@ -1,8 +1,8 @@
-﻿function Install-SqlSizerCoreTables
+﻿function Install-SqlSizerCore
 {
     [cmdletbinding()]
     param
-    (   
+    (
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -64,7 +64,7 @@
     $tmp = "CREATE TABLE SqlSizer.Tables(Id int identity(1,1) $pk, [Schema] varchar(128), [TableName] varchar(128))"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
-    $tmp = "IF OBJECT_ID('SqlSizer.Sessions') IS NULL 
+    $tmp = "IF OBJECT_ID('SqlSizer.Sessions') IS NULL
                 CREATE TABLE SqlSizer.Sessions(Id int identity(1,1) $pk, [SessionId] varchar(256))"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
@@ -100,14 +100,13 @@
 
     $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Table] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
-    
+
     $schemaExists = Test-SchemaExists -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo
 
     if ($schemaExists -eq $false)
     {
         $tmp = "CREATE SCHEMA SqlSizerHistory"
         $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
-
     }
 
     if ((Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "Subset" -ConnectionInfo $ConnectionInfo) -eq $false)
@@ -129,12 +128,12 @@
         {
             $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Guid] [uniqueidentifier] $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL, [SubsetGuid] uniqueidentifier NOT NULL)"
         }
-        else 
+        else
         {
             $sql = "CREATE TABLE SqlSizerHistory.SubsetTable ([Id] int identity(1,1) $pk, [SchemaName] varchar(256), [TableName] varchar(256), [PrimaryKeySize] int NOT NULL, [RowCount] int NOT NULL,  [SubsetId] int NOT NULL)"
         }
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
-    
+
         if ($ConnectionInfo.IsSynapse -eq $false)
         {
             $sql = "ALTER TABLE SqlSizerHistory.SubsetTable ADD CONSTRAINT SubsetTable_SubsetId FOREIGN KEY (SubsetId) REFERENCES SqlSizerHistory.Subset([Id]) ON DELETE CASCADE"

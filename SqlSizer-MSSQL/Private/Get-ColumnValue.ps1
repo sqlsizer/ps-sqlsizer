@@ -14,7 +14,7 @@
     {
         return "$($Prefix)[" + $ColumnName + "]"
     }
-    
+
     if ($OnlyXml)
     {
         if ($DataType -in @('xml'))
@@ -47,7 +47,7 @@
                 return "CONVERT(nvarchar(max), " + $Prefix + $ColumnName + ")"
             }
         }
-    
+
         if ($DataType -eq 'bit')
         {
             return "CONVERT(char(1), $Prefix[" + $ColumnName + "])"
