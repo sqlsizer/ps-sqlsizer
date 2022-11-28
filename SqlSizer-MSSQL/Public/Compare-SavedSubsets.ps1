@@ -126,7 +126,7 @@ function Compare-SavedSubsets
             $keys = @()
             for ($i = 0; $i -lt $sourceTable.PrimaryKeySize; $i++)
             {
-                $keys += "t.Key$i as Key$i"
+                $keys += "s.Key$i as Key$i"
             }
 
             if ($ConnectionInfo.IsSynapse -eq $true)
