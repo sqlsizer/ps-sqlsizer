@@ -21,10 +21,9 @@
         Write-Progress -Activity "Enabling integrity checks on database" -PercentComplete (100 * ($i / $DatabaseInfo.Tables.Count))
 
         $sql = "ALTER TABLE " + $table.SchemaName + "." + $table.TableName + " CHECK CONSTRAINT ALL"
-        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+        $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
     }
 
-    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     Write-Progress -Activity "Enabling foreign key on database" -Completed
 }
 # SIG # Begin signature block
