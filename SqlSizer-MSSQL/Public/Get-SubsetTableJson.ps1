@@ -43,7 +43,7 @@ function Get-SubsetTableJson
             {
                 $sql = "SELECT * FROM SqlSizer_$($SessionId).$($type)_$($SchemaName)_$($TableName) FOR JSON PATH, INCLUDE_NULL_VALUES"
             }
-            
+
             $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $json = ($rows | Select-Object ItemArray -ExpandProperty ItemArray) -join ""
             return $json

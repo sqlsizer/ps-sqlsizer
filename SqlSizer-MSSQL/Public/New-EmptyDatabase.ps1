@@ -11,7 +11,7 @@ function New-EmptyDatabase
 
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
-        
+
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )

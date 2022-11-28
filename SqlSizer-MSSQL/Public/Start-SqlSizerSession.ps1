@@ -1,5 +1,6 @@
 function Start-SqlSizerSession
 {
+    [outputtype([System.String])]
     [cmdletbinding()]
     param
     (
@@ -26,11 +27,11 @@ function Start-SqlSizerSession
     )
     $sessionId = (New-Guid).ToString().Replace("-", "_")
 
-    Write-Host "SqlSizer: Starting new session: $sessionId"
+    Write-Verbose "SqlSizer: Starting new session: $sessionId"
 
     if ($Installation)
     {
-        Write-Host "SqlSizer: Installation verification"
+        Write-Verbose "SqlSizer: Installation verification"
 
         Install-SqlSizer -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -Force $ForceInstallation
     }
@@ -39,7 +40,7 @@ function Start-SqlSizerSession
     $sql = "INSERT INTO SqlSizer.Sessions(SessionId) VALUES('$SessionId')"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    Write-Host "SqlSizer: Installation of session views and tables"
+    Write-Verbose "SqlSizer: Installation of session views and tables"
     # install session structures
     Install-SqlSizerSessionTables -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     Install-SqlSizerResultViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
@@ -53,7 +54,7 @@ function Start-SqlSizerSession
     {
         Install-SqlSizerSecureViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
-    
+
     Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 
     return $sessionId

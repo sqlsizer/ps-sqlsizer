@@ -8,7 +8,7 @@ function Import-TableJson
 
         [Parameter(Mandatory = $true)]
         [string]$SchemaName,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$TableName,
 
@@ -44,7 +44,7 @@ function Import-TableJson
         else
         {
             $type = $column.DataType
-            
+
             if ($type -in @('nvarchar', 'varchar'))
             {
                 $type += "(max)"
@@ -60,9 +60,9 @@ function Import-TableJson
             $identity_on
 
             INSERT INTO [$($tableInfo.SchemaName)].[$($tableInfo.TableName)] ($tableSelect)
-            SELECT $tableSelect 
+            SELECT $tableSelect
             FROM OpenJson(@json) with ($([string]::join(', ', $columns)))
-                
+
             $identity_off"
 
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

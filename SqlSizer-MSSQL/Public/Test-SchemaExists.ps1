@@ -13,7 +13,7 @@ function Test-SchemaExists
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    
+
     $sql = "SELECT 1 as [Result] FROM sys.schemas WHERE name = '$SchemaName'"
     $results = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 

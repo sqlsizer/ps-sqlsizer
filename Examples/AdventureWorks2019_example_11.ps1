@@ -41,7 +41,7 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
+Write-Verbose "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 New-DataTableFromSubsetTable -Connection $connection -Database $database -DatabaseInfo $info -CopyData $true `
                              -NewSchemaName "Person_subset_02" -NewTableName "Address" -SchemaName "Person" -TableName "Address" `

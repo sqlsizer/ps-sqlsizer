@@ -14,7 +14,7 @@ function Get-SubsetUnreachableEdges
     )
 
     $structure = [Structure]::new($DatabaseInfo)
-    
+
     $reachedEdges = New-Object 'System.Collections.Generic.HashSet[int]'
     $allEdges = New-Object 'System.Collections.Generic.HashSet[int]'
 

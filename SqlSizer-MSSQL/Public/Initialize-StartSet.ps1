@@ -4,9 +4,6 @@
     param
     (
         [Parameter(Mandatory = $true)]
-        [string]$SessionId,
-
-        [Parameter(Mandatory = $true)]
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
@@ -16,7 +13,10 @@
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
+        [SqlConnectionInfo]$ConnectionInfo,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SessionId
     )
 
     # get metadata
@@ -42,7 +42,7 @@
             $top = " TOP " + $query.Top;
         }
         $procesing = $Structure.GetProcessingName($signature, $SessionId)
-        $tmp = "INSERT INTO $($procesing) SELECT " + $top 
+        $tmp = "INSERT INTO $($procesing) SELECT " + $top
 
         $i = 0
         foreach ($column in $query.KeyColumns)

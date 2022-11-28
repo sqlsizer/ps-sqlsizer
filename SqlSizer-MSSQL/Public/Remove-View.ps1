@@ -1,5 +1,6 @@
 ﻿function Remove-View
 {
+    [outputtype([System.Boolean])]
     [cmdletbinding()]
     param
     (
@@ -13,16 +14,13 @@
         [string]$ViewName,
 
         [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
     $schemaExists = Test-SchemaExists -SchemaName $SchemaName -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $false)
     {
-        Write-Host "Schema $SchemaName doesn't exist"
+        Write-Verbose "Schema $SchemaName doesn't exist"
         return $false
     }
 

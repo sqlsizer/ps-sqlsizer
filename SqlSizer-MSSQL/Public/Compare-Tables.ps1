@@ -49,7 +49,7 @@ function Compare-Tables
     }
     $sql += " [Result] int NOT NULL)"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    
+
     $sql = "ALTER TABLE SqlSizer.TableCompare_$compareId ADD CONSTRAINT PK_$compareId PRIMARY KEY (" + [string]::Join(",", $table1.PrimaryKey) + ")"
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
@@ -87,7 +87,7 @@ function Compare-Tables
     # only in schema2.table2
     $sql = "INSERT INTO SqlSizer.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 1 FROM $SchemaName2.$TableName2 t LEFT JOIN  $SchemaName1.$TableName1 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $cond2)
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    
+
     # same
     $sql = "INSERT INTO SqlSizer.TableCompare_$compareId SELECT $([string]::Join(",", $primary)), 0 FROM $SchemaName1.$TableName1 t INNER JOIN  $SchemaName2.$TableName2 t2 ON " + [string]::Join(" and ", $cond) + " WHERE " + [string]::Join(" and ", $columns)
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo

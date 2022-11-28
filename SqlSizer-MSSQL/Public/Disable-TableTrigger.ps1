@@ -23,11 +23,11 @@
     {
         throw "Feature not supported in Synapse"
     }
-    
+
     Write-Progress -Activity "Disabling trigger on table $SchemaName.$TableName" -PercentComplete 0
 
     $sql = "DISABLE TRIGGER $SchemaName.$TriggerName ON $SchemaName.$TableName"
-    
+
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
     Write-Progress -Activity "Disabling trigger on table $SchemaName.$TableName" -Completed

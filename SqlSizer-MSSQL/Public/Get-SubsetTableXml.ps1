@@ -27,7 +27,7 @@ function Get-SubsetTableXml
         $json = Get-SubsetTableJson -SessionId $SessionId -Database $database -ConnectionInfo $ConnectionInfo -SchemaName $SchemaName -TableName $TableName -DatabaseInfo $DatabaseInfo -Secure $Secure
         $obj = $json | ConvertFrom-Json
         $xml = $obj | ConvertTo-Xml -NoTypeInformation
-        
+
         return $xml
     }
 

@@ -51,7 +51,7 @@ while ($true)
 Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-Write-Output "Logical reads from db: $($connection.Statistics.LogicalReads)"
+Write-Verbose "Logical reads from db: $($connection.Statistics.LogicalReads)"
 
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info

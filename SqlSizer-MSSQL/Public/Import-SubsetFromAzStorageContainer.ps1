@@ -70,7 +70,7 @@ function Import-SubsetFromAzStorageContainer
         $sql = "SELECT COUNT(*) as Count FROM $($table.SchemaName).$($table.TableName)"
         $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-        Write-Output "$($result.Count) added"
+        Write-Verbose "$($result.Count) added"
     }
 }
 # SIG # Begin signature block

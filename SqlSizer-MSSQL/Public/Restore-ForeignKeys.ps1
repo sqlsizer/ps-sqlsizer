@@ -13,13 +13,13 @@ function Restore-ForeignKeys
         [SqlConnectionInfo]$ConnectionInfo
     )
     Write-Progress -Activity "Restoring foreign keys" -PercentComplete 0
-    
+
     # create all foreign keys
     foreach ($table in $DatabaseInfo.Tables)
     {
         foreach ($fk in $table.ForeignKeys)
         {
-            New-ForeignKey -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo `
+            New-ForeignKey -Database $Database -ConnectionInfo $ConnectionInfo `
                             -SchemaName $table.SchemaName -TableName $table.TableName -FkName $fk.Name `
                             -Columns $fk.Columns `
                             -FkColumns $fk.FkColumns `

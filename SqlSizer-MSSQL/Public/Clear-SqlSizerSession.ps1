@@ -14,10 +14,10 @@ function Clear-SqlSizerSession
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
-    )  
+    )
     # remove session
-    Write-Host "SqlSizer: Remove session: $sessionId"
-    
+    Write-Verbose "SqlSizer: Remove session: $sessionId"
+
     Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -DropFks $false
     Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 

@@ -17,7 +17,7 @@ function Update-DatabaseInfo
     )
 
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize $MeasureSize
-    
+
     $DatabaseInfo.Views = @()
     if ($null -ne $info.Views)
     {
@@ -44,7 +44,7 @@ function Update-DatabaseInfo
             $DatabaseInfo.StoredProcedures += $sp
         }
     }
-    
+
     $DatabaseInfo.Schemas = @()
     if ($null -ne $info.Schemas)
     {

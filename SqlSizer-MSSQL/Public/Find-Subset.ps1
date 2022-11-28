@@ -49,7 +49,7 @@
             [int]$color,
             [ColorMap]$colorMap
         )
-        
+
         $newColor = $color
 
         if ($color -eq [int][Color]::Green)
@@ -77,7 +77,7 @@
         }
         return $newColor
     }
-    
+
     function GetMaxDepth
     {
         param
@@ -86,7 +86,7 @@
             [int]$color,
             [ColorMap]$colorMap
         )
-        
+
         $maxDepth = $null
 
         if ($null -ne $colorMap)
@@ -110,7 +110,7 @@
             [int]$color,
             [ColorMap]$colorMap
         )
-        
+
         $top = $null
 
         if ($null -ne $colorMap)
@@ -255,7 +255,7 @@
 
             $insert = " SELECT $columns " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp2 FROM (" + $sql + ") x "
             $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
-            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "      
+            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "
             $insert += " DROP TABLE #tmp2"
 
             if ($ConnectionInfo.IsSynapse -eq $false)
@@ -285,7 +285,7 @@
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
 
         if ($outgoingCache.ContainsKey($key))
-        {   
+        {
             $query = $outgoingCache[$key]
         }
         else
@@ -400,7 +400,7 @@
 
                 if ($MaxBatchSize -ne -1)
                 {
-                    $top = $MaxBatchSize                    
+                    $top = $MaxBatchSize
                 }
 
                 if (($null -ne $top) -and ($top -ne -1))
@@ -429,7 +429,7 @@
                                 END"
                 }
 
-                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "      
+                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "
                 $insert += " DROP TABLE #tmp "
 
                 if ($ConnectionInfo.IsSynapse -eq $false)
@@ -445,7 +445,7 @@
 
         return $result
     }
-    
+
     function HandleIncoming
     {
         param
@@ -506,13 +506,12 @@
             $columns = $columns + "s.Key$i,"
         }
 
-        
         # red
         $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and " + $cond + ")"
         $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
         $q = " SELECT  $columns " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp1 FROM $processing s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "      
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "
         $result += $q
 
         # green
@@ -520,7 +519,7 @@
         $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
         $q = " SELECT $columns " +  [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp2 FROM $processing s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "      
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "
         $result += $q
         $result += "DROP TABLE #tmp1 DROP TABLE #tmp2"
 
@@ -560,7 +559,6 @@
         return ($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple)
     }
 
-    
     function ShouldAddIncoming
     {
         param
@@ -570,7 +568,7 @@
 
         return ($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue)
     }
-    
+
     function DoSearch()
     {
         param
@@ -579,11 +577,8 @@
             [int]$iteration
         )
 
-      
-    
         $interval = 5
         $percent = 0
-       
         # Progress handling
         $totalSeconds = (New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds
         if ($totalSeconds -gt ($lastTotalSeconds + $interval))
@@ -596,7 +591,7 @@
 
         if ($false -eq $useDfs)
         {
-            $q = "SELECT TOP 1   
+            $q = "SELECT TOP 1
 			        [Table],
 			        [Depth],
     			    [Color],
@@ -612,7 +607,7 @@
         }
         else
         {
-            $q = "SELECT TOP 1   
+            $q = "SELECT TOP 1
 			        [Table],
     			    [Color],
                     SUM([ToProcess]) as [ToProcess]
@@ -633,7 +628,7 @@
             Write-Progress -Activity "Finding subset" -Completed
             return $false
         }
-        # load node info 
+        # load node info
         $tableId = $operation.Table
         $color = $operation.Color
         $depth = $operation.Depth
@@ -648,7 +643,7 @@
         {
             # mark operations as in progress => Status = 0
             if ($false -eq $useDfs)
-            {   
+            {
                 $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
             }
@@ -662,7 +657,7 @@
         {
             # mark only first operation as in progress => Status = 0  (heuristic)
             if ($false -eq $useDfs)
-            {   
+            {
                 $q = "UPDATE TOP (1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
                 $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
             }
@@ -700,7 +695,6 @@
         # mark operations as processed
         $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedDate = GETDATE() WHERE Status = 0 AND [SessionId] = '$SessionId'"
         $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-        
         return $true
     }
 
@@ -746,7 +740,7 @@
             $start = Get-Date
             $result = DoSearch -useDfs $UseDfs -iteration $Iteration
 
-            return [pscustomobject]@{   
+            return [pscustomobject]@{
                 Finished            = $result -eq $false
                 Initialized         = $true
                 CompletedIterations = $Iteration

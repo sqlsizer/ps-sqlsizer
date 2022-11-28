@@ -24,10 +24,10 @@ function Get-SavedSubsetTables
         $sql = "SELECT st.Id as [TableId], st.PrimaryKeySize as [PrimaryKeySize], st.SchemaName as [SchemaName], st.TableName as [TableName], st.[RowCount] as [RowCount]
             FROM [SqlSizerHistory].[Subset] s
             INNER JOIN [SqlSizerHistory].[SubsetTable] st ON s.Id = st.SubsetId
-            WHERE s.[Guid] = '{0}'"  
+            WHERE s.[Guid] = '{0}'"
     }
 
-    $rows = Invoke-SqlcmdEx -Sql $([String]::Format($sql, $SubsetGuid)) -Database $Database -ConnectionInfo $ConnectionInfo     
+    $rows = Invoke-SqlcmdEx -Sql $([String]::Format($sql, $SubsetGuid)) -Database $Database -ConnectionInfo $ConnectionInfo
     $tables = @()
 
     foreach ($row in $rows)
@@ -40,7 +40,6 @@ function Get-SavedSubsetTables
             RowCount       = $row.RowCount
         }
     }
-    
     return $tables
 }
 # SIG # Begin signature block

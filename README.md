@@ -153,16 +153,16 @@ Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInf
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Output "Subset size: $($infoNew.DatabaseSize)"
+Write-Verbose "Subset size: $($infoNew.DatabaseSize)"
 $sum = 0
 foreach ($table in $infoNew.Tables)
 {
     $sum += $table.Statistics.Rows
 }
 
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
-Write-Output "Total rows: $($sum)"
-Write-Output "==================="
+Write-Verbose "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
+Write-Verbose "Total rows: $($sum)"
+Write-Verbose "==================="
 
 Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 

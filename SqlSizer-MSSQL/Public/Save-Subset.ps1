@@ -2,7 +2,7 @@ function Save-Subset
 {
     [cmdletbinding()]
     param
-    ( 
+    (
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
@@ -26,7 +26,7 @@ function Save-Subset
         $sql = "INSERT INTO SqlSizerHistory.Subset([Guid], [Name]) VALUES('$guid', '$SubsetName')"
         $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         $subsetId = $result.Id
-    
+
         $tables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -SessionId $SessionId
         foreach ($table in $tables)
         {
@@ -34,9 +34,9 @@ function Save-Subset
             $sql = "INSERT INTO SqlSizerHistory.SubsetTable([Guid], [SchemaName], [TableName], [PrimaryKeySize], [RowCount], [SubsetGuid]) VALUES('$tableGuid', '$($table.SchemaName)', '$($table.TableName)', $($table.PrimaryKeySize), $($table.RowCount), '$guid')"
             $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             $tableId = $result.TableId
-    
+
             $exists = Test-TableExists -Database $Database -SchemaName "SqlSizerHistory" -TableName "SubsetTableRow_$($table.PrimaryKeySize)" -ConnectionInfo $ConnectionInfo
-    
+
             if ($exists -eq $false)
             {
                 $keys = @()
@@ -44,13 +44,13 @@ function Save-Subset
                 {
                     $keys += "Key${i} varchar(4000) not null"
                 }
-    
+
                 $keysStr = [string]::Join(',', $keys)
-                
+
                 $sql = "CREATE TABLE SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize) ([Guid] uniqueidentifier NOT NULL, $keysStr, [Hash] varbinary(8000), [TableGuid] uniqueidentifier NOT NULL)"
                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
-    
+
             $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $table.SchemaName) -and ($_.TableName -eq $table.TableName) }
             $keys = @()
             $columns = @()
@@ -60,14 +60,13 @@ function Save-Subset
                 $keys += "Key$i"
                 $columns += $tableInfo.PrimaryKey[$i].Name
             }
-    
+
             $sql = "INSERT INTO SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize)([Guid], $([string]::Join(',', $keys)), TableGuid, [Hash])
             SELECT NEWID(), $([string]::Join(',', $columns)), '$tableGuid', row_sha2_512
             FROM [SqlSizer_$SessionId].Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
-            
+
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
-    
         return $guid
     }
 
@@ -98,7 +97,7 @@ function Save-Subset
 
             $sql = "CREATE TABLE SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize) ([Id] int primary key identity(1,1), $keysStr, [Hash] varbinary(8000), [TableId] int NOT NULL)"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    
+
             $sql = "ALTER TABLE SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize) ADD CONSTRAINT SubsetTableRow_$($table.PrimaryKeySize)_TableId FOREIGN KEY (TableId) REFERENCES SqlSizerHistory.SubsetTable([Id]) ON DELETE CASCADE"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
@@ -116,7 +115,7 @@ function Save-Subset
         $sql = "INSERT INTO SqlSizerHistory.SubsetTableRow_$($table.PrimaryKeySize)($([string]::Join(',', $keys)), TableId, [Hash])
         SELECT $([string]::Join(',', $columns)), $tableId, row_sha2_512
         FROM [SqlSizer_$SessionId].Secure_$($tableInfo.SchemaName)_$($tableInfo.TableName)"
-        
+
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 

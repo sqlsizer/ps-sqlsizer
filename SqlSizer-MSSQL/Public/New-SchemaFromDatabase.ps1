@@ -32,7 +32,7 @@ function New-SchemaFromDatabase
     if ($schemaAlreadyExists)
     {
         Write-Progress -Activity "Copy schema $SchemaName to $NewSchemaName in $TargetDatabase database" -Completed
-        Write-Output "Schema $NewSchemaName already exists in $TargetDatabase database. Provide different name"
+        Write-Verbose "Schema $NewSchemaName already exists in $TargetDatabase database. Provide different name"
         return
     }
     $sql = "CREATE SCHEMA $NewSchemaName"

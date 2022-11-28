@@ -32,63 +32,63 @@
                         @sql_code NVARCHAR(1024),
                         @columnValue NVARCHAR(4000),
                         @ColumnName VARCHAR(1024)
-        
+
                 SELECT
                     ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS Sequence,
-                    c.TABLE_SCHEMA [schema], 
+                    c.TABLE_SCHEMA [schema],
                     c.TABLE_NAME [table],
                     c.COLUMN_NAME [column],
                     row_number() over(PARTITION BY c.TABLE_SCHEMA, c.TABLE_NAME order by c.ORDINAL_POSITION) as [position],
                     c.DATA_TYPE [dataType],
                     c.IS_NULLABLE [isNullable]
-                INTO 
+                INTO
                     #columns
-                FROM 
+                FROM
                     INFORMATION_SCHEMA.COLUMNS c
-                WHERE 
+                WHERE
                     c.TABLE_SCHEMA = @SchemaName AND c.TABLE_NAME = @ViewName
-        
+
                 SET @sql_code = 'SELECT * INTO #viewData FROM ' + @SchemaName + '.' + @ViewName
                 EXEC sp_executesql @sql_code
-        
+
                 SET @columnCount = (SELECT COUNT(*) FROM #columns)
                 SET @rowCount = (SELECT COUNT(*) FROM #viewData)
-        
+
                 DECLARE @result NVARCHAR(max) = ''
-        
+
                 WHILE  @i <= @rowCount
-                BEGIN	
+                BEGIN
                     SET @result = @result + '{'
-                    
+
                     SET @j = 1
                     WHILE @j <= @columnCount
                     BEGIN
                         SET @sql_code = 'SELECT @columnName = [column] FROM #columns WHERE Sequence = ' + CONVERT(varchar, @j)
                         EXEC sp_executesql @sql_code, N'@columnName VARCHAR(1024) OUTPUT', @columnName = @columnName OUTPUT
-        
+
                         SET @sql_code = 'SELECT @columnValue = [' + @columnName + '] FROM #viewData WHERE SqlSizer_RowSequence = ' + CONVERT(varchar, @i)
                         EXEC sp_executesql @sql_code, N'@columnValue NVARCHAR(4000) OUTPUT', @columnValue = @columnValue OUTPUT
-        
-        
+
+
                         IF @columnValue IS NULL
                             SET @result = @result + '""' + @columnName + '"":null'
                         ELSE
-                            BEGIN	
+                            BEGIN
                                 SET @columnValue = REPLACE(@columnValue, '\', '\\')
                                 SET @result = @result + '""' + @columnName + '"":""' + @columnValue + '""'
                             END
-        
+
                         IF @j <> @columnCount
                             SET @result = @result + ','
                         SET @j = @j + 1
                     END
-        
+
                     SET @result = @result + '}'
                     IF @i <> @rowCount
                         SET @result = @result + ','
                     SET @i +=1;
                 END
-        
+
                 DROP TABLE #columns
                 DROP TABLE #viewData
                 SELECT '[' + @result + ']'
@@ -102,9 +102,9 @@
     $schemaExists = Test-SchemaExists -SchemaName "SqlSizer" -Database $Database -ConnectionInfo $ConnectionInfo
     if ($schemaExists -eq $true)
     {
-        Write-Host "SqlSizer is already installed" -ForegroundColor Green
-        Write-Host "Checking the version of installed SqlSizer ..." -ForegroundColor Yellow
-        
+        Write-Verbose "SqlSizer is already installed"
+        Write-Verbose "Checking the version of installed SqlSizer ..."
+
         $sql = "IF OBJECT_ID('SqlSizer.Settings') IS NULL
         BEGIN
             SELECT 'Unknown' as Version
@@ -114,13 +114,13 @@
             SELECT Value as Version FROM SqlSizer.Settings WHERE Name = 'Version'
         END"
         $result = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-        Write-Host "Installed version: $($result.Version)" -ForegroundColor Green
-        Write-Host "Current version: $($currentSqlSizerVersion)" -ForegroundColor Green
-        
+        Write-Verbose "Installed version: $($result.Version)"
+        Write-Verbose "Current version: $($currentSqlSizerVersion)"
+
         if ($Force)
         {
-            Write-Host "Installation of SqlSizer forced" -ForegroundColor Red
-            Write-Host "Uninstalling SqlSizer..." -ForegroundColor Red
+            Write-Verbose "Installation of SqlSizer forced"
+            Write-Verbose "Uninstalling SqlSizer..."
             Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
         }
         else
@@ -131,7 +131,7 @@
 
                 if ($answer -eq "y")
                 {
-                    Write-Host "New version. Uninstalling SqlSizer..." -ForegroundColor Cyan
+                    Write-Verbose "New version. Uninstalling SqlSizer..."
                     Uninstall-SqlSizer -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
                 }
                 else
@@ -142,13 +142,13 @@
             }
             else
             {
-                Write-Host "Installation of SqlSizer: skipped" -ForegroundColor Yellow
+                Write-Verbose "Installation of SqlSizer: skipped"
                 return
             }
         }
     }
 
-    Write-Host "Installing SqlSizer..." -ForegroundColor Green
+    Write-Verbose "Installing SqlSizer..."
 
     if ($DatabaseInfo.Tables.Count -eq 0)
     {
@@ -162,7 +162,7 @@
     }
 
     Install-SqlSizerCore -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
-  
+
     # install JSON helper for Synapse
     if ($ConnectionInfo.IsSynapse)
     {

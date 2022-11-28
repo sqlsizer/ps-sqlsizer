@@ -38,7 +38,7 @@
     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
     # Recreate it
-    $sql = "ALTER TABLE " + $SchemaName + "." + $TableName + " WITH CHECK ADD CONSTRAINT " + $FkName 
+    $sql = "ALTER TABLE " + $SchemaName + "." + $TableName + " WITH CHECK ADD CONSTRAINT " + $FkName
 
     $fkNames = @()
     foreach ($column in $fk.FkColumns)
@@ -61,7 +61,7 @@
         {
             $rules += " ON DELETE CASCADE"
         }
-        
+
         if ($DeleteRule -eq [ForeignKeyRule]::SetNull)
         {
             $rules += " ON DELETE SET NULL"
@@ -73,10 +73,10 @@
         }
 
         if ($UpdateRule -eq [ForeignKeyRule]::Cascade)
-        {   
+        {
             $rules += " ON UPDATE CASCADE"
         }
-    
+
         if ($UpdateRule -eq [ForeignKeyRule]::SetNull)
         {
             $rules += " ON UPDATE SET NULL"
@@ -86,7 +86,7 @@
         {
             $rules += " ON UPDATE SET DEFAULT"
         }
-        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo    
+        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo
     }
     catch
     {
@@ -95,7 +95,7 @@
         {
             $rules += " ON DELETE CASCADE"
         }
-        
+
         if ($fk.DeleteRule -eq [ForeignKeyRule]::SetNull)
         {
             $rules += " ON DELETE SET NULL"
@@ -107,10 +107,10 @@
         }
 
         if ($fk.UpdateRule -eq [ForeignKeyRule]::Cascade)
-        {   
+        {
             $rules += " ON UPDATE CASCADE"
         }
-    
+
         if ($fk.UpdateRule -eq [ForeignKeyRule]::SetNull)
         {
             $rules += " ON UPDATE SET NULL"
@@ -121,8 +121,8 @@
             $rules += " ON UPDATE SET DEFAULT"
         }
 
-        Write-Host -ForegroundColor Red "Error: $_ Cannot change $FkName. Reverting change..."
-        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo    
+        Write-Verbose "Error: $_ Cannot change $FkName. Reverting change..."
+        $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     Write-Progress -Activity "Editing FK $FkName on $SchemaName.$TableName" -Completed

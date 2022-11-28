@@ -2,7 +2,7 @@ function Get-SubsetTableRows
 {
     [cmdletbinding()]
     param
-    (  
+    (
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
@@ -31,12 +31,8 @@ function Get-SubsetTableRows
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    # get metadata
     $structure = [Structure]::new($DatabaseInfo)
-    $sqlSizerInfo = Get-SqlSizerInfo -Database $Database -ConnectionInfo $ConnectionInfo
-    $allTablesGroupedbyName = $sqlSizerInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 
-    # get subset rows
     foreach ($table in $DatabaseInfo.Tables)
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))

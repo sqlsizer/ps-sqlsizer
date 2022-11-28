@@ -28,9 +28,6 @@
         [ForeignKeyRule]$UpdateRule,
 
         [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
     Write-Progress -Activity "Creating FK $FkName on $SchemaName.$TableName" -PercentComplete 0
@@ -49,13 +46,11 @@
     }
     $sql += " REFERENCES $($fk.Schema).$($fk.Table) (" + [string]::Join(',', $names) + ")"
 
-    
     $rules = ""
     if ($DeleteRule -eq [ForeignKeyRule]::Cascade)
     {
         $rules += " ON DELETE CASCADE"
     }
-        
     if ($DeleteRule -eq [ForeignKeyRule]::SetNull)
     {
         $rules += " ON DELETE SET NULL"
@@ -67,10 +62,9 @@
     }
 
     if ($UpdateRule -eq [ForeignKeyRule]::Cascade)
-    {   
+    {
         $rules += " ON UPDATE CASCADE"
     }
-    
     if ($UpdateRule -eq [ForeignKeyRule]::SetNull)
     {
         $rules += " ON UPDATE SET NULL"
@@ -80,8 +74,8 @@
     {
         $rules += " ON UPDATE SET DEFAULT"
     }
-    $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo    
-   
+
+    $null = Invoke-SqlcmdEx -Sql ($sql + $rules) -Database $Database -ConnectionInfo $ConnectionInfo
 
     Write-Progress -Activity "Creating FK $FkName on $SchemaName.$TableName" -Completed
 }

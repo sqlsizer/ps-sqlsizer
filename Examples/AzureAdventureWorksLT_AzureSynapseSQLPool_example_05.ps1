@@ -12,7 +12,7 @@ $connection = New-SqlConnectionInfo -Server $server -Username $username -Passwor
 # Check if database is available
 if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
 {
-    Write-Output "Database is not available" 
+    Write-Verbose "Database is not available" 
     return
 }
 

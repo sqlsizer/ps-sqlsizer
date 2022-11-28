@@ -21,7 +21,7 @@ function Copy-StoredProcedures
     Write-Progress -Activity "Copy stored procedures" -PercentComplete 0
 
     $sql = "SELECT s.name as [schema], object_definition(o.object_id) as [definition]
-    FROM sys.objects o 
+    FROM sys.objects o
     INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
     WHERE type='P'"
     $rows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
@@ -36,7 +36,7 @@ function Copy-StoredProcedures
             $tmp = "CREATE SCHEMA $schema"
             Invoke-SqlcmdEx -Sql $tmp -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
         }
-        
+
         $definition = $row.definition
         $definition = $definition.Replace("'", "''")
 

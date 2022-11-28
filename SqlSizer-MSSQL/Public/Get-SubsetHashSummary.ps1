@@ -10,12 +10,6 @@ function Get-SubsetHashSummary
         [string]$Database,
 
         [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $false)]
-        [boolean]$Negation = $false,
-
-        [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 

@@ -42,7 +42,7 @@ Find-Subset -Database $database -ConnectionInfo $connection -IgnoredTables @($ig
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
+Write-Verbose "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 $subsetId = (New-Guid).ToString().Replace('-', '_')
 
@@ -50,7 +50,7 @@ New-SchemaFromSubset -Connection $connection -Database $database -DatabaseInfo $
                      -NewSchemaPrefix "SqlSizer_subset_$subsetId" `
                      -SessionId $sessionId
 
-Write-Output "New schema: SqlSizer_subset_$subsetId"
+Write-Verbose "New schema: SqlSizer_subset_$subsetId"
 
 # end of script
 # SIG # Begin signature block

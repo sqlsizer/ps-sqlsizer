@@ -19,7 +19,7 @@ function Install-ForeignKeyIndexes
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $reachableTables = Find-ReachableTables -Database $Database -Queries $Queries -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
+    $reachableTables = Find-ReachableTables -Queries $Queries -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo
 
     $tablesGrouped = $DatabaseInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
 

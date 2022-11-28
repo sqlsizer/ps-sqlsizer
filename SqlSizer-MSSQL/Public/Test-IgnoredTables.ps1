@@ -3,17 +3,11 @@ function Test-IgnoredTables
     [cmdletbinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
-        [string]$Database,
-
         [Parameter(Mandatory = $false)]
         [TableInfo2[]]$IgnoredTables,
 
         [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
+        [DatabaseInfo]$DatabaseInfo
     )
 
     foreach ($table in $DatabaseInfo.Tables)

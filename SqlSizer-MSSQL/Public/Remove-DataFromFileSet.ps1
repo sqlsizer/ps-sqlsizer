@@ -40,7 +40,7 @@
             else
             {
                 $type = $column.DataType
-                
+
                 if ($type -in @('nvarchar', 'varchar'))
                 {
                     $type += "(max)"
@@ -49,9 +49,8 @@
 
             $columns += "[" + $column.Name + "] " + $type
         }
-   
+
         $sql = "DECLARE @json NVARCHAR(MAX); SELECT @json = STRING_AGG([Content], '') FROM SqlSizer.Files WHERE [FileId] = '$($file.FileId)'
-                
                 DELETE t
                 FROM OpenJson(@json) with ($([string]::join(', ', $columns)))  as o
                 INNER JOIN [$($tableInfo.SchemaName)].[$($tableInfo.TableName)] t ON $([string]::join(' and ', $where))"

@@ -14,7 +14,7 @@ $connection = New-SqlConnectionInfo -Server $server -AccessToken $accessToken -E
 # Check if database is available
 if ((Test-DatabaseOnline -Database $database -ConnectionInfo $connection) -eq $false)
 {
-    Write-Output "Database is not available" 
+    Write-Verbose "Database is not available" 
     return
 }
 
@@ -42,7 +42,7 @@ Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info 
 # Get subset info
 Get-SubsetTables -Database $database -Connection $connection -DatabaseInfo $info -SessionId $sessionId
 
-Write-Output "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
+Write-Verbose "Logical reads from db during subsetting: $($connection.Statistics.LogicalReads)"
 
 
 # Ensure that empty database with the database schema exists
@@ -59,7 +59,7 @@ Copy-AzDatabase -Database $emptyDb -NewDatabase $newDatabase -ConnectionInfo $co
 
 while ((Test-DatabaseOnline -Database $newDatabase -ConnectionInfo $connection) -eq $false)
 {
-    Write-Output "Waiting for database"
+    Write-Verbose "Waiting for database"
     Start-Sleep -Seconds 5
 }
 
@@ -79,7 +79,7 @@ Import-SubsetFromAzStorageContainer -MasterPassword $masterPassword -Database $n
 Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 Remove-EmptyTables -Database $newDatabase -ConnectionInfo $connection -DatabaseInfo $info
 
-Write-Output "Azure SQL database created"
+Write-Verbose "Azure SQL database created"
 
 # end of script
 # SIG # Begin signature block

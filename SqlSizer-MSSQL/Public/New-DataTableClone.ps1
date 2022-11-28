@@ -37,7 +37,7 @@ function New-DataTableClone
 
     if ($tableAlreadyExists)
     {
-        Write-Output "Table [$NewSchemaName].[$NewTableName] already exists in $TargetDatabase database. Provide different name"
+        Write-Verbose "Table [$NewSchemaName].[$NewTableName] already exists in $TargetDatabase database. Provide different name"
         return
     }
 

@@ -33,7 +33,7 @@ function Copy-Functions
             $tmp = "CREATE SCHEMA $schema"
             Invoke-SqlcmdEx -Sql $tmp -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
         }
-        
+
         $definition = $row.definition
         $definition = $definition.Replace("'", "''")
 

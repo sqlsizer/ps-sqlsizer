@@ -18,7 +18,7 @@ function Get-SubsetTableStatistics
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    
+
     $sql = "SELECT t.[Schema] as [SchemaName],
                    t.TableName,
                    SUM([ToProcess]) as [Count]
@@ -32,7 +32,7 @@ function Get-SubsetTableStatistics
 
     $result = @()
     foreach ($row in $rows)
-    { 
+    {
         $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $row.SchemaName) -and ($_.TableName -eq $row.TableName) }
 
         if ($null -eq $tableInfo)

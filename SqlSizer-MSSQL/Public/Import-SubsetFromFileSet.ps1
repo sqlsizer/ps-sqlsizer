@@ -39,7 +39,7 @@ function Import-SubsetFromFileSet
             else
             {
                 $type = $column.DataType
-                
+
                 if ($type -in @('nvarchar', 'varchar'))
                 {
                     $type += "(max)"
@@ -69,9 +69,9 @@ function Import-SubsetFromFileSet
                 $identity_on
 
                 INSERT INTO [$($tableInfo.SchemaName)].[$($tableInfo.TableName)] ($tableSelect)
-                SELECT $tableSelect 
+                SELECT $tableSelect
                 FROM OpenJson(@json) with ($([string]::join(', ', $columns)))
-                
+
                 $identity_off"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo
     }

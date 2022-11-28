@@ -16,9 +16,9 @@ function Remove-ForeignKeys
 
     foreach ($view in $DatabaseInfo.Views)
     {
-        Remove-View -Database $Database -DatabaseInfo $DatabaseInfo -ViewName $view.ViewName -SchemaName $view.SchemaName -ConnectionInfo $ConnectionInfo
+        Remove-View -Database $Database -ViewName $view.ViewName -SchemaName $view.SchemaName -ConnectionInfo $ConnectionInfo
     }
-    
+
     foreach ($table in $DatabaseInfo.Tables)
     {
         foreach ($fk in $table.ForeignKeys)
@@ -32,7 +32,7 @@ function Remove-ForeignKeys
     {
         Restore-View -Database $Database -DatabaseInfo $DatabaseInfo -ViewName $view.ViewName -SchemaName $view.SchemaName -ConnectionInfo $ConnectionInfo
     }
-    
+
     Write-Progress -Activity "Removing foreign keys" -Completed
 }
 # SIG # Begin signature block

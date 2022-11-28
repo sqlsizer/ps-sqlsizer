@@ -12,8 +12,8 @@ function Get-SqlSizerInfo
 
     $sql = "SELECT [Id],[Schema],[TableName] FROM [SqlSizer].[Tables]"
     $tablesRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-    
-    $sql = "SELECT  
+
+    $sql = "SELECT
         f.[Id]
         ,[FkTableId]
         ,[TableId]
@@ -45,7 +45,7 @@ function Get-SqlSizerInfo
         Tables      = $tables
         ForeignKeys = $fks
     }
-    
+
     return $result
 }
 # SIG # Begin signature block

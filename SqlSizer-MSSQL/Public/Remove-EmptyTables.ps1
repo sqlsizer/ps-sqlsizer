@@ -12,7 +12,7 @@ function Remove-EmptyTables
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
-    
+
     $i = 0
     foreach ($table in $DatabaseInfo.Tables)
     {
@@ -25,7 +25,7 @@ function Remove-EmptyTables
 
         $null = Remove-Table -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo `
                     -SchemaName $table.SchemaName -TableName $table.TableName
-        
+
         $i += 1
     }
 

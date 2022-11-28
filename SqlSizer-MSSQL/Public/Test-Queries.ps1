@@ -20,14 +20,14 @@ function Test-Queries
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $unreachable = Find-UnreachableTables -Database $Database -Queries $Queries -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -ColorMap $ColorMap
+    $unreachable = Find-UnreachableTables -Queries $Queries -DatabaseInfo $DatabaseInfo -ColorMap $ColorMap
 
     if ($unreachable.Count -gt 0)
     {
-        Write-Host "$($unreachable.Length) are not reachable by queries:"
+        Write-Verbose "$($unreachable.Length) are not reachable by queries:"
         foreach ($item in $unreachable)
         {
-            Write-Host $item
+            Write-Verbose $item
         }
         return $false
     }

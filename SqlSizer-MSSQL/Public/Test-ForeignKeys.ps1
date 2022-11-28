@@ -27,7 +27,7 @@ function Test-ForeignKeys
 
             if ($ok -eq $false)
             {
-                Write-Output "Problem with FK $($fk.Name)"
+                Write-Verbose "Problem with FK $($fk.Name)"
             }
         }
         $i += 1

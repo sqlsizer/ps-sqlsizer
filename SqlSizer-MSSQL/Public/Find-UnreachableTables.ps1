@@ -4,19 +4,13 @@ function Find-UnreachableTables
     param
     (
         [Parameter(Mandatory = $true)]
-        [string]$Database,
-
-        [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
         [Parameter(Mandatory = $false)]
         [ColorMap]$ColorMap = $null,
 
         [Parameter(Mandatory = $true)]
-        [DatabaseInfo]$DatabaseInfo,
-
-        [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
+        [DatabaseInfo]$DatabaseInfo
     )
 
     $reachableTables = New-Object 'System.Collections.Generic.HashSet[string]'
@@ -140,7 +134,6 @@ function Find-UnreachableTables
 
     foreach ($table in $DatabaseInfo.Tables)
     {
-    
         if ($table.SchemaName -in @('SqlSizer', 'SqlSizerHistory'))
         {
             continue
@@ -150,7 +143,7 @@ function Find-UnreachableTables
         {
             continue
         }
-        
+
         $key = $table.SchemaName + "." + $table.TableName
 
         if ($reachableTables.Contains($key) -eq $false)

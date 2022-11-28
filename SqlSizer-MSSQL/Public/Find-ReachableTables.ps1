@@ -4,9 +4,6 @@ function Find-ReachableTables
     param
     (
         [Parameter(Mandatory = $true)]
-        [string]$Database,
-
-        [Parameter(Mandatory = $true)]
         [Query[]]$Queries,
 
         [Parameter(Mandatory = $true)]
@@ -16,7 +13,7 @@ function Find-ReachableTables
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $unreachable = Find-UnreachableTables -Database $Database -Connection $ConnectionInfo -DatabaseInfo $DatabaseInfo -Queries $Queries
+    $unreachable = Find-UnreachableTables -DatabaseInfo $DatabaseInfo -Queries $Queries
 
     $toReturn = @()
     foreach ($table in $DatabaseInfo.Tables)

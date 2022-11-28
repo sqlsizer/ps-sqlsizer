@@ -1,5 +1,6 @@
 function New-EmptyCompactDatabase
 {
+    [outputtype([System.Boolean])]
     [cmdletbinding()]
     param
     (
@@ -20,10 +21,10 @@ function New-EmptyCompactDatabase
     {
         return $false
     }
-    
+
     $sql = "CREATE DATABASE $NewDatabase"
     Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Silent $false
-    
+
     Copy-UserTypes -SourceDatabase $Database -TargetDatabase $NewDatabase -ConnectionInfo $ConnectionInfo
     Copy-Functions -SourceDatabase $Database -TargetDatabase $NewDatabase -ConnectionInfo $ConnectionInfo
     Copy-StoredProcedures -SourceDatabase $Database -TargetDatabase $NewDatabase -ConnectionInfo $ConnectionInfo
@@ -45,6 +46,8 @@ function New-EmptyCompactDatabase
             Invoke-SqlcmdEx -Sql $sql -Database $NewDatabase -ConnectionInfo $ConnectionInfo -Silent $false
         }
     }
+
+    return $true
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor

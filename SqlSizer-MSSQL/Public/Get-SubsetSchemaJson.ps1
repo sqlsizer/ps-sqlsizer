@@ -26,11 +26,11 @@ function Get-SubsetSchemaJson
     {
         $allColors += """rgb($($random.Next(255)),$($random.Next(255)),$($random.Next(255)))"""
     }
-    
+
     $i = 0
     $tableSize = @()
     foreach ($table in $DatabaseInfo.Tables)
-    {    
+    {
         $i += 1
         $tableSize += @{ Table = $table; Size = $table.Statistics.Rows }
     }
@@ -38,7 +38,7 @@ function Get-SubsetSchemaJson
     $sorted = $tableSize | Sort-Object -Property Size
     $sizes = New-Object "System.Collections.Generic.Dictionary[[string], [int]]"
     foreach ($table in $DatabaseInfo.Tables)
-    {    
+    {
         $t = $sorted | Where-Object { $_.Table -eq $table }
         $index = $sorted.IndexOf($t)
         $sizes[$table.SchemaName + $table.TableName] = $index
@@ -72,7 +72,6 @@ function Get-SubsetSchemaJson
 
         foreach ($fk in $tableInfo.ForeignKeys)
         {
-            
             $tableBase = $subsetTables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
 
             if ($null -eq $tableBase)

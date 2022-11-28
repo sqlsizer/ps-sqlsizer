@@ -77,14 +77,14 @@ Test-ForeignKeys -Database $newDatabase -ConnectionInfo $connection -DatabaseInf
 
 $infoNew = Get-DatabaseInfo -Database $newDatabase -ConnectionInfo $connection -MeasureSize $true
 
-Write-Output "Subset size: $($infoNew.DatabaseSize)"
+Write-Verbose "Subset size: $($infoNew.DatabaseSize)"
 $sum = 0
 foreach ($table in $infoNew.Tables)
 {
     $sum += $table.Statistics.Rows
 }
 
-Write-Output "Total rows: $($sum)"
+Write-Verbose "Total rows: $($sum)"
 
 # end of script
 # SIG # Begin signature block

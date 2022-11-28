@@ -16,7 +16,7 @@ function Clear-SqlSizerSessions
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    Write-Host "SqlSizer: Remove sessions"
+    Write-Verbose "SqlSizer: Remove sessions"
 
     Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
 

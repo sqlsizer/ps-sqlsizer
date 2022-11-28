@@ -1,5 +1,6 @@
 ﻿function Restore-View
 {
+    [outputtype([System.Boolean])]
     [cmdletbinding()]
     param
     (

@@ -42,7 +42,6 @@ function Get-DatabaseSchemaJson
         $sizes[$table.SchemaName + $table.TableName] = $index
     }
 
-
     $i = 0
     $j = 0
     foreach ($table in $DatabaseInfo.Tables)

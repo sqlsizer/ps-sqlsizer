@@ -29,7 +29,7 @@ function Compare-SavedSubsets
     $added = @()
 
     foreach ($sourceTable in $sourceTables)
-    { 
+    {
         $found = $false
         foreach ($targetTable in $targetTables)
         {
@@ -66,7 +66,7 @@ function Compare-SavedSubsets
                         INNER JOIN $($SourceDatabase).[SqlSizerHistory].[SubsetTableRow_$($sourceTable.PrimaryKeySize)] s ON $([string]::Join(' AND ', $conds))
                         WHERE t.Hash <> s.Hash AND t.TableId = $($targetTable.TableId) AND s.TableId = $($sourceTable.TableId)"
             }
-            
+
             $changeRows = Invoke-SqlcmdEx -Sql $sql -Database $SourceDatabase -ConnectionInfo $ConnectionInfo
 
             foreach ($changeRow in $changeRows)
@@ -110,7 +110,7 @@ function Compare-SavedSubsets
             {
                 $key = @()
                 foreach ($item in $removedRow)
-                {   
+                {
                     $key += $item
                 }
 
@@ -148,7 +148,7 @@ function Compare-SavedSubsets
             {
                 $key = @()
                 foreach ($item in $removedRow)
-                {   
+                {
                     $key += $item
                 }
 
@@ -160,10 +160,9 @@ function Compare-SavedSubsets
             }
         }
     }
-    
 
     foreach ($targetTable in $targetTables)
-    { 
+    {
         $found = $false
         foreach ($sourceTable in $sourceTables)
         {
@@ -213,7 +212,7 @@ function Compare-SavedSubsets
                     SchemaName = $sourceTable.SchemaName
                     TableName  = $sourceTable.TableName
                     Key        = $key
-                }   
+                }
             }
         }
         else
@@ -245,7 +244,7 @@ function Compare-SavedSubsets
                     SchemaName = $sourceTable.SchemaName
                     TableName  = $sourceTable.TableName
                     Key        = $key
-                }   
+                }
             }
         }
     }

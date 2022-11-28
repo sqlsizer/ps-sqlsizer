@@ -2,7 +2,7 @@ function Copy-SubsetToAzStorageContainer
 {
     [cmdletbinding()]
     param
-    (  
+    (
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 

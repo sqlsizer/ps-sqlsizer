@@ -18,22 +18,21 @@
     {
         if ($ConnectionInfo.IsSynapse)
         {
-            $sql = "SELECT 
+            $sql = "SELECT
 					SCHEMA_NAME(v.schema_id) as [schema],
 					OBJECT_NAME(v.object_id) as [view],
 					m.definition as [definition]
-                FROM 
+                FROM
 					sys.views v
 				    INNER JOIN sys.sql_modules m ON v.object_id = m.object_id"
         }
         else
         {
-        
-            $sql = "SELECT 
+            $sql = "SELECT
                 SCHEMA_NAME(v.schema_id) as [schema],
                 OBJECT_NAME(v.object_id) as [view],
                 OBJECT_DEFINITION(v.object_id) as [definition]
-                FROM 
+                FROM
             sys.views v"
         }
 
@@ -41,7 +40,7 @@
         {
             return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
-        catch 
+        catch
         {
             return $null
         }
@@ -49,19 +48,19 @@
 
     function GetTablesRows
     {
-        $sql = "SELECT 
+        $sql = "SELECT
         tables.TABLE_SCHEMA as [schema],
         tables.TABLE_NAME as [table],
         OBJECTPROPERTY(OBJECT_ID(tables.TABLE_SCHEMA + '.' + tables.TABLE_NAME), 	'TableHasIdentity') as [identity],
-        CASE 
-            WHEN t.history_table_name IS NOT NULL 
+        CASE
+            WHEN t.history_table_name IS NOT NULL
                 THEN 1
                 ELSE 0
         END as [is_historic],
         t.table_name as [history_owner],
         t.[schema] as [history_owner_schema]
         FROM INFORMATION_SCHEMA.TABLES tables
-        LEFT JOIN 
+        LEFT JOIN
         (	SELECT t.name as table_name, OBJECT_NAME(history_table_id) as history_table_name, s.[name] as [schema]
             FROM sys.tables t
                 INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
@@ -69,13 +68,11 @@
         ) t ON tables.TABLE_NAME = t.history_table_name AND tables.TABLE_SCHEMA = t.[schema]
         WHERE tables.TABLE_TYPE = 'BASE TABLE'
         ORDER BY [schema], [table]"
-    
         return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
     function GetPrimaryKeysInfo
     {
-        
         $sql = "SELECT
             t.TABLE_SCHEMA [schema],
             t.TABLE_NAME [table],
@@ -83,13 +80,13 @@
             c.DATA_TYPE [dataType],
     	    c.CHARACTER_MAXIMUM_LENGTH [length],
 	        row_number() over(PARTITION BY c.TABLE_SCHEMA, c.TABLE_NAME order by c.ORDINAL_POSITION) as [position]
-        FROM    
-    	INFORMATION_SCHEMA.COLUMNS c 
+        FROM
+    	INFORMATION_SCHEMA.COLUMNS c
     	INNER JOIN 	INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cc ON c.COLUMN_NAME = cc.COLUMN_NAME AND c.TABLE_NAME = cc.TABLE_NAME AND c.TABLE_SCHEMA = cc.TABLE_SCHEMA
 	    INNER JOIN  INFORMATION_SCHEMA.TABLE_CONSTRAINTS t ON t.TABLE_NAME = cc.TABLE_NAME AND t.TABLE_SCHEMA = cc.TABLE_SCHEMA AND t.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
         WHERE
     	    t.CONSTRAINT_TYPE = 'PRIMARY KEY'
-        ORDER BY 
+        ORDER BY
 	        c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
 
         $primaryKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
@@ -99,44 +96,44 @@
     function GetColumnsInfo
     {
         $sql = "SELECT
-        c.TABLE_SCHEMA [schema], 
+        c.TABLE_SCHEMA [schema],
         c.TABLE_NAME [table],
         c.COLUMN_NAME [column],
         row_number() over(PARTITION BY c.TABLE_SCHEMA, c.TABLE_NAME order by c.ORDINAL_POSITION) as [position],
         c.DATA_TYPE [dataType],
         c.IS_NULLABLE [isNullable],
-        CASE 
-            WHEN computed.[isComputed] IS NULL 
-                THEN 0 
+        CASE
+            WHEN computed.[isComputed] IS NULL
+                THEN 0
                 ELSE 1
         END as [isComputed],
-        CASE 
-            WHEN computed.[isComputed] IS NULL 
+        CASE
+            WHEN computed.[isComputed] IS NULL
                 THEN NULL
                 ELSE computed.definition
         END as [computedDefinition],
-        CASE 
+        CASE
             WHEN computed2.generated_always_type <> 0
                 THEN 1
                 ELSE 0
         END as [isGenerated]
-        FROM 
-        INFORMATION_SCHEMA.COLUMNS c
-        LEFT JOIN 
+        FROM
+            INFORMATION_SCHEMA.COLUMNS c
+        LEFT JOIN
             (SELECT 1 as [isComputed], c.[definition], s.name as [schema], o.name as [table], c.[name] as [column]
             FROM sys.computed_columns c
             INNER JOIN sys.objects o ON o.object_id = c.object_id
-            INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed 
+            INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed
             ON c.TABLE_SCHEMA = computed.[schema] and c.TABLE_NAME = computed.[table] and c.COLUMN_NAME = computed.[column]
-        LEFT JOIN 
+        LEFT JOIN
             (SELECT c.generated_always_type, s.name as [schema], o.name as [table], c.[name] as [column]
             FROM sys.columns c
             INNER JOIN sys.objects o ON o.object_id = c.object_id
-            INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed2 
+            INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed2
             ON c.TABLE_SCHEMA = computed2.[schema] and c.TABLE_NAME = computed2.[table] and c.COLUMN_NAME = computed2.[column]
-        ORDER BY 
+        ORDER BY
         c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
-    
+
         $columnsRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         return $columnsRows | Group-Object -Property schema, table -AsHashTable -AsString
     }
@@ -149,7 +146,7 @@
             return $null
         }
 
-        $sql = "SELECT  
+        $sql = "SELECT
         [objects].name AS [fk_name],
         [schemas].name AS [fk_schema],
         [tables].name AS [fk_table],
@@ -162,7 +159,7 @@
         ROW_NUMBER() OVER(PARTITION BY [objects].name ORDER BY [columns2].column_id) as [column_position],
         [rules].DELETE_RULE AS [delete_rule],
         [rules].UPDATE_RULE AS [update_rule]
-        FROM 
+        FROM
         sys.foreign_key_columns [fk]
         INNER JOIN sys.objects [objects]
         ON [objects].object_id = [fk].constraint_object_id
@@ -172,7 +169,7 @@
         ON [tables].schema_id = [schemas].schema_id
         INNER JOIN sys.columns [columns]
         ON [columns].column_id = [fk].parent_column_id AND [columns].object_id = [tables].object_id
-        INNER JOIN sys.types [columnsT] 
+        INNER JOIN sys.types [columnsT]
         ON [columnsT].user_type_id = [columns].user_type_id
         INNER JOIN sys.tables [tables2]
         ON [tables2].object_id = [fk].referenced_object_id
@@ -182,9 +179,9 @@
         ON [columns2].column_id = [fk].referenced_column_id AND [columns2].object_id = [tables2].object_id
         INNER JOIN 	information_schema.REFERENTIAL_CONSTRAINTS [rules]
         ON [rules].CONSTRAINT_NAME = [objects].name and [rules].CONSTRAINT_SCHEMA = [schemas].name
-        ORDER BY 
+        ORDER BY
         [fk_schema], [fk_table], [column_position]"
-    
+
         $foreignKeyRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         return $foreignKeyRows | Group-Object -Property fk_schema, fk_table -AsHashTable -AsString
     }
@@ -195,7 +192,7 @@
         i.[name] as [index], [schemas].[name] as [schema], t.[name] as [table], c.[name] as [column]
         FROM
         sys.objects t
-        INNER JOIN sys.indexes i 
+        INNER JOIN sys.indexes i
         ON [t].object_id = [i].object_id
         INNER JOIN sys.objects [objects]
         ON [objects].object_id = i.object_id
@@ -205,13 +202,13 @@
         ON [tables].schema_id = [schemas].schema_id
         INNER JOIN sys.index_columns ic
         ON ic.object_id = i.object_id and ic.index_id = i.index_id
-        INNER JOIN sys.columns c 
+        INNER JOIN sys.columns c
         ON c.object_id = ic.object_id and c.column_id = ic.column_id
         WHERE
         i.is_primary_key = 0 and [schemas].[name] not like 'SqlSizer%'
-        ORDER BY 
+        ORDER BY
         [schemas].[name], t.[name]"
-    
+
         $indexesRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         return $indexesRows | Group-Object -Property schema, table -AsHashTable -AsString
     }
@@ -232,32 +229,30 @@
             INNER JOIN sys.objects AS o2 ON d.referenced_id = o2.object_id
             LEFT JOIN sys.schemas s ON s.schema_id = o.schema_id
             WHERE o2.[type] IN ('U', 'V')
-            
+
             UNION ALL
-        
+
             SELECT o2.[type], ed.referenced_id, ed.referenced_schema_name, ed.referenced_entity_name, d.referencing_type, d.referencing_id, d.view_schema_name, d.view_name
-            FROM Dependencies d 
+            FROM Dependencies d
             INNER JOIN sys.sql_expression_dependencies ed ON d.referenced_id = ed.referencing_id
             INNER JOIN sys.objects AS o ON ed.referencing_id = o.object_id  and o.type IN ('V')
             INNER JOIN sys.objects AS o2 ON ed.referenced_id = o2.object_id
             INNER JOIN sys.schemas s ON s.schema_id = o.schema_id
-        
         )
         SELECT DISTINCT d.*
         FROM Dependencies d
         ORDER BY d.referenced_schema_name, d.referenced_entity_name"
-    
+
         try
         {
             $depRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
             return $depRows | Group-Object -Property referenced_schema_name, referenced_entity_name -AsHashTable -AsString
         }
-        catch 
+        catch
         {
             return $null
         }
     }
-
 
     function GetTriggerInfo
     {
@@ -274,11 +269,11 @@
         sys.triggers trig
         INNER JOIN sys.tables t ON t.object_id = trig.parent_id
         INNER JOIN sys.schemas s ON t.schema_id = s.schema_id"
-    
+
         try
         {
             $triggerRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
-            return $triggerRows | Group-Object -Property SchemaName, TableName -AsHashTable -AsString      
+            return $triggerRows | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
         }
         catch
         {
@@ -290,7 +285,6 @@
     {
         $sql = "select s.[name]
         from sys.schemas s"
-    
         return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
 
@@ -304,12 +298,12 @@
         {
             $sql = "select SCHEMA_NAME(schema_id) AS [schema], name, object_definition(object_id) as [definition] from sys.objects where type = 'P'"
         }
-        
+
         try
         {
             return Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         }
-        catch 
+        catch
         {
             return $null
         }
@@ -317,7 +311,7 @@
 
     # create result object
     $result = New-Object -TypeName DatabaseInfo
-   
+
     # measure size of db
     if ($true -eq $MeasureSize)
     {
@@ -399,7 +393,7 @@
                     $table.PrimaryKey = $sTable.PrimaryKey
                 }
             }
-        
+
         $tableColumns = $columnsInfo[$key]
 
         foreach ($tableColumn in $tableColumns)
@@ -561,7 +555,7 @@
     if ($null -ne $proceduresRows)
     {
         foreach ($row in $proceduresRows)
-        { 
+        {
             $storedProcedureInfo = New-Object StoredProcedureInfo
             $storedProcedureInfo.Schema = $row.schema
             $storedProcedureInfo.Name = $row.name

@@ -32,7 +32,7 @@ function New-DataTableFromView
     if ($tableAlreadyExists)
     {
         Write-Progress -Activity "Copy view $ViewSchemaName.$ViewName" -Completed
-        Write-Output "Table [$NewSchemaName].[$NewTableName] already exists. Provide different name"
+        Write-Verbose "Table [$NewSchemaName].[$NewTableName] already exists. Provide different name"
         return
     }
 

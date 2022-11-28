@@ -24,7 +24,6 @@ function Install-PrimaryKeys
                 $sql = "ALTER TABLE $($table.SchemaName).$($table.TableName) ALTER COLUMN $($pkColumn.Name) int NOT NULL"
                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
-            
             $sql = "ALTER TABLE $($table.SchemaName).$($table.TableName) ADD CONSTRAINT PK_$($table.SchemaName)_$($table.TableName) PRIMARY KEY NONCLUSTERED ($([string]::Join(',', $names))) NOT ENFORCED"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 

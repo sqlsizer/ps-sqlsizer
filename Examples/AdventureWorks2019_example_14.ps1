@@ -44,7 +44,7 @@ $newDatabase = "AdventureWorks2019_subset_w2"
 
 if ((New-EmptyCompactDatabase -Database $database -NewDatabase $newDatabase -ConnectionInfo $connection -DatabaseInfo $info) -eq $false)
 {
-    Write-Output "Database already exists"
+    Write-Verbose "Database already exists"
     return
 }
 
