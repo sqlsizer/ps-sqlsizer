@@ -65,7 +65,7 @@ function Install-ForeignKeyIndexes
                 $indexName = "SqlSizer_$($table.SchemaName)_$($table.TableName)_$($signature)"
                 $sql = "IF IndexProperty(OBJECT_ID('$($table.SchemaName).$($table.TableName)'), '$($indexName)', 'IndexId') IS NULL"
                 $sql += " CREATE INDEX [$($indexName)] ON [$($table.SchemaName)].[$($table.TableName)] ($($columns))"
-                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
             }
         }
     }
