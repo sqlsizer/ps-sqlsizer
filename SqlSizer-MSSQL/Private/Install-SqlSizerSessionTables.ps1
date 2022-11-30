@@ -13,7 +13,10 @@
         [DatabaseInfo]$DatabaseInfo,
 
         [Parameter(Mandatory = $true)]
-        [SqlConnectionInfo]$ConnectionInfo
+        [SqlConnectionInfo]$ConnectionInfo,
+        
+        [Parameter(Mandatory = $false)]
+        [bool]$Prototype = $false
     )
 
     $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
@@ -71,19 +74,31 @@
             $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
             $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
-            $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ($($keysIndex), [Color] ASC)"
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
-
-            if ($ConnectionInfo.IsSynapse -eq $true)
+            if ($Prototype)
             {
-                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration] ASC)"
+                $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ([Depth] ASC, [Color] ASC, $($keysIndex))"
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+
+                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Color] ASC, $($keysIndex))"
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
             }
             else
             {
-                $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration]) INCLUDE ([Depth], [Fk])"
+                $sql = "CREATE NONCLUSTERED INDEX [Index] ON $($processing) ($($keysIndex), [Color] ASC)"
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+    
+                if ($ConnectionInfo.IsSynapse -eq $true)
+                {
+                    $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration] ASC)"
+                }
+                else
+                {
+                    $sql = "CREATE NONCLUSTERED INDEX [Index_2] ON $($processing) ([Iteration]) INCLUDE ([Depth], [Fk])"
+                }
+    
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
             }
 
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
         }
     }
 }
