@@ -28,7 +28,7 @@ The core feature is ability to find desired subset from the database and that fe
  - importing data:
      - from JSON
  - removing:
-     - subsets
+     - subsets (**in efficient way**)
      - schemas
      - tables
  - editing schema of database:
