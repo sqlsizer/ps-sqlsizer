@@ -39,7 +39,7 @@
         $top = "";
         if ($query.Top -ne 0)
         {
-            $top = " TOP " + $query.Top;
+            $top = " TOP " + $query.Top + " "
         }
         $procesing = $Structure.GetProcessingName($signature, $SessionId)
         $tmp = "INSERT INTO $($procesing) SELECT " + $top

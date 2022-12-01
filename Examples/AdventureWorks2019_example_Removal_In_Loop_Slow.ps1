@@ -31,7 +31,8 @@ while ($true)
     $query.KeyColumns = @('BusinessEntityID')
     $query.Where = "[`$table].FirstName LIKE '%a'"
     $query.Top = 10000
-
+    $query.OrderBy = "[`$table].BusinessEntityID ASC"
+    
     Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
     $null = Find-Subset_Prototype -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000

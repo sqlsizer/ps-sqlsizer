@@ -586,7 +586,7 @@
             $lastTotalSeconds = $totalSeconds
             $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
             $percent = (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
-            Write-Progress -Activity "Finding subset" -PercentComplete $percent
+            Write-Progress -Activity "Finding subset $SessionId" -PercentComplete $percent
         }
 
         if ($false -eq $useDfs)
@@ -634,7 +634,7 @@
         $depth = $operation.Depth
         $tableData = $tablesGroupedById["$($tableId)"]
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
-        Write-Progress -Activity "Finding subset" -CurrentOperation  "$($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+        Write-Progress -Activity "Finding subset $SessionId" -CurrentOperation  "$($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature, $SessionId)

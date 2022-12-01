@@ -1,304 +1,60 @@
-enum Color
+﻿function Enable-ReachableIndexes
 {
-    Red = 1
-    Green = 2
-    Yellow = 3
-    Blue = 4
-    Purple = 5
-}
+    [cmdletbinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [Query[]]$Queries,
 
-enum ForeignKeyRule
-{
-    NoAction = 1
-    Cascade = 2
-    SetNull = 3
-    SetDefault = 4
-}
+        [Parameter(Mandatory = $true)]
+        [string]$Database,
 
-class ColorMap
-{
-    [ColorItem[]]$Items
-}
+        [Parameter(Mandatory = $true)]
+        [DatabaseInfo]$DatabaseInfo,
 
-class ColorItem
-{
-    [string]$SchemaName
-    [string]$TableName
-    [ForcedColor]$ForcedColor
-    [Condition]$Condition
-}
-
-class ForcedColor
-{
-    [Color]$Color
-}
-
-class Condition
-{
-    [int]$Top = -1
-    [string]$SourceSchemaName = ""
-    [string]$SourceTableName = ""
-    [int]$MaxDepth = -1
-    [string]$FkName = ""
-}
-
-class Query
-{
-    [Color]$Color
-    [string]$Schema
-    [string]$Table
-    [string[]]$KeyColumns
-    [string]$Where
-    [int]$Top
-    [string]$OrderBy
-}
-class DatabaseInfo
-{
-    [string[]]$Schemas
-    [TableInfo[]]$Tables
-    [ViewInfo[]]$Views
-    [StoredProcedureInfo[]]$StoredProcedures
-    
-    [int]$PrimaryKeyMaxSize
-    [string]$DatabaseSize
-}
-
-class StoredProcedureInfo
-{
-    [string]$Schema
-    [string]$Name
-    [string]$Definition
-}
-
-class TableInfo2
-{
-    [string]$SchemaName
-    [string]$TableName
-
-    static [bool] IsIgnored([string] $schemaName, [string] $tableName, [TableInfo2[]] $ignoredTables)
-    {
-        $result = $false
-
-        foreach ($ignoredTable in $ignoredTables)
-        {
-            if (($ignoredTable.SchemaName -eq $schemaName) -and ($ignoredTable.TableName -eq $tableName))
-            {
-                $result = $true
-                break
-            }
-        }
-
-        return $result
-    }
-
-    [string] ToString()
-    {
-        return "$($this.SchemaName).$($this.TableName)"
-    }
-}
-
-class TableInfo2WithColor
-{
-    [string]$SchemaName
-    [string]$TableName
-    [Color]$Color
-}
-
-class SubsettingTableResult
-{
-    [string]$SchemaName
-    [string]$TableName
-    [bool]$CanBeDeleted
-    [long]$RowCount
-    [int]$PrimaryKeySize
-}
-
-class SubsettingProcess
-{
-    [long]$ToProcess
-    [long]$Processed
-}
-
-class TableStatistics
-{
-    [long]$Rows
-    [long]$ReservedKB
-    [long]$DataKB
-    [long]$IndexSize
-    [long]$UnusedKB
-
-    [string] ToString()
-    {
-        return "$($this.Rows) rows  => [$($this.DataKB) used of $($this.ReservedKB) reserved KB, $($this.IndexSize) index KB]"
-    }
-}
-
-class DatabaseStructureInfo
-{
-    [TableStructureInfo[]]$Tables
-    [TableFk[]]$Fks
-}
-
-class TableStructureInfo
-{
-    [string]$SchemaName
-    [string]$TableName
-    [ColumnInfo[]]$PrimaryKey
-}
-
-class ViewInfo
-{
-    [string]$SchemaName
-    [string]$ViewName
-    [string]$Definition
-}
-
-class TableInfo
-{
-    [string]$SchemaName
-    [string]$TableName
-    [bool]$IsIdentity
-    [bool]$IsHistoric
-    [bool]$HasHistory
-    [string]$HistoryOwner
-    [string]$HistoryOwnerSchema
-
-    [ColumnInfo[]]$PrimaryKey
-    [ColumnInfo[]]$Columns
-
-    [Tablefk[]]$ForeignKeys
-    [TableInfo[]]$IsReferencedBy
-
-    [ViewInfo[]]$Views
-
-    [string[]]$Triggers
-
-    [TableStatistics]$Statistics
-
-    [Index[]]$Indexes
-
-    [string] ToString()
-    {
-        return "$($this.SchemaName).$($this.TableName)"
-    }
-}
-
-class Index 
-{
-    [string]$Name
-    [string[]]$Columns
-}
-
-class ColumnInfo
-{
-    [string]$Name
-    [string]$DataType
-    [string]$Length
-    [bool]$IsNullable
-    [bool]$IsComputed
-    [bool]$IsGenerated
-    [string]$ComputedDefinition
-    [bool]$IsPresent
-    [string] ToString()
-    {
-        return $this.Name;
-    }
-}
-
-class TableFk
-{
-    [string]$Name
-    [string]$FkSchema
-    [string]$FkTable
-
-    [string]$Schema
-    [string]$Table
-
-    [ForeignKeyRule]$DeleteRule
-    [ForeignKeyRule]$UpdateRule
-
-    [ColumnInfo[]]$FkColumns
-    [ColumnInfo[]]$Columns
-}
-
-class SqlConnectionStatistics
-{
-    [long]$LogicalReads
-}
-
-class SqlConnectionInfo
-{
-    [string]$Server
-    [System.Management.Automation.PSCredential]$Credential
-    [string]$AccessToken = $null
-    [bool]$EncryptConnection = $false
-    [SqlConnectionStatistics]$Statistics
-    [bool]$IsSynapse = $false
-}
-
-class TableFile
-{
-    [string]$FileId
-    [SubsettingTableResult]$TableContent
-}
-
-class Structure
-{
-    [DatabaseInfo] $DatabaseInfo
-    [System.Collections.Generic.Dictionary[String, ColumnInfo[]]] $Signatures
-    [System.Collections.Generic.Dictionary[TableInfo, String]] $Tables
-
-    Structure(
-        [DatabaseInfo]$DatabaseInfo
+        [Parameter(Mandatory = $true)]
+        [SqlConnectionInfo]$ConnectionInfo
     )
+
+    $tablesGrouped = $DatabaseInfo.Tables | Group-Object -Property SchemaName, TableName -AsHashTable -AsString
+    $reachable = Find-ReachableTables -Queries $Queries -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+
+    Write-Progress -Activity "Enabling reachable indexes" -PercentComplete 0
+
+    foreach ($tableInfo in $reachable)
     {
-        $this.DatabaseInfo = $DatabaseInfo
-        $this.Signatures = New-Object "System.Collections.Generic.Dictionary[[string], ColumnInfo[]]"
-        $this.Tables = New-Object "System.Collections.Generic.Dictionary[[TableInfo], [string]]"
+        $table = $tablesGrouped[$tableInfo.SchemaName + ", " + $tableInfo.TableName]
 
-        foreach ($table in $this.DatabaseInfo.Tables)
+        foreach ($index in $table.Indexes)
         {
-            if ($table.PrimaryKey.Count -eq 0)
+            $isPk = $false
+            foreach ($indexColumn in $index.Columns)
             {
-                continue
+                foreach ($pkColumn in $table.PrimaryKey)
+                {
+                    if ($indexColumn -eq $pkColumn.Name)
+                    {
+                        $isPk = $true
+                        break
+                    }
+                }
             }
 
-            if ($table.SchemaName.StartsWith("SqlSizer"))
+            if ($isPk -eq $false)
             {
-                continue
-            }
-
-            $signature = $this.GetTablePrimaryKeySignature($table)
-            $this.Tables[$table] = $signature
-
-            if ($this.Signatures.ContainsKey($signature) -eq $false)
-            {
-                $this.Signatures.Add($signature, $table.PrimaryKey)
+                $sql  = "ALTER INDEX $($index.Name) ON $($table.SchemaName).$($table.TableName) REBUILD"
+                $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
             }
         }
     }
 
-    [string] GetProcessingName([string] $Signature, [string] $SessionId)
-    {
-        return "SqlSizer_$SessionId." + $Signature
-    }
-
-    [string] GetSliceName([string] $Signature, [string] $SessionId)
-    {
-        return "SqlSizer_$SessionId.Slice" + $Signature
-    }
-
-    [string] GetTablePrimaryKeySignature([TableInfo]$Table)
-    {
-        $result = $Table.SchemaName + "_" + $Table.TableName
-        return $result
-    }
+    Write-Progress -Activity "Enable reachable indexes" -Completed
 }
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAkQ5uZ+498yXb2
-# +7/ojG/PIuo5NY8TzANPeUimc3r3jaCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBbCbn6EUtMnz8q
+# Jqui2yOPEDsg/KYQ1jDArY6J2fl7rKCCIL4wggXJMIIEsaADAgECAhAbtY8lKt8j
 # AEkoya49fu0nMA0GCSqGSIb3DQEBDAUAMH4xCzAJBgNVBAYTAlBMMSIwIAYDVQQK
 # ExlVbml6ZXRvIFRlY2hub2xvZ2llcyBTLkEuMScwJQYDVQQLEx5DZXJ0dW0gQ2Vy
 # dGlmaWNhdGlvbiBBdXRob3JpdHkxIjAgBgNVBAMTGUNlcnR1bSBUcnVzdGVkIE5l
@@ -478,38 +234,38 @@ class Structure
 # Z25pbmcgMjAyMSBDQQIQYpSo2Nu09IRO7XqaiixN1TANBglghkgBZQMEAgEFAKCB
 # hDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEE
 # AYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJ
-# BDEiBCDSkXRIRYnpBsvq4N6QlsLDGC0JmQ5ZT3XyUr48MMU1hjANBgkqhkiG9w0B
-# AQEFAASCAgBCxHEoIcWQBUEuhUYIiGAfGJ7mVbYWvbF2bULqc+XvXKvcIZ30dSYM
-# 5mUUITQO2ghySlxpKtujHwwJNTzAdh0aScV564HIrWK/DQvEH/1Q38P+m5Ijewaq
-# jIdZDvYqmd9ZtAhjOSfKbuWd/DGKa28/luOI4LBPrqGEHJ4n1+6JdK8I8G+FTg1F
-# qCFGnajd498lMGX/L7ua/dyiYg3jC3m5nH8eDVxk6tsGlHylm0POsPFrEubkHhLO
-# 7ETI0sMRebI9j6o7h0vee9X1NyRMrVDZ71/XzFOwKZducmCR33HVnT6IpkwnKmgE
-# g1RbAXL4gKFPybyRJQECC2OkhZ4pkHsJfYNBrm8Idh5gSEOQgWpRtIHqmnpdmE5d
-# fvhWM+rq3PBoYARmK9ovZ0xbz+NjwvjhHYIAifNWEuWixonE3W6KnKYpSqBh3Ont
-# oE6JNGC+LI9mqWhIopjpsfVGcJWvVfHg2KXQr+pfNx0vVb5WCoO4B8lcLj91YW6G
-# Pd6kjy4n/IFvyXPsY8/s/LOVEySnOJ+Nq3JFt+VFHHQcA/0rtIShrOqPs56+Pgmu
-# pN9F+feOa1LlFYhkvwOS9ou2wEPXQgXtuYS2Cf48PX9Hy6urvgyBXOuOAklpCIb4
-# /F0rzEMdZDe6gUNmT9GfQdakIa93v4sIA9g4waaYCOQkZbmNwTLXT6GCBAIwggP+
+# BDEiBCCDxEV/eb27KICXvfMi/96iaO5qj8JhGv3ecU6DYailZDANBgkqhkiG9w0B
+# AQEFAASCAgClZqyZUomS+8ErWXK2aYOzb/wr4XkRgCe+UjTodpZiUGDFFDfclG6M
+# PUbaLLy4XImIGjcfzSJDPwBCJN+IV7Ohtzn3UbBCAaTsLRDvDzjdePloHobc5uWR
+# b3qY2CslBNIRKgH9Q5JflcMFGFMlEpbFoFt0n5+9PLBJwxfg/nAHROeLSZV3jKBr
+# ESIsjZvshCa8JsqMbiRV2T6+w413ZVl383YiSpM2uXOOTlnG0VWAPe8I+X/7H5Xf
+# 2GbV5pfHumVxkWhCMVd9gUQrcoSDBJLBZAq8NdgqZvioHA7fKVKM/oOUnCEGxgzo
+# m6QlYAlZbHYx/3Cs+PFPg4fI5TQR/i6vFKdEEllqPU8Q5qYt+uwUt3MPjh6QCR33
+# 4Y97B9Ayg9GZz195UGBU/+TJVxpczn2tmeHhtt6lpoSyOnsYy4GhZFGEA2XpKr/W
+# BuvmSWZHykWyGbGz6KNay5FDc4libBFEnVzn5AhuWJumqdCEmElIhoLu472ODerg
+# qkKEdTIHKkrOy1u/UQ6t1kwULgAaOmndYjtU4rUtScFLPkSAuVct5Q/gJ9vlF+Bd
+# bQ1wu89Dhlh3N+jeQhGoArq3zXf4jsj98XDWngTK49wiy4yCxe3egGTEosai6+vh
+# YkEtT7FtTNoRfUMLXR/0/rqDulVkzOAO6lia4Jb+sDTUltajCz7itaGCBAIwggP+
 # BgkqhkiG9w0BCQYxggPvMIID6wIBATBqMFYxCzAJBgNVBAYTAlBMMSEwHwYDVQQK
 # ExhBc3NlY28gRGF0YSBTeXN0ZW1zIFMuQS4xJDAiBgNVBAMTG0NlcnR1bSBUaW1l
 # c3RhbXBpbmcgMjAyMSBDQQIQK9SucLnQY1sq6YTI1nSqMDANBglghkgBZQMEAgIF
 # AKCCAVYwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEP
-# Fw0yMjExMzAyMjMwMzhaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
-# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDBLigzrj1MW
-# Uu1MQtEnYZloP4nQdpKRNSYOvZKg0HU3W+fxq/x8H5uqaDkQw5HZ4cYwgZ8GCyqG
+# Fw0yMjExMzAyMjI1MjJaMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEIAO5mmRJdJhK
+# lbbMXYDTRNB0+972yiQEhCvmzw5EIgeKMD8GCSqGSIb3DQEJBDEyBDCjmO3arTtL
+# lSRnrbpGtGSHJQSjU9Hymswwj7441V0boGEScjf+hYYKm+09OqxjvN4wgZ8GCyqG
 # SIb3DQEJEAIMMYGPMIGMMIGJMIGGBBS/T2vEmC3eFQWo78jHp51NFDUAzjBuMFqk
 # WDBWMQswCQYDVQQGEwJQTDEhMB8GA1UEChMYQXNzZWNvIERhdGEgU3lzdGVtcyBT
 # LkEuMSQwIgYDVQQDExtDZXJ0dW0gVGltZXN0YW1waW5nIDIwMjEgQ0ECECvUrnC5
-# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIAezrpLNeZ0y/YxDca48XsCjw7
-# VfNXlBXBgbSts2wR25NUAT4Y0ocYi1W6r2ANTSvc7X4jMky6Z7biugar5Llnqg5S
-# UKAqB2YMJriw1Sl8TlEZfJdisjfBfzLFxiWEhuCBlIDWsPZttK9k0A6R8mAjqCVL
-# 5H8OqR/TRHkZgYXRy2//YvgLXJ9hmbG/fr+F7txrvepBj+r8KsA5PUR3pzGU+gYC
-# w37KTBo2X/iiSawa7/hWc1lDlwu3EVoMDncOEp2cdgK40B8Otv9BzSutaMjZMpDk
-# iZnjtPV/rSsIEKXQJezyzi8E94hO/Y/Odxm9+LLFDhFKI/vo4tqf9yjPO6gN5Dyp
-# 7shKuaREk0cBrq+XuHVjm9DS/UU9NGkI6/lc7qyDLALY7ALgDIQtxWdxVkcFUOR+
-# LKN8F/xEZSK4bSNA2jRz5opn7tPJfcUY6sP/BpWoj3HUDuW8crfYVSAoFTUHQuIF
-# 41D0dyjEKuYuKuMoI+N2EtSLEvs8RKEcSHqZKLKPTh1brX5C75ROavB+Yr1pLm1w
-# l3SDZgmDaIz7jpj5aqBAD748LGDKMYq+2LfdmSPNiSuNjKV62XdkLQPViZgDXOVc
-# oD59ihZgH/kQtkpAkkNwIvubc3sRBYwv6j/l4anczqijKWmFQQ4iLmFeiXSDBsQC
-# xpwuGAshUb2am3LV+fw=
+# 0GNbKumEyNZ0qjAwDQYJKoZIhvcNAQEBBQAEggIASsOR8WIQgBVH2VRh1SGLDV5h
+# ldgu4Tm2f7cvvZmdmb50rKlsgqXWTjzX1kVEfN8AcLGT6O+9lBN3ewGmh9Ji88qe
+# 9V839cdkcPzaz9uapOXAnuxiGGkSBbrgtHuI71cnKeXR06JiTgu5U73bcYlM+bsw
+# EOO+EdAqFgmU/u9MfKMyrVzknSm3h0d51wYBYMkUjNEKvSvcE8uNE4wnFUQU5ihz
+# Y3ga7DC7oz9dDfiG2xBKfhi9oW7JOkyMHbmDSQMNDYoQY9Yb2SnLLdSDT7xq0ags
+# +7h88CzQSTC6/gRD83h+M4vReYvvOZTR/6d9z9B/Q5xWOnRCQoE3IBEIJhLHn5lH
+# eDlFe09RKVJ/xR9NpXlDkcNj76I7jR77zVQhOqs232xrjpHr7b8WIb9lYKuG1/H9
+# 8t1X6bI/Kt6zD3JHfGqEuV3Wurmmoy6CuRkGo5fePeXzvCRAxPnS/eg+AwN0/BU9
+# HkWulhQDsZL6R5yxDvF0QKyWlyli1QZvYilJEWkMliQh2du/5KzdlhqCIWtbHwTf
+# nORsIHpdSkwUFtChub8ljtb4nmUsW42u4PpSN7aRv4X7/ps0oo7O2bDrI3q1oxq0
+# JtpSpdgROKMky1xvjNbAog3ZBmjIS76tPrxhqPD8ZfB3axP1GgN/LaUErtuyZZct
+# Zbr3VxzzTUTQTr6e0cs=
 # SIG # End signature block

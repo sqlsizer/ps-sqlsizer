@@ -25,282 +25,11 @@
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
 
-        [Parameter(Mandatory = $false)]
-        [ColorMap]$ColorMap = $null,
-
-        [Parameter(Mandatory = $false)]
-        [bool]$FullSearch = $false,
-
-        [Parameter(Mandatory = $false)]
-        [bool]$UseDfs = $false,
-
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $outgoingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
     $incomingCache = New-Object "System.Collections.Generic.Dictionary[[string], [string]]"
-
-    function GetIncomingNewColor
-    {
-        param
-        (
-            [TableFk]$fk,
-            [int]$color,
-            [ColorMap]$colorMap
-        )
-
-        $newColor = $color
-
-        if ($color -eq [int][Color]::Green)
-        {
-            if ($FullSearch -ne $true)
-            {
-                $newColor = [int][Color]::Yellow
-            }
-        }
-
-        if ($color -eq [int][Color]::Purple)
-        {
-            $newColor = [int][Color]::Red
-        }
-
-        if ($null -ne $colorMap)
-        {
-            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
-            $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
-
-            if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-            {
-                $newColor = [int]$items.ForcedColor.Color
-            }
-        }
-        return $newColor
-    }
-
-    function GetMaxDepth
-    {
-        param
-        (
-            [TableFk]$fk,
-            [int]$color,
-            [ColorMap]$colorMap
-        )
-
-        $maxDepth = $null
-
-        if ($null -ne $colorMap)
-        {
-            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
-            $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
-
-            if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.MaxDepth -ne -1))
-            {
-                $maxDepth = [int]$items.Condition.MaxDepth
-            }
-        }
-        return $maxDepth
-    }
-
-    function GetTop
-    {
-        param
-        (
-            [TableFk]$fk,
-            [int]$color,
-            [ColorMap]$colorMap
-        )
-
-        $top = $null
-
-        if ($null -ne $colorMap)
-        {
-            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
-            $items = $items | Where-Object { ($null -eq $_.Condition) -or ($_.Condition.FkName -eq $fk.Name) -or ((($_.Condition.SourceSchemaName -eq $fk.Schema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.Table) -or ("" -eq $_.Condition.SourceTableName))) }
-
-            if (($null -ne $items) -and ($null -ne $items.Condition) -and ($items.Condition.Top -ne -1))
-            {
-                $top = [int]$items.Condition.Top
-            }
-        }
-        return $top
-    }
-    function GetOutgoingColor
-    {
-        param
-        (
-            [TableFk]$fk,
-            [int]$color,
-            [ColorMap]$colorMap
-        )
-
-        if ($color -eq [int][Color]::Green)
-        {
-            $newColor = [int][Color]::Green
-        }
-        else
-        {
-            $newColor = [int][Color]::Red
-        }
-
-        if ($null -ne $colorMap)
-        {
-            $items = $colorMap.Items | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
-            $items = $items | Where-Object { ($null -eq $_.Condition) -or ((($_.Condition.SourceSchemaName -eq $fk.FkSchema) -or ("" -eq $_.Condition.SourceSchemaName)) -and (($_.Condition.SourceTableName -eq $fk.FkTable) -or ("" -eq $_.Condition.SourceTableName))) }
-            if (($null -ne $items) -and ($null -ne $items.ForcedColor))
-            {
-                $newColor = [int]$items.ForcedColor.Color
-            }
-        }
-        return $newColor
-    }
-
-    function CreateOutgoingQueryPattern
-    {
-        param
-        (
-            [TableInfo]$table,
-            [int]$color,
-            [ColorMap]$colorMap
-        )
-
-        $result = ""
-        $primaryKey = $table.PrimaryKey
-        $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
-
-        $cond = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            if ($i -gt 0)
-            {
-                $cond += " and "
-            }
-
-            $cond = $cond + "(p.Key" + $i + " = s.Key" + $i + ")"
-        }
-
-        if ($table.ForeignKeys.Count -eq 0)
-        {
-            return $result
-        }
-
-        foreach ($fk in $table.ForeignKeys)
-        {
-            if ([TableInfo2]::IsIgnored($fk.Schema, $fk.Table, $ignoredTables) -eq $true)
-            {
-                continue
-            }
-
-            $newColor = GetOutgoingColor -color $color -fk $fk -colorMap $colorMap
-
-            $baseTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.Schema) -and ($_.TableName -eq $fk.Table) }
-            $baseTableId = $tablesGroupedByName[$fk.Schema + ", " + $fk.Table].Id
-            $baseSignature = $structure.Tables[$baseTable]
-            $baseProcessing = $structure.GetProcessingName($baseSignature, $SessionId)
-
-            #where
-            $columns = ""
-            $i = 0
-            foreach ($fkColumn in $fk.FkColumns)
-            {
-                if ($i -gt 0)
-                {
-                    $columns += " and "
-                }
-                $columns = $columns + " f." + $fkColumn.Name + " = p.Key" + $i
-                $i += 1
-            }
-            $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $baseProcessing p WHERE p.[Color] = $newColor AND $columns)"
-
-            # from
-            $join = " INNER JOIN $processing s ON "
-            $i = 0
-            foreach ($primaryKeyColumn in $primaryKey)
-            {
-                if ($i -gt 0)
-                {
-                    $join += " AND "
-                }
-
-                $join += " s.Key" + $i + " = f." + $primaryKeyColumn.Name
-                $i += 1
-            }
-
-            $join += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
-            $from = " FROM " + $table.SchemaName + "." + $table.TableName + " f " + $join
-
-            # select
-            $columns = ""
-            $i = 0
-            foreach ($fkColumn in $fk.FkColumns)
-            {
-                if ($columns -ne "")
-                {
-                    $columns += ","
-                }
-                $columns = $columns + (Get-ColumnValue -ColumnName $fkColumn.Name -Prefix "f." -DataType $fkColumn.dataType) + " as val$i "
-                $i += 1
-            }
-
-            $select = "SELECT DISTINCT " + $columns + ", s.Depth"
-            $sql = $select + $from + $where
-
-            $columns = ""
-            for ($i = 0; $i -lt $fk.FkColumns.Count; $i = $i + 1)
-            {
-                $columns = $columns + "x.val" + $i + ","
-            }
-
-            $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
-
-            $insert = " SELECT $columns " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp2 FROM (" + $sql + ") x "
-            $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
-            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "
-            $insert += " DROP TABLE #tmp2"
-
-            if ($ConnectionInfo.IsSynapse -eq $false)
-            {
-                $insert += " 
-                GO
-                "
-            }
-
-            $result += $insert
-        }
-
-        return $result
-    }
-
-    function HandleOutgoing
-    {
-        param
-        (
-            [TableInfo]$table,
-            [int]$color,
-            [bool]$useDfs = $false,
-            [ColorMap]$colorMap,
-            [int]$iteration
-        )
-
-        $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
-
-        if ($outgoingCache.ContainsKey($key))
-        {
-            $query = $outgoingCache[$key]
-        }
-        else
-        {
-            $query = CreateOutgoingQueryPattern -table $table -color $color -useDfs $useDfs -colorMap $colorMap -iteration $iteration
-            $outgoingCache[$key] = $query
-        }
-
-        if ($query -ne "")
-        {
-            $query = $query.Replace("##iteration##", $iteration)
-
-            $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
-        }
-    }
 
     function CreateIncomingQueryPattern
     {
@@ -308,7 +37,6 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [bool]$useDfs = $false,
             [ColorMap]$colorMap
         )
         $result = " DECLARE @Break BIT = 0
@@ -326,10 +54,7 @@
                     continue
                 }
 
-                $newColor = GetIncomingNewColor -color $color -fk $fk -colorMap $colorMap
-                $maxDepth = GetMaxDepth -color $color -fk $fk -colorMap $colorMap
-                $top = GetTop -color $color -fk $fk -colorMap $colorMap
-
+                $newColor = $color
                 $fkTable = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $fk.FkSchema) -and ($_.TableName -eq $fk.FkTable) }
                 $fkTableId = $tablesGroupedByName[$fk.FkSchema + ", " + $fk.FkTable].Id
                 $fkSignature = $structure.Tables[$fkTable]
@@ -433,14 +158,13 @@
                 if ($MaxBatchSize -ne -1)
                 {
                     # reset operation if there is a data and max size is set
-                    $insert += "IF (@SqlSizerCount <> 0)
+                    $insert += "IF (@SqlSizerCount = $MaxBatchSize)
                                 BEGIN
                                     SET @Break = 1
-                                    UPDATE SqlSizer.Operations SET [Status] = NULL WHERE [SessionId] = '$SessionId' AND [Status] = 0
+                                    UPDATE SqlSizer.Operations SET [Status] = NULL WHERE [Table] = $tableId AND [SessionId] = '$SessionId' AND [Status] = 0
                                 END
                                 "
                 }
-
 
                 $insert += "IF (@SqlSizerCount <> 0)
                 BEGIN
@@ -460,7 +184,6 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [bool]$useDfs = $false,
             [ColorMap]$colorMap,
             [int]$iteration
         )
@@ -473,7 +196,7 @@
         }
         else
         {
-            $query = CreateIncomingQueryPattern -table $table -color $color -useDfs $useDfs -colorMap $colorMap
+            $query = CreateIncomingQueryPattern -table $table -color $color -colorMap $colorMap
             $incomingCache[$key] = $query
         }
 
@@ -485,88 +208,6 @@
         }
     }
 
-    function CreateSplitQuery
-    {
-        param
-        (
-            [TableInfo]$table,
-            [int]$color,
-            [int]$depth,
-            [int]$iteration
-        )
-
-        $result = ""
-        $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
-
-        $cond = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            if ($i -gt 0)
-            {
-                $cond += " and "
-            }
-
-            $cond = $cond + "(p.Key$i = s.Key$i )"
-        }
-
-        $columns = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
-        {
-            $columns = $columns + "s.Key$i,"
-        }
-
-        # red
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Red + "  and " + $cond + ")"
-        $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
-        $q = " SELECT  $columns " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp1 FROM $processing s" + $where
-        $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "
-        $result += $q
-
-        # green
-        $where = " WHERE NOT EXISTS(SELECT * FROM $processing p WHERE p.[Color] = " + [int][Color]::Green + " and " + $cond + ")"
-        $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
-        $q = " SELECT $columns " +  [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp2 FROM $processing s" + $where
-        $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "
-        $result += $q
-        $result += "DROP TABLE #tmp1 DROP TABLE #tmp2"
-
-        if ($ConnectionInfo.IsSynapse -eq $false)
-        {
-            $result += " 
-            GO 
-            "
-        }
-
-        return $result
-    }
-
-    function Split
-    {
-        param
-        (
-            [TableInfo]$table,
-            [int]$color,
-            [int]$depth,
-            [bool]$useDfs,
-            [int]$iteration
-        )
-        $query = CreateSplitQuery -table $table -color $color -depth $depth -iteration $iteration
-
-        $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
-    }
-
-    function ShouldAddOutgoing
-    {
-        param
-        (
-            [int]$color
-        )
-
-        return ($color -eq [int][Color]::Red) -or (($FullSearch -eq $true) -and ($color -eq [int][Color]::Green)) -or ($color -eq [int][Color]::Purple)
-    }
-
     function ShouldAddIncoming
     {
         param
@@ -574,14 +215,13 @@
             [int]$color
         )
 
-        return ($color -eq [int][Color]::Green) -or ($color -eq [int][Color]::Purple) -or ($color -eq [int][Color]::Blue)
+        return ($color -eq [int][Color]::Blue)
     }
 
     function DoSearch()
     {
         param
         (
-            [bool]$useDfs = $false,
             [int]$iteration
         )
 
@@ -594,12 +234,12 @@
             $lastTotalSeconds = $totalSeconds
             $progress = Get-SubsetProgress -Database $Database -ConnectionInfo $ConnectionInfo
             $percent = (100 * ($progress.Processed / ($progress.Processed + $progress.ToProcess)))
-            Write-Progress -Activity "Finding subset" -PercentComplete $percent
+            Write-Progress -Activity "Finding subset $SessionId" -PercentComplete $percent
         }
         
         $q = "SELECT TOP 1
-			    [Table],
 			    [Depth],
+                [Table],
     			[Color],
                 SUM([ToProcess]) as [ToProcess]
             FROM
@@ -615,7 +255,7 @@
 
         if ($null -eq $operation)
         {
-            Write-Progress -Activity "Finding subset" -Completed
+            Write-Progress -Activity "Finding subset $SessionId" -Completed
             return $false
         }
         # load node info
@@ -624,39 +264,14 @@
         $depth = $operation.Depth
         $tableData = $tablesGroupedById["$($tableId)"]
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
-        Write-Progress -Activity "Finding subset" -CurrentOperation  "$($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
+        Write-Progress -Activity "Finding subset $SessionId" -CurrentOperation  "$($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature, $SessionId)
 
-        if ($MaxBatchSize -eq -1)
-        {
-            # mark operations as in progress => Status = 0
-            if ($false -eq $useDfs)
-            {
-                $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-            else
-            {
-                $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-        }
-        else
-        {
-            # mark only first operation as in progress => Status = 0  (heuristic)
-            if ($false -eq $useDfs)
-            {
-                $q = "UPDATE TOP (1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-            else
-            {
-                $q = "UPDATE TOP(1) SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [SessionId] = '$SessionId'"
-                $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
-            }
-        }
+        # mark operations as in progress => Status = 0
+        $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
+        $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
         $keys = ""
         for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
@@ -664,22 +279,10 @@
             $keys = $keys + "Key" + $i + ","
         }
 
-        $addOutgoing = ShouldAddOutgoing -color $color
-        if ($true -eq $addOutgoing)
-        {
-            HandleOutgoing -table $table -color $color -useDfs $useDfs -colorMap $ColorMap -iteration $iteration
-        }
-
         $addIncoming = ShouldAddIncoming -color $color
         if ($true -eq $addIncoming)
         {
-            HandleIncoming -table $table -color $color -useDfs $useDfs -colorMap $ColorMap -iteration $iteration
-        }
-
-        # Yellow -> Split into Red and Green
-        if ($color -eq [int][Color]::Yellow)
-        {
-            Split -table $table -useDfs $useDfs -iteration $iteration
+            HandleIncoming -table $table -color $color -colorMap $ColorMap -iteration $iteration
         }
 
         # mark operations as processed
@@ -703,7 +306,7 @@
 
         do
         {
-            $result = DoSearch -useDfs $UseDfs -iteration $iteration
+            $result = DoSearch -iteration $iteration
             $iteration = $iteration + 1
         }
         while ($result -eq $true)
@@ -728,7 +331,7 @@
         else
         {
             $start = Get-Date
-            $result = DoSearch -useDfs $UseDfs -iteration $Iteration
+            $result = DoSearch -iteration $Iteration
 
             return [pscustomobject]@{
                 Finished            = $result -eq $false

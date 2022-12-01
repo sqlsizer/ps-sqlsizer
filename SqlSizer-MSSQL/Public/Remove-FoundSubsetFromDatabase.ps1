@@ -43,7 +43,7 @@
         $where
     }
 
-    Write-Progress -Activity "Removing data from database" -PercentComplete 0
+    Write-Progress -Activity "Removing subset $SessionId" -PercentComplete 0
 
     $subsetTables = Get-SubsetTables -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -SessionId $SessionId
     
@@ -52,7 +52,7 @@
     {
         $i += 1
 
-        Write-Progress -Activity "Removing data from database" -PercentComplete (100 * ($i / ($subsetTables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
+        Write-Progress -Activity "Removing subset $SessionId" -PercentComplete (100 * ($i / ($subsetTables.Count))) -CurrentOperation "Table $($table.SchemaName).$($table.TableName)"
 
         $schema = $table.SchemaName
         $tableName = $table.TableName
@@ -88,7 +88,7 @@
         }
     }
 
-    Write-Progress -Activity "Removing data from database" -Completed
+    Write-Progress -Activity "Removing subset $SessionId" -Completed
 }
 
 
