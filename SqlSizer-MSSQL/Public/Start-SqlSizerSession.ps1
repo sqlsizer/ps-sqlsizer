@@ -58,8 +58,6 @@ function Start-SqlSizerSession
         Install-SqlSizerSecureViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
     }
 
-    Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
-
     return $sessionId
 }
 # SIG # Begin signature block
