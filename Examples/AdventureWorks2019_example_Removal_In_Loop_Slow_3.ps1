@@ -64,26 +64,25 @@ Remove-FoundSubsetsFromDatabase -Database $database -ConnectionInfo $connection 
 
 Enable-ReachableIndexes -Queries @($query) -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
+Update-DatabaseInfo -DatabaseInfo $info -Database $Database -ConnectionInfo $connection
+
 foreach ($session in $sessions)
 {
     Clear-SqlSizerSession -SessionId $session -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 }
 
-Update-DatabaseInfo -DatabaseInfo $info -Database $Database -ConnectionInfo $connection -MeasureSize ($DatabaseInfo.DatabaseSize -ne "")
+Update-DatabaseInfo -DatabaseInfo $info -Database $Database -ConnectionInfo $connection
 
 $end = Get-Date
-
-Write-Host ($end - $start)
 
 # Enable integrity checks and triggers
 Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-
+Write-Host ($end - $start)
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
