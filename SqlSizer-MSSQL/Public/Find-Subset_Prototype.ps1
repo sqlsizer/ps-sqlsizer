@@ -36,11 +36,10 @@
         param
         (
             [TableInfo]$table,
-            [int]$color,
-            [ColorMap]$colorMap
+            [int]$color
         )
-        $result = " DECLARE @Break BIT = 0
-                    DECLARE @SqlSizerCount INT = 0
+        $result = "DECLARE @SqlSizerCount INT = 0
+        DECLARE @ShouldRetry BIT = 0
         "
         $tableId = $tablesGroupedByName[$table.SchemaName + ", " + $table.TableName].Id
 
@@ -61,6 +60,10 @@
                 $fkProcessing = $structure.GetProcessingName($fkSignature, $SessionId)
                 $primaryKey = $referencedByTable.PrimaryKey
                 $fkId = $fkGroupedByName[$fk.FkSchema + ", " + $fk.FkTable + ", " + $fk.Name].Id
+
+                
+                $signature = $structure.Tables[$table]
+                $processing = $structure.GetProcessingName($signature, $SessionId)
 
                 if (($null -eq $primaryKey) -or ($primaryKey.Count -eq 0))
                 {
@@ -84,12 +87,6 @@
                 if ($null -ne $maxDepth)
                 {
                     $where += " AND s.Depth <= $maxDepth"
-                }
-
-                # prevent go-back if this is not full search
-                if (($FullSearch -eq $false) -and ($color -ne [int][Color]::Blue))
-                {
-                    $where += " AND ((s.Fk <> $($fkId)) OR (s.Fk IS NULL))"
                 }
 
                 # from
@@ -146,22 +143,21 @@
                 }
 
                 $insert = "
-
-                IF (@Break = 1)
+                IF (##fksRetry## = 0 OR ($fkId IN ##fks##))
                 BEGIN
-                    RETURN
-                END
                 INSERT INTO $fkProcessing SELECT $columns " + $newColor + " as Color, $tableId as Source, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration FROM (" + $sql + ") x 
                 SET @SqlSizerCount = @@ROWCOUNT
                 "
-
                 if ($MaxBatchSize -ne -1)
                 {
-                    # reset operation if there is a data and max size is set
                     $insert += "IF (@SqlSizerCount = $MaxBatchSize)
                                 BEGIN
-                                    SET @Break = 1
-                                    UPDATE SqlSizer.Operations SET [Status] = NULL WHERE [Table] = $tableId AND [SessionId] = '$SessionId' AND [Status] = 0
+                                    INSERT INTO SqlSizer.Retries (SessionId, OperationId, FkId, [Status])
+                                    SELECT '$SessionId', Id, $fkId, 0
+                                    FROM SqlSizer.Operations 
+                                    WHERE [Status] = 0 AND [SessionId] = '$SessionId'
+
+                                    SET @ShouldRetry = 1
                                 END
                                 "
                 }
@@ -170,11 +166,17 @@
                 BEGIN
                     INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, @SqlSizerCount,  NULL, $tableId, ##depth## + 1, GETDATE(), NULL, '$SessionId', ##iteration##, NULL 
                 END
+                END
                 "
                 $result += $insert
             }
         }
 
+        $result += " IF (@ShouldRetry = 1) 
+        BEGIN
+            UPDATE SqlSizer.Operations SET [Status] = NULL WHERE [Table] = $tableId AND [SessionId] = '$SessionId' AND [Status] = 0
+        END
+        "
         return $result
     }
 
@@ -184,8 +186,8 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [ColorMap]$colorMap,
-            [int]$iteration
+            [int]$iteration,
+            [int[]]$fks
         )
 
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
@@ -196,7 +198,7 @@
         }
         else
         {
-            $query = CreateIncomingQueryPattern -table $table -color $color -colorMap $colorMap
+            $query = CreateIncomingQueryPattern -table $table -color $color 
             $incomingCache[$key] = $query
         }
 
@@ -204,6 +206,17 @@
         {
             $query = $query.Replace("##iteration##", $iteration)
             $query = $query.Replace("##depth##", $depth)
+            if ($fks.Count -gt 0)
+            {
+                $fkString = [String]::Join(",", $fks)
+                $query = $query.Replace("##fks##", "(" + $fkString + ")")
+                $query = $query.Replace("##fksRetry##", "1")
+            }
+            else
+            {
+                $query = $query.Replace("##fks##", "(0)")
+                $query = $query.Replace("##fksRetry##", "0")
+            }
             $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
@@ -224,6 +237,8 @@
         (
             [int]$iteration
         )
+
+        Write-Progress -Activity "Finding subset $SessionId" -PercentComplete 0 
 
         $interval = 5
         $percent = 0
@@ -266,27 +281,35 @@
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $tableData.SchemaName) -and ($_.TableName -eq $tableData.TableName) }
         Write-Progress -Activity "Finding subset $SessionId" -CurrentOperation  "$($table.SchemaName).$($table.TableName) table is being processed with color $([Color]$color)" -PercentComplete $percent
 
-        $signature = $structure.Tables[$table]
-        $processing = $structure.GetProcessingName($signature, $SessionId)
-
         # mark operations as in progress => Status = 0
-        $q = "UPDATE SqlSizer.Operations SET Status = 0, ProcessedIteration = $iteration WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
+        $q = "UPDATE SqlSizer.Operations SET Status = 0 WHERE [Table] = $tableId AND Status IS NULL AND [Color] = $color AND [Depth] = $depth AND [SessionId] = '$SessionId'"
         $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
 
-        $keys = ""
-        for ($i = 0; $i -lt $table.PrimaryKey.Count; $i++)
+        $q = "SELECT Id, FkId FROM SqlSizer.Retries WHERE [SessionId] = '$SessionId' AND [Status] = 0 AND OperationId IN (SELECT Id FROM SqlSizer.Operations WHERE Status = 0 AND [SessionId] = '$SessionId')"
+        $fksRows = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
+
+        $fks = @()
+        $retryIds = @()
+        foreach ($item in $fksRows)
         {
-            $keys = $keys + "Key" + $i + ","
+            $fks += $item.FkId
+            $retryIds += $item.Id
         }
 
         $addIncoming = ShouldAddIncoming -color $color
         if ($true -eq $addIncoming)
         {
-            HandleIncoming -table $table -color $color -colorMap $ColorMap -iteration $iteration
+            HandleIncoming -table $table -color $color -iteration $iteration -fks $fks
+        }
+
+        if ($fks.Count -gt 0)
+        {
+            $q = "UPDATE SqlSizer.Retries SET Status = 1 WHERE Status = 0 AND [SessionId] = '$SessionId' AND Id IN ($([string]::Join(",",$retryIds)))"
+            $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
         }
 
         # mark operations as processed
-        $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedDate = GETDATE() WHERE Status = 0 AND [SessionId] = '$SessionId'"
+        $q = "UPDATE SqlSizer.Operations SET Status = 1, ProcessedIteration = $iteration, ProcessedDate = GETDATE() WHERE Status = 0 AND [SessionId] = '$SessionId'"
         $null = Invoke-SqlcmdEx -Sql $q -Database $Database -ConnectionInfo $ConnectionInfo
         return $true
     }

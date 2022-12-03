@@ -101,6 +101,13 @@
     $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Operations ([Table] ASC, [Color] ASC, [Source] ASC, [Depth] ASC)"
     $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
+    $tmp = "CREATE TABLE SqlSizer.Retries(Id int identity(1,1) $pk, [SessionId] varchar(256) NOT NULL, [OperationId] int NOT NULL, [FkId] int NOT NULL, [Status] int NOT NULL)"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+
+    $tmp = "CREATE NONCLUSTERED INDEX [Index] ON SqlSizer.Retries ([OperationId] ASC)"
+    $null = Invoke-SqlcmdEx -Sql $tmp -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+
+
     $schemaExists = Test-SchemaExists -Database $Database -SchemaName "SqlSizerHistory" -ConnectionInfo $ConnectionInfo
 
     if ($schemaExists -eq $false)
