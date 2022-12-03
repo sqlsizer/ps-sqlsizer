@@ -73,24 +73,24 @@ function New-DataTableClone
     {
         if (($table.SchemaName -eq $SchemaName) -and ($table.TableName -eq $TableName))
         {
-            $sql = "ALTER TABLE [$TargetDatabase].[$NewSchemaName].[$NewTableName] ADD PRIMARY KEY ($([string]::Join(',', $table.PrimaryKey)))"
-            $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+            $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ADD PRIMARY KEY ($([string]::Join(',', $table.PrimaryKey)))"
+            $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
 
             foreach ($column in $table.Columns)
             {
                 if ($column.IsComputed)
                 {
-                    $sql = "ALTER TABLE [$TargetDatabase].[$NewSchemaName].[$NewTableName] DROP COLUMN $($column.Name)"
-                    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+                    $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] DROP COLUMN $($column.Name)"
+                    $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
 
-                    $sql = "ALTER TABLE [$TargetDatabase].[$NewSchemaName].[$NewTableName] ADD $($column.Name) as $($column.ComputedDefinition)"
-                    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+                    $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ADD $($column.Name) as $($column.ComputedDefinition)"
+                    $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
                 }
 
                 if ($column.DataType -eq 'xml')
                 {
-                    $sql = "ALTER TABLE [$TargetDatabase].[$NewSchemaName].[$NewTableName] ALTER COLUMN $($column.Name) xml"
-                    $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
+                    $sql = "ALTER TABLE [$NewSchemaName].[$NewTableName] ALTER COLUMN $($column.Name) xml"
+                    $null = Invoke-SqlcmdEx -Sql $sql -Database $TargetDatabase -ConnectionInfo $ConnectionInfo -Statistics $false
                 }
             }
         }
