@@ -19,9 +19,10 @@ Install-SqlSizer -Database $database -ConnectionInfo $connection -DatabaseInfo $
 Disable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
+$start = Get-Date
 while ($true)
 {
-    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false
+    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false -Prototype $true
 
     # Define start set
     $query = New-Object -TypeName Query
@@ -33,7 +34,7 @@ while ($true)
 
     Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
-    $null = Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
+    $null = Find-Subset_Prototype -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
 
     $empty = Test-FoundSubsetIsEmpty -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 
@@ -46,6 +47,11 @@ while ($true)
     Remove-FoundSubsetFromDatabase -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Step 1000 -SessionId $sessionId
     Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 }
+$end = Get-Date
+
+Update-DatabaseInfo -DatabaseInfo $info -Database $Database -ConnectionInfo $connection
+
+
 # Enable integrity checks and triggers
 Enable-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 Enable-AllTablesTriggers -Database $database -ConnectionInfo $connection -DatabaseInfo $info
@@ -54,6 +60,8 @@ Write-Verbose "Logical reads from db: $($connection.Statistics.LogicalReads)"
 
 # Test foreign keys
 Test-ForeignKeys -Database $database -ConnectionInfo $connection -DatabaseInfo $info
+
+Write-Host ($end - $start)
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
