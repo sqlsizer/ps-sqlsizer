@@ -23,6 +23,7 @@
 
     try
     {
+        Write-Verbose "Invoke SQL [$(Get-Date)] => $($Sql.Substring(0, [Math]::Min(80, $Sql.Length))) ..."
         $params = @{
             Query             = $Sql
             ServerInstance    = $ConnectionInfo.Server
