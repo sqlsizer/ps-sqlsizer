@@ -18,7 +18,7 @@ function Clear-SqlSizerSession
     # remove session
     Write-Verbose "SqlSizer: Remove session: $SessionId"
 
-    Update-DatabaseInfo -DatabaseInfo $info -Database $Database -ConnectionInfo $connection
+    Update-DatabaseInfo -DatabaseInfo $DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo
     Remove-Schema -Database $Database -SchemaName "SqlSizer_$SessionId" -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -DropFks $false
     
     $sql = "DELETE FROM SqlSizer.Sessions WHERE SessionId = '$SessionId'"
