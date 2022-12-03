@@ -64,8 +64,6 @@ Remove-FoundSubsetsFromDatabase -Database $database -ConnectionInfo $connection 
 
 Enable-ReachableIndexes -Queries @($query) -Database $database -ConnectionInfo $connection -DatabaseInfo $info
 
-Update-DatabaseInfo -DatabaseInfo $info -Database $Database -ConnectionInfo $connection
-
 foreach ($session in $sessions)
 {
     Clear-SqlSizerSession -SessionId $session -Database $database -ConnectionInfo $connection -DatabaseInfo $info
