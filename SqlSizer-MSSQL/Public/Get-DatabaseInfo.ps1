@@ -86,6 +86,7 @@
 	    INNER JOIN  INFORMATION_SCHEMA.TABLE_CONSTRAINTS t ON t.TABLE_NAME = cc.TABLE_NAME AND t.TABLE_SCHEMA = cc.TABLE_SCHEMA AND t.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
         WHERE
     	    t.CONSTRAINT_TYPE = 'PRIMARY KEY'
+            AND t.TABLE_SCHEMA NOT LIKE 'SqlSizer%'
         ORDER BY
 	        c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
 
@@ -131,8 +132,10 @@
             INNER JOIN sys.objects o ON o.object_id = c.object_id
             INNER JOIN sys.schemas s ON s.schema_id = o.schema_id) computed2
             ON c.TABLE_SCHEMA = computed2.[schema] and c.TABLE_NAME = computed2.[table] and c.COLUMN_NAME = computed2.[column]
+        WHERE 
+			c.TABLE_SCHEMA NOT LIKE 'SqlSizer%'
         ORDER BY
-        c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
+            c.TABLE_SCHEMA, c.TABLE_NAME, [position]"
 
         $columnsRows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
         return $columnsRows | Group-Object -Property schema, table -AsHashTable -AsString
