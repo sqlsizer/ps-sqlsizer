@@ -25,7 +25,7 @@ $i = 0
 $step = 10000
 while ($true)
 {
-    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false -Prototype $true
+    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false -Removal $true
     $sessions += $sessionId
 
     # Define start set
@@ -40,7 +40,7 @@ while ($true)
 
     Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
-    $null = Find-Subset_Prototype -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
+    $null = Find-RemovalSubset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
 
     $empty = Test-FoundSubsetIsEmpty -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 

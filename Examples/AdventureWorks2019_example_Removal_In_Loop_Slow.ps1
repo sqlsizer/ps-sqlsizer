@@ -21,7 +21,7 @@ Disable-AllTablesTriggers -Database $database -ConnectionInfo $connection -Datab
 
 while ($true)
 {
-    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false -Prototype $true
+    $sessionId = Start-SqlSizerSession -Database $database -ConnectionInfo $connection -DatabaseInfo $info -Installation $false -SecureViews $false -ExportViews $false -Removal $true
 
     # Define start set
     $query = New-Object -TypeName Query
@@ -35,7 +35,7 @@ while ($true)
     
     Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 
-    $null = Find-Subset_Prototype -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
+    $null = Find-RemovalSubset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId -MaxBatchSize 10000
 
     $empty = Test-FoundSubsetIsEmpty -Database $database -ConnectionInfo $connection -DatabaseInfo $info -SessionId $sessionId
 

@@ -29,12 +29,14 @@
 
         $table = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $TableInfo.SchemaName) -and ($_.TableName -eq $TableInfo.TableName) }
         $primaryKey = $table.PrimaryKey
-        $where = " WHERE EXISTS(SELECT * FROM SqlSizer_$SessionId.Result_$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE "
+        $where = " WHERE EXISTS(SELECT * FROM SqlSizer_$SessionId.$($TableInfo.SchemaName)_$($TableInfo.TableName) e WHERE "
 
         $conditions = @()
+        $i = 0
         foreach ($column in $primaryKey)
         {
-            $conditions += " e." + $column.Name + " = t." + $column.Name
+            $conditions += " e.Key$i" + " = t." + $column.Name
+            $i += 1
         }
 
         $where += [string]::Join(' AND ', $conditions) 

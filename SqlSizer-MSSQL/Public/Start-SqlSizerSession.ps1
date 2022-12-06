@@ -23,7 +23,7 @@ function Start-SqlSizerSession
         [bool]$ExportViews = $true,
 
         [Parameter(Mandatory = $false)]
-        [bool]$Prototype = $false,
+        [bool]$Removal = $false,
 
         [Parameter(Mandatory = $true)]
         [SqlConnectionInfo]$ConnectionInfo
@@ -45,7 +45,7 @@ function Start-SqlSizerSession
 
     Write-Verbose "SqlSizer: Installation of session views and tables"
     # install session structures
-    Install-SqlSizerSessionTables -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -Prototype $Prototype
+    Install-SqlSizerSessionTables -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -Removal $Removal
     Install-SqlSizerResultViews -SessionId $sessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
 
     if ($ExportViews)

@@ -16,7 +16,7 @@
         [SqlConnectionInfo]$ConnectionInfo,
         
         [Parameter(Mandatory = $false)]
-        [bool]$Prototype = $false
+        [bool]$Removal = $false
     )
 
     $schemaExists = Test-SchemaExists -SchemaName "SqlSizer_$SessionId" -Database $Database -ConnectionInfo $ConnectionInfo
@@ -71,8 +71,7 @@
 
         if ($len -gt 0)
         {
-          
-            if ($Prototype)
+            if ($Removal)
             {
                 $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false

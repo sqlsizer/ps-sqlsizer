@@ -1,4 +1,4 @@
-﻿function Find-Subset_Prototype
+﻿function Find-RemovalSubset
 {
     [cmdletbinding()]
     [outputtype([pscustomobject])]
@@ -18,9 +18,6 @@
 
         [Parameter(Mandatory = $true)]
         [string]$Database,
-
-        [Parameter(Mandatory = $false)]
-        [TableInfo2[]]$IgnoredTables,
 
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
@@ -82,31 +79,24 @@
                     $columns = $columns + " f.$($pk.Name) = p.Key$i "
                     $i += 1
                 }
-                $where = " WHERE NOT EXISTS(SELECT * FROM $fkProcessing p WHERE p.[Color] = $newColor AND $columns)"
+                $where = " WHERE NOT EXISTS(SELECT 1 FROM $fkProcessing p WHERE $columns) AND EXISTS(SELECT 1 FROM  $processing s WHERE "
 
-                if ($null -ne $maxDepth)
-                {
-                    $where += " AND s.Depth <= $maxDepth"
-                }
-
-                # from
-                $join = " INNER JOIN $processing s ON "
                 $i = 0
 
                 foreach ($fkColumn in $fk.FkColumns)
                 {
                     if ($i -gt 0)
                     {
-                        $join += " AND "
+                        $where += " AND "
                     }
 
-                    $join += " s.Key$i = f.$($fkColumn.Name)"
+                    $where += " s.Key$i = f.$($fkColumn.Name)"
                     $i += 1
                 }
 
-                $join += " AND s.Depth = ##depth## AND s.Color = $color"
+                $where += " AND s.Depth = ##depth## ) "
 
-                $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName + " f " + $join
+                $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName + " f "
 
                 # select
                 $columns = ""
@@ -133,7 +123,7 @@
                     $topPhrase = " TOP $($top) "
                 }
 
-                $select = "SELECT DISTINCT " + $topPhrase + $columns + ", s.Depth"
+                $select = "SELECT " + $topPhrase + $columns
                 $sql = $select + $from + $where
 
                 $columns = ""
@@ -145,7 +135,7 @@
                 $insert = "
                 IF (##fksRetry## = 0 OR ($fkId IN ##fks##))
                 BEGIN
-                INSERT INTO $fkProcessing SELECT $columns " + $newColor + " as Color, $tableId as Source, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration FROM (" + $sql + ") x 
+                INSERT INTO $fkProcessing SELECT $columns " + $newColor + " as Color, $tableId as Source, ##depth## + 1 as Depth, $fkId as FkId, ##iteration## as Iteration FROM (" + $sql + ") x 
                 SET @SqlSizerCount = @@ROWCOUNT
                 "
                 if ($MaxBatchSize -ne -1)
@@ -220,17 +210,6 @@
             $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
-
-    function ShouldAddIncoming
-    {
-        param
-        (
-            [int]$color
-        )
-
-        return ($color -eq [int][Color]::Blue)
-    }
-
     function DoSearch()
     {
         param
@@ -296,11 +275,7 @@
             $retryIds += $item.Id
         }
 
-        $addIncoming = ShouldAddIncoming -color $color
-        if ($true -eq $addIncoming)
-        {
-            HandleIncoming -table $table -color $color -iteration $iteration -fks $fks
-        }
+        HandleIncoming -table $table -color $color -iteration $iteration -fks $fks
 
         if ($fks.Count -gt 0)
         {
