@@ -123,7 +123,7 @@
                     $topPhrase = " TOP $($top) "
                 }
 
-                $select = "SELECT " + $topPhrase + $columns
+                $select = "SELECT DISTINCT " + $topPhrase + $columns
                 $sql = $select + $from + $where
 
                 $columns = ""
