@@ -86,7 +86,7 @@ Run the following to install SqlSizer-MSSQL from the  [PowerShell Gallery](https
 To install for all users, remove the -Scope parameter and run in an elevated session:
 
 ```powershell
-Install-Module SqlSizer-MSSQL -AllowPrerelease -Scope CurrentUser
+Install-Module SqlSizer-MSSQL -Scope CurrentUser
 ```
 
 Before running scripts:
