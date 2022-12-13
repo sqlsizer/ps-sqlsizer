@@ -18,39 +18,39 @@ function Update-DatabaseInfo
 
     $info = Get-DatabaseInfo -Database $Database -ConnectionInfo $ConnectionInfo -MeasureSize $MeasureSize
 
-    $DatabaseInfo.Views = @()
+    $DatabaseInfo.Views.Clear()
     if ($null -ne $info.Views)
     {
         foreach ($view in $info.Views)
         {
-            $DatabaseInfo.Views += $view
+            $null = $DatabaseInfo.Views.Add($view)
         }
     }
 
-    $DatabaseInfo.Tables = @()
+    $DatabaseInfo.Tables.Clear()
     if ($null -ne $info.Tables)
     {
         foreach ($table in $info.Tables)
         {
-            $DatabaseInfo.Tables += $table
+            $null = $DatabaseInfo.Tables.Add($table)
         }
     }
 
-    $DatabaseInfo.StoredProcedures = @()
+    $DatabaseInfo.StoredProcedures.Clear()
     if ($null -ne $info.StoredProcedures)
     {
         foreach ($sp in $info.StoredProcedures)
         {
-            $DatabaseInfo.StoredProcedures += $sp
+            $null = $DatabaseInfo.StoredProcedures.Add($sp)
         }
     }
 
-    $DatabaseInfo.Schemas = @()
+    $DatabaseInfo.Schemas.Clear()
     if ($null -ne $info.Schemas)
     {
         foreach ($schema in $info.Schemas)
         {
-            $DatabaseInfo.Schemas += $schema
+            $null = $DatabaseInfo.Schemas.Add($schema)
         }
     }
 

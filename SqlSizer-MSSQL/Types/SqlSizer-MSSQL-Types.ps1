@@ -54,10 +54,10 @@ class Query
 }
 class DatabaseInfo
 {
-    [string[]]$Schemas
-    [TableInfo[]]$Tables
-    [ViewInfo[]]$Views
-    [StoredProcedureInfo[]]$StoredProcedures
+    [System.Collections.Generic.List[string]]$Schemas
+    [System.Collections.Generic.List[TableInfo]]$Tables
+    [System.Collections.Generic.List[ViewInfo]]$Views
+    [System.Collections.Generic.List[StoredProcedureInfo]]$StoredProcedures
     
     [int]$PrimaryKeyMaxSize
     [string]$DatabaseSize
@@ -163,19 +163,19 @@ class TableInfo
     [string]$HistoryOwner
     [string]$HistoryOwnerSchema
 
-    [ColumnInfo[]]$PrimaryKey
-    [ColumnInfo[]]$Columns
+    [System.Collections.Generic.List[ColumnInfo]]$PrimaryKey
+    [System.Collections.Generic.List[ColumnInfo]]$Columns
 
-    [Tablefk[]]$ForeignKeys
-    [TableInfo[]]$IsReferencedBy
+    [System.Collections.Generic.List[Tablefk]]$ForeignKeys
+    [System.Collections.Generic.List[TableInfo]]$IsReferencedBy
 
-    [ViewInfo[]]$Views
+    [System.Collections.Generic.List[ViewInfo]]$Views
 
-    [string[]]$Triggers
+    [System.Collections.Generic.List[string]]$Triggers
 
     [TableStatistics]$Statistics
 
-    [Index[]]$Indexes
+    [System.Collections.Generic.List[Index]]$Indexes
 
     [string] ToString()
     {
@@ -186,7 +186,7 @@ class TableInfo
 class Index 
 {
     [string]$Name
-    [string[]]$Columns
+    [System.Collections.Generic.List[string]]$Columns
 }
 
 class ColumnInfo
@@ -217,8 +217,8 @@ class TableFk
     [ForeignKeyRule]$DeleteRule
     [ForeignKeyRule]$UpdateRule
 
-    [ColumnInfo[]]$FkColumns
-    [ColumnInfo[]]$Columns
+    [System.Collections.Generic.List[ColumnInfo]]$FkColumns
+    [System.Collections.Generic.List[ColumnInfo]]$Columns
 }
 
 class SqlConnectionStatistics
@@ -273,7 +273,7 @@ class Structure
 
             if ($this.Signatures.ContainsKey($signature) -eq $false)
             {
-                $this.Signatures.Add($signature, $table.PrimaryKey)
+                $null = $this.Signatures.Add($signature, $table.PrimaryKey)
             }
         }
     }

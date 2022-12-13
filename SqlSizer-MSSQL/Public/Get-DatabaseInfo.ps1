@@ -315,6 +315,11 @@
     # create result object
     $result = New-Object -TypeName DatabaseInfo
 
+    $result.Tables = [System.Collections.Generic.List[TableInfo]]@()
+    $result.Views = [System.Collections.Generic.List[ViewInfo]]@()
+    $result.Schemas = [System.Collections.Generic.List[string]]@()
+    $result.StoredProcedures = [System.Collections.Generic.List[StoredProcedureInfo]]@()
+
     # measure size of db
     if ($true -eq $MeasureSize)
     {
@@ -332,7 +337,7 @@
             $view.SchemaName = $viewRow["schema"]
             $view.ViewName = $viewRow["view"]
             $view.Definition = $viewRow["definition"]
-            $result.Views += $view
+            $null = $result.Views.Add($view)
         }
     }
 
@@ -355,7 +360,14 @@
         $table.IsHistoric = $row["is_historic"]
         $table.HistoryOwner = $row["history_owner"]
         $table.HistoryOwnerSchema = $row["history_owner_schema"]
-        $table.IsReferencedBy = @()
+
+        $table.IsReferencedBy = [System.Collections.Generic.List[TableInfo]]@()
+        $table.PrimaryKey = [System.Collections.Generic.List[ColumnInfo]]@()
+        $table.Columns = [System.Collections.Generic.List[ColumnInfo]]@()
+        $table.Indexes = [System.Collections.Generic.List[Index]]@()
+        $table.Triggers = [System.Collections.Generic.List[string]]@()
+        $table.ForeignKeys = [System.Collections.Generic.List[TableFk]]@()
+        $table.Views = [System.Collections.Generic.List[ViewInfo]]@()
 
         if ($true -eq $MeasureSize)
         {
@@ -385,7 +397,7 @@
                 $pkColumn.IsNullable = $false
                 $pkColumn.IsComputed = $false
                 $pkColumn.IsPresent = $true
-                $table.PrimaryKey += $pkColumn
+                $null = $table.PrimaryKey.Add($pkColumn)
             }
         }
             if ($true -eq $ConnectionInfo.IsSynapse)
@@ -408,7 +420,7 @@
             $column.IsGenerated = $tableColumn["isGenerated"]
             $column.IsNullable = $tableColumn["isNullable"] -eq "YES"
             $column.ComputedDefinition = $tableColumn["computedDefinition"]
-            $table.Columns += $column
+            $null = $table.Columns.Add($column)
         }
 
         if ($null -ne $fkInfo)
@@ -419,6 +431,8 @@
             {
                 $fk = New-Object -TypeName TableFk
                 $fk.Name = $item.Name
+                $fk.Columns = [System.Collections.Generic.List[ColumnInfo]]@()
+                $fk.FkColumns = [System.Collections.Generic.List[ColumnInfo]]@()
 
                 foreach ($column in $item.Group)
                 {
@@ -441,11 +455,11 @@
                     $baseColumn.IsNullable = $false
                     $baseColumn.IsComputed = $false
 
-                    $fk.Columns += $baseColumn
-                    $fk.FkColumns += $fkColumn
+                    $null = $fk.Columns.Add($baseColumn)
+                    $null = $fk.FkColumns.Add($fkColumn)
                 }
 
-                $table.ForeignKeys += $fk
+                $null = $table.ForeignKeys.Add($fk)
             }
         }
         else
@@ -456,7 +470,7 @@
                 {
                     foreach ($item in $AdditonalStructureInfo.Fks | Where-Object { ($_.FkSchema -eq $table.SchemaName) -and ($_.FkTable -eq $table.TableName) })
                     {
-                        $table.ForeignKeys += $item
+                        $null = $table.ForeignKeys.Add($item)
                     }
                 }
             }
@@ -469,43 +483,41 @@
             foreach ($item in $indexesForTableGrouped)
             {
                 $index = New-Object -TypeName Index
+                $index.Columns = [System.Collections.Generic.List[string]]@()
                 $index.Name = $item.Name
 
                 foreach ($column in $item.Group)
                 {
-                    $index.Columns += $column["column"]
+                    $null = $index.Columns.Add($column["column"])
                 }
 
-                $table.Indexes += $index
+                $null = $table.Indexes.Add($index)
             }
         }
 
         if ($null -ne $dependenciesInfo)
         {
             $viewsForTable = $dependenciesInfo[$key]
-            $table.Views = @()
-
             foreach ($item in $viewsForTable)
             {
                 $view = New-Object ViewInfo
                 $view.SchemaName = $item.view_schema_name
                 $view.ViewName = $item.view_name
-                $table.Views += $view
+                $null = $table.Views.Add($view)
             }
         }
 
         if ($null -ne $triggerInfo)
         {
             $triggersForTable = $triggerInfo[$key]
-            $table.Triggers = @()
-
+            
             foreach ($item in $triggersForTable)
             {
-                $table.Triggers += $item["TriggerName"]
+                $null = $table.Triggers.Add($item["TriggerName"])
             }
         }
 
-        $result.Tables += $table
+        $null = $result.Tables.Add($table)
     }
 
     $primaryKeyMaxSize = 0
@@ -539,7 +551,7 @@
 
             if ($primaryTable.IsReferencedBy.Contains($table) -eq $false)
             {
-                $primaryTable.IsReferencedBy += $table
+                $null = $primaryTable.IsReferencedBy.Add($table)
             }
 
         }
@@ -551,7 +563,7 @@
     {
         foreach ($row in $schemasRows)
         {
-            $result.Schemas += $row.name
+            $null = $result.Schemas.Add($row.name)
         }
     }
 
@@ -564,7 +576,7 @@
             $storedProcedureInfo.Name = $row.name
             $storedProcedureInfo.Definition = $row.definition
 
-            $result.StoredProcedures += $storedProcedureInfo
+            $null = $result.StoredProcedures.Add($storedProcedureInfo)
         }
 
     }
