@@ -24,7 +24,7 @@
     # initialize operations
     foreach ($table in $DatabaseInfo.Tables)
     {
-        if ($table.PrimaryKey.Length -eq 0)
+        if ($table.PrimaryKey.Count -eq 0)
         {
             continue
         }

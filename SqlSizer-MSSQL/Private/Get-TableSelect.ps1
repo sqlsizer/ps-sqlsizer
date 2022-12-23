@@ -12,7 +12,7 @@ function Get-TableSelect
         [string]$MaxLength = $null
     )
 
-    $result = @()
+    $result = [System.Collections.Generic.List[string]]@()
 
     $j = 0
     for ($i = 0; $i -lt $TableInfo.Columns.Count; $i++)
@@ -59,7 +59,7 @@ function Get-TableSelect
             }
 
             $j += 1
-            $result += $select
+            $null = $result.Add($select)
         }
     }
 

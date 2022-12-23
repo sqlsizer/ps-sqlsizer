@@ -155,7 +155,7 @@
         throw "No tables have been found. Cannot install SqlSizer on database without tables."
     }
 
-    $withPrimaryKey = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -notin @('SqlSizer', 'SqlSizerHistory')) -and ($null -ne $_.PrimaryKey) -and ($_.PrimaryKey.Length -gt 0) }
+    $withPrimaryKey = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -notin @('SqlSizer', 'SqlSizerHistory')) -and ($null -ne $_.PrimaryKey) -and ($_.PrimaryKey.Count -gt 0) }
     if ($null -eq $withPrimaryKey)
     {
         throw "No table has been found with primary key. Run Install-PrimaryKeys or set up manually first."

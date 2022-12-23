@@ -64,14 +64,14 @@ function GetResultViewsTableJoin
 
     $processing = $Structure.GetProcessingName($signature, $SessionId)
 
-    $select = @()
-    $join = @()
+    $select = [System.Collections.Generic.List[string]]@()
+    $join = [System.Collections.Generic.List[string]]@()
 
     $i = 0
     foreach ($column in $primaryKey)
     {
-        $select += "p.Key$i"
-        $join += "t.$column = rr.Key$i"
+        $null = $select.Add("p.Key$i")
+        $null = $join.Add("t.$column = rr.Key$i")
         $i = $i + 1
     }
 

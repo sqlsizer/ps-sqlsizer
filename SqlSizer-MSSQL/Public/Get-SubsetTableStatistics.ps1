@@ -30,7 +30,7 @@ function Get-SubsetTableStatistics
 
     $rows = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
 
-    $result = @()
+    $result = [System.Collections.Generic.List[SubsettingTableResult]]@()
     foreach ($row in $rows)
     {
         $tableInfo = $DatabaseInfo.Tables | Where-Object { ($_.SchemaName -eq $row.SchemaName) -and ($_.TableName -eq $row.TableName) }
@@ -46,7 +46,7 @@ function Get-SubsetTableStatistics
         $obj.PrimaryKeySize = $tableInfo.PrimaryKey.Count
         $obj.CanBeDeleted = $tableInfo.IsHistoric -eq $false
         $obj.RowCount = $row.Count
-        $result += $obj
+        $null = $result.Add($obj)
     }
 
     return $result
