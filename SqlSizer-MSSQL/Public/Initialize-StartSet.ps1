@@ -4,10 +4,13 @@
     param
     (
         [Parameter(Mandatory = $true)]
-        [string]$Database,
+        [Query[]]$Queries,
 
         [Parameter(Mandatory = $true)]
-        [Query[]]$Queries,
+        [string]$Database,
+
+        [Parameter(Mandatory = $false)]
+        [int]$StartIteration = 0,
 
         [Parameter(Mandatory = $true)]
         [DatabaseInfo]$DatabaseInfo,
@@ -56,7 +59,7 @@
         {
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, 0 FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
+        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, $StartIteration FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
 
         if ($null -ne $query.Where)
         {

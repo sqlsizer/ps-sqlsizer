@@ -4,6 +4,9 @@ function Test-FoundSubsetIsEmpty
     [outputtype([System.Boolean])]
     param
     (
+        [Parameter(Mandatory = $false)]
+        [int]$StartIteration = 0,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -17,7 +20,7 @@ function Test-FoundSubsetIsEmpty
         [SqlConnectionInfo]$ConnectionInfo
     )
 
-    $result = Get-SubsetTableStatistics -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo
+    $result = Get-SubsetTableStatistics -SessionId $SessionId -Database $Database -DatabaseInfo $DatabaseInfo -ConnectionInfo $ConnectionInfo -StartIteration $StartIteration
 
     $sum = 0
 
