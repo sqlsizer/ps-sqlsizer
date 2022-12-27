@@ -5,6 +5,9 @@
     param
     (
         [Parameter(Mandatory = $false)]
+        [int]$StartIteration = 0,
+
+        [Parameter(Mandatory = $false)]
         [bool]$Interactive = $false,
 
         [Parameter(Mandatory = $false)]
@@ -707,9 +710,9 @@
 
     if ($false -eq $Interactive)
     {
-        $null = Initialize-OperationsTable -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+        $null = Initialize-OperationsTable -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -StartIteration $StartIteration
         $start = Get-Date
-        $iteration = 1
+        $iteration = $StartIteration + 1
 
         do
         {
@@ -721,14 +724,14 @@
         return [pscustomobject]@{
             Finished            = $true
             Initialized         = $true
-            CompletedIterations = $iteration
+            CompletedIterations = $iteration - $StartIteration
         }
     }
     else
     {
         if ($Iteration -eq 0)
         {
-            $null = Initialize-OperationsTable -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo
+            $null = Initialize-OperationsTable -SessionId $SessionId -Database $Database -ConnectionInfo $ConnectionInfo -DatabaseInfo $DatabaseInfo -StartIteration $StartIteration
             return [pscustomobject]@{
                 Finished            = $false
                 Initialized         = $true
@@ -743,7 +746,7 @@
             return [pscustomobject]@{
                 Finished            = $result -eq $false
                 Initialized         = $true
-                CompletedIterations = $Iteration
+                CompletedIterations = 1
             }
         }
     }

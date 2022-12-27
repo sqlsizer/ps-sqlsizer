@@ -6,6 +6,9 @@
         [Parameter(Mandatory = $true)]
         [string]$SessionId,
 
+        [Parameter(Mandatory = $false)]
+        [int]$StartIteration = 0,
+
         [Parameter(Mandatory = $true)]
         [string]$Database,
 
@@ -48,8 +51,9 @@
         }
 
         $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Status], [Color], [Depth], [Created], [SessionId], [FoundIteration])
-        SELECT $tableId, COUNT(*), NULL, p.[Color], 0, GETDATE(), '$SessionId', 0
+        SELECT $tableId, COUNT(*), NULL, p.[Color], 0, GETDATE(), '$SessionId', $StartIteration
         FROM $($processing) p
+        WHERE p.Iteration >= $StartIteration
         GROUP BY [Color]"
         $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
     }
