@@ -1,5 +1,5 @@
 ﻿## Example that shows how to run two phase search
-## Use case: Remove some GDRP data (e.g. Person.Address data for people with last name 'Adams')
+## Use case: Remove some GDPR data (e.g. Person.Address data for people with last name 'Adams')
 
 # Connection settings
 $server = "localhost"
