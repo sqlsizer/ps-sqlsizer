@@ -175,7 +175,7 @@ class TableInfo
 
     [TableStatistics]$Statistics
 
-    [System.Collections.Generic.List[Index]]$Indexes
+    [System.Collections.Generic.List[TableIndex]]$Indexes
 
     [string] ToString()
     {
@@ -183,7 +183,7 @@ class TableInfo
     }
 }
 
-class Index 
+class TableIndex
 {
     [string]$Name
     [System.Collections.Generic.List[string]]$Columns

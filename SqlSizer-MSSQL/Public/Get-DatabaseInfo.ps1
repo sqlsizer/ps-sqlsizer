@@ -364,7 +364,7 @@
         $table.IsReferencedBy = [System.Collections.Generic.List[TableInfo]]@()
         $table.PrimaryKey = [System.Collections.Generic.List[ColumnInfo]]@()
         $table.Columns = [System.Collections.Generic.List[ColumnInfo]]@()
-        $table.Indexes = [System.Collections.Generic.List[Index]]@()
+        $table.Indexes = [System.Collections.Generic.List[TableIndex]]@()
         $table.Triggers = [System.Collections.Generic.List[string]]@()
         $table.ForeignKeys = [System.Collections.Generic.List[TableFk]]@()
         $table.Views = [System.Collections.Generic.List[ViewInfo]]@()
@@ -482,7 +482,7 @@
 
             foreach ($item in $indexesForTableGrouped)
             {
-                $index = New-Object -TypeName Index
+                $index = New-Object -TypeName TableIndex
                 $index.Columns = [System.Collections.Generic.List[string]]@()
                 $index.Name = $item.Name
 
