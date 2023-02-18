@@ -86,25 +86,22 @@
                     $columns = $columns + " f.$($pk.Name) = p.Key$i "
                     $i += 1
                 }
-                $where = " WHERE " + $fk.FkColumns[0].Name + " IS NOT NULL AND NOT EXISTS(SELECT * FROM $fkProcessing p WHERE p.[Color] = $newColor AND $columns)"
+                $where = " WHERE NOT EXISTS(SELECT 1 FROM $fkProcessing p WHERE $columns) AND EXISTS(SELECT 1 FROM  $processing s WHERE "
 
-                # from
-                $join = " INNER JOIN $processing s ON "
                 $i = 0
-
                 foreach ($fkColumn in $fk.FkColumns)
                 {
                     if ($i -gt 0)
                     {
-                        $join += " AND "
+                        $where += " AND "
                     }
 
-                    $join += " s.Key$i = f.$($fkColumn.Name)"
+                    $where += " s.Key$i = f.$($fkColumn.Name)"
                     $i += 1
                 }
 
-                $join += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
-                $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName + " f " + $join
+                $where += " AND s.Depth = ##depth## ) "
+                $from = " FROM " + $referencedByTable.SchemaName + "." + $referencedByTable.TableName + " f "
 
                 # select
                 $columns = ""
@@ -131,7 +128,7 @@
                     $topPhrase = " TOP $($top) "
                 }
 
-                $select = "SELECT DISTINCT " + $topPhrase + $columns + ", s.Depth"
+                $select = "SELECT " + $topPhrase + $columns
                 $sql = $select + $from + $where
 
                 $columns = ""
@@ -145,7 +142,7 @@
                     $insert = "DECLARE @SqlSizerCount INT = 0
                     " 
                 }
-                $insert += " SELECT $columns " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp FROM (" + $sql + ") x SET @SqlSizerCount = @@ROWCOUNT "
+                $insert += " SELECT $columns " + $newColor + " as Color, $tableId as TableId, ##depth## + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp FROM (" + $sql + ") x SET @SqlSizerCount = @@ROWCOUNT "
                 $insert += " INSERT INTO $fkProcessing SELECT * FROM #tmp "
                 if ($MaxBatchSize -ne -1)
                 {
@@ -155,7 +152,7 @@
                                     UPDATE SqlSizer.Operations SET [Status] = NULL WHERE [SessionId] = '$SessionId' AND [Status] = 0 AND [Table] = $($table.Id)
                                 END"
                 }
-                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count], 0, NULL, $tableId, $fkId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "
+                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, @SqlSizerCount, 0, NULL, $tableId, $fkId, ##depth## + 1, GETDATE(), NULL, '$SessionId', ##iteration##, NULL"
                 $insert += " DROP TABLE #tmp "
                 
                 if ($ConnectionInfo.IsSynapse -eq $false)
@@ -177,7 +174,8 @@
         (
             [TableInfo]$table,
             [int]$color,
-            [int]$iteration
+            [int]$iteration,
+            [int]$depth
         )
 
         $key = "$($table.SchemaName)_$($table.TableName)_$($color)"
@@ -195,6 +193,7 @@
         if ($query -ne "")
         {
             $query = $query.Replace("##iteration##", $iteration)
+            $query = $query.Replace("##depth##", $depth)
             $null = Invoke-SqlcmdEx -Sql $query -Database $Database -ConnectionInfo $ConnectionInfo
         }
     }
@@ -298,7 +297,7 @@
         $signature = $structure.Tables[$table]
         $processing = $structure.GetProcessingName($signature, $SessionId)
 
-        HandleIncoming -table $table -color $color -iteration $iteration
+        HandleIncoming -table $table -color $color -iteration $iteration -depth $depth
 
         # mark operations as processed
         $q = "UPDATE SqlSizer.Operations SET Status = NULL WHERE Status = 0 AND ToProcess <> Processed AND [SessionId] = '$SessionId'"
