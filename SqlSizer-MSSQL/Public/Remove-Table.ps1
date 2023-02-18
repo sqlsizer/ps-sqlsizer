@@ -66,16 +66,16 @@
     {
         foreach ($table in $DatabaseInfo.Tables)
         { 
-            $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
-            if ($tableExists -eq $false)
-            {
-                continue
-            }
-
             foreach ($fk in $table.ForeignKeys)
             {
                 if (($fk.Schema -eq $SchemaName) -and ($fk.Table -eq $TableName))
                 {
+                    $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
+                    if ($tableExists -eq $false)
+                    {
+                        continue
+                    }
+
                     $sql = "ALTER TABLE [" + $table.SchemaName + "].[" + $table.TableName + "] DROP CONSTRAINT IF EXISTS $($fk.Name)"
                     $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                 }
@@ -88,11 +88,7 @@
     {
         foreach ($table in $DatabaseInfo.Tables)
         { 
-            $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
-            if ($tableExists -eq $false)
-            {
-                continue
-            }
+            
             
             foreach ($fk in $table.ForeignKeys)
             {
@@ -107,6 +103,12 @@
 
                             if ($isPartofIndex)
                             {
+                                $tableExists = Test-TableExists -SchemaName $table.SchemaName -TableName $table.TableName -Database $Database -ConnectionInfo $ConnectionInfo
+                                if ($tableExists -eq $false)
+                                {
+                                    continue
+                                }
+
                                 $sql = "DROP INDEX $($index.Name) ON TABLE [" + $table.SchemaName + "].[" + $table.TableName + "]"
                                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo
                             }
