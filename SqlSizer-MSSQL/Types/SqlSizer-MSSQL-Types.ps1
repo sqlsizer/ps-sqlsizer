@@ -155,6 +155,7 @@ class ViewInfo
 
 class TableInfo
 {
+    [int]$Id
     [string]$SchemaName
     [string]$TableName
     [bool]$IsIdentity

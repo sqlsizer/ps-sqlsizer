@@ -50,8 +50,8 @@
             continue
         }
 
-        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Status], [Color], [Depth], [Created], [SessionId], [FoundIteration])
-        SELECT $tableId, COUNT(*), NULL, p.[Color], 0, GETDATE(), '$SessionId', $StartIteration
+        $sql = "INSERT INTO SqlSizer.Operations([Table], [ToProcess], [Processed], [Status], [Color], [Depth], [Created], [SessionId], [FoundIteration])
+        SELECT $tableId, COUNT(*), 0, NULL, p.[Color], 0, GETDATE(), '$SessionId', $StartIteration
         FROM $($processing) p
         WHERE p.Iteration >= $StartIteration
         GROUP BY [Color]"
