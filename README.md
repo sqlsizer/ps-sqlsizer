@@ -32,7 +32,7 @@ The core feature is ability to find desired subset from the database and that fe
      - schemas
      - tables
  - editing schema of database:
-    - enabling/disabling/editing table foreign keys 
+    - enabling / disabling / editing table foreign keys 
     - enabling / disabling triggers
  - testing data consistency
      - testing foreign keys
@@ -174,7 +174,7 @@ Clear-SqlSizerSession -SessionId $sessionId -Database $database -ConnectionInfo 
 
 # Connection settings
 $server = "sqlsizer.database.windows.net"
-$database = "test01"
+$database = "##db##"
 
 Connect-AzAccount
 $accessToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
