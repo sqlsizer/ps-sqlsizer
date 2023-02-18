@@ -22,11 +22,7 @@ $query.Color = [Color]::Blue
 $query.Schema = "Person"
 $query.Table = "Person"
 $query.KeyColumns = @('BusinessEntityID')
-$query.Where = "[`$table].FirstName = 'Michael'"
-
-$ignored = New-Object -Type TableInfo2
-$ignored.SchemaName = "Sales"
-$ignored.TableName = "Store"
+$query.Where = "[`$table].FirstName <> 'Michael'"
 
 Initialize-StartSet -Database $database -ConnectionInfo $connection -Queries @($query) -DatabaseInfo $info -SessionId $sessionId
 Find-Subset -Database $database -ConnectionInfo $connection -DatabaseInfo $info -IgnoredTables @($ignored) -SessionId $sessionId
@@ -38,7 +34,6 @@ New-DataTableClone -ConnectionInfo $connection -CopyData $false -DatabaseInfo $i
 Update-DatabaseInfo -DatabaseInfo $info -Database $database -ConnectionInfo $connection
 
 Import-TableJson -Json $json -Database $database -SchemaName "Person3" -TableName "Password" -DatabaseInfo $info -ConnectionInfo $connection
-
 # end of script
 # SIG # Begin signature block
 # MIIoigYJKoZIhvcNAQcCoIIoezCCKHcCAQExDzANBglghkgBZQMEAgEFADB5Bgor
