@@ -65,7 +65,7 @@
     {
         if ($Silent -eq $false)
         {
-            throw $_.Exception
+            throw [System.Exception]::new("Error '$($_.Exception.Message)' occured when invoking $Sql",  $_.Exception)
         }
         return $false
     }
