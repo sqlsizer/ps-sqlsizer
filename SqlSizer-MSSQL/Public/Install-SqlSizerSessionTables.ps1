@@ -73,7 +73,7 @@
         {
             if ($Removal)
             {
-                $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
+                $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
                 
@@ -82,7 +82,7 @@
             }
             else
             {
-                $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NOT NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
+                $sql = "CREATE TABLE $($processing) (Id int identity(1,1) $pk, $($columns), [Color] tinyint NOT NULL, [Source] smallint NULL, [Depth] smallint NOT NULL, [Fk] smallint, [Iteration] int NOT NULL,)"
                 $null = Invoke-SqlcmdEx -Sql $sql -Database $Database -ConnectionInfo $ConnectionInfo -Statistics $false
 
                 

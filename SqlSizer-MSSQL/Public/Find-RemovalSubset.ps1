@@ -157,7 +157,7 @@
 
                 $insert += "IF (@SqlSizerCount <> 0)
                 BEGIN
-                    INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, @SqlSizerCount,  NULL, $tableId, ##depth## + 1, GETDATE(), NULL, '$SessionId', ##iteration##, NULL 
+                    INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, @SqlSizerCount,  NULL, $tableId, $fkId, ##depth## + 1, GETDATE(), NULL, '$SessionId', ##iteration##, NULL 
                 END
                 END
                 "

@@ -59,7 +59,7 @@
         {
             $order = " ORDER BY " + $query.OrderBy
         }
-        $tmp = $tmp + [int]$query.Color + " as Color, 0, 0, NULL, $StartIteration FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
+        $tmp = $tmp + [int]$query.Color + " as Color, NULL, 0, NULL, $StartIteration FROM " + $query.Schema + "." + $query.Table + " as [`$table] "
 
         if ($null -ne $query.Where)
         {

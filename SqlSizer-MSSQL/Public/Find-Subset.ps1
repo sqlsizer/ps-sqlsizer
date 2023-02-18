@@ -258,7 +258,7 @@
 
             $insert = " SELECT $columns " + $newColor + " as Color, $tableId as TableId, x.Depth + 1 as Depth, $fkId as FkId, ##iteration## as Iteration INTO #tmp2 FROM (" + $sql + ") x "
             $insert += " INSERT INTO $baseProcessing SELECT * FROM #tmp2 "
-            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "
+            $insert += " INSERT INTO SqlSizer.Operations SELECT $baseTableId, $newColor, t.[Count], NULL, $tableId, $fkId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Depth) t "
             $insert += " DROP TABLE #tmp2"
 
             if ($ConnectionInfo.IsSynapse -eq $false)
@@ -432,7 +432,7 @@
                                 END"
                 }
 
-                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count],  NULL, $tableId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "
+                $insert += " INSERT INTO SqlSizer.Operations SELECT $fkTableId, $newColor, t.[Count], NULL, $tableId, $fkId, t.Depth, GETDATE(), NULL, '$SessionId', ##iteration##, NULL FROM (SELECT Depth, COUNT(*) as [Count] FROM #tmp GROUP BY Depth) t "
                 $insert += " DROP TABLE #tmp "
 
                 if ($ConnectionInfo.IsSynapse -eq $false)
@@ -514,7 +514,7 @@
         $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
         $q = " SELECT  $columns " + [int][Color]::Red + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp1 FROM $processing s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp1 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth) t "
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Red), t.[Count],  NULL, t.Source, t.Fk, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, Fk, COUNT(*) as [Count] FROM #tmp1 GROUP BY Source, Depth, Fk) t "
         $result += $q
 
         # green
@@ -522,7 +522,7 @@
         $where += " AND s.Iteration IN (SELECT FoundIteration FROM SqlSizer.Operations o WHERE o.Status = 0 AND o.[SessionId] = '$SessionId') "
         $q = " SELECT $columns " +  [int][Color]::Green + " as Color, s.Source, s.Depth, s.Fk, $iteration as Iteration INTO #tmp2 FROM $processing s" + $where
         $q += " INSERT INTO $processing SELECT * FROM #tmp2 "
-        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  NULL, t.Source, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth) t "
+        $q += " INSERT INTO SqlSizer.Operations SELECT $tableId, $([int][Color]::Green), t.[Count],  NULL, t.Source, t.Fk, t.Depth, GETDATE(), NULL, '$SessionId', $iteration, NULL FROM (SELECT Source, Depth, Fk, COUNT(*) as [Count] FROM #tmp2 GROUP BY Source, Depth, Fk) t "
         $result += $q
         $result += "DROP TABLE #tmp1 DROP TABLE #tmp2"
 
