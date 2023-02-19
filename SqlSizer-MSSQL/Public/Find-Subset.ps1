@@ -421,7 +421,7 @@
                     $topPhrase = " TOP $($top) "
                 }
 
-                $select = "SELECT DISTINCT " + $topPhrase + $columns + ", s.Depth"
+                $select = "SELECT " + $topPhrase + $columns + ", s.Depth"
                 $sql = $select + $from + $where
 
                 $columns = ""
